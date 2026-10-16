@@ -17,7 +17,7 @@ window.SENTINEL_CONFIG = {
    *   2. Review invitePermissions (see docs.html#permissions).
    * Until then, "Add to Discord" opens the invitation guide instead.      */
   applicationId: "1545465845524996219",
-  inviteUrl: "https://canary.discord.com/oauth2/authorize?client_id=1545465845524996219",              // TODO: optional full invite URL
+  inviteUrl: "https://discord.com/oauth2/authorize?client_id=1545465845524996219",              // TODO: optional full invite URL
   invitePermissions: "8",     // TODO: REVIEW — 8 = Administrator (see docs)
 
   /* --- Live status ------------------------------------------------------
