@@ -1,4 +1,4 @@
-name = "sentinel-auth"
+name = "sentinel-website"
 main = "index.js"
 compatibility_date = "2024-11-01"
 
