@@ -4,7 +4,7 @@
  * webhook URLs or any other credential in this file (it is served to everyone).
  */
 window.SENTINEL_CONFIG = {
-  supportUrl: "https://discord.gg/GsE2U5WvKh",
+  supportUrl: "https://discord.gg/NwXnVdzyuf",
   githubUrl: "https://github.com/zodiakgh/sentinel-website",
   siteUrl: "https://sentineldashboard.site",
 
