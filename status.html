@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#090909">
+<title data-i18n="meta.st">Status — Sentinel</title>
+<meta name="description" content="Service status page for Sentinel. Live monitoring is not connected yet; this page never shows invented uptime." data-i18n-attr="content:meta.st.d">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://sentineldashboard.site/status.html">
+<link rel="icon" href="sentinel.png" type="image/png">
+<link rel="apple-touch-icon" href="sentinel.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Sentinel">
+<meta property="og:title" content="Status — Sentinel" data-i18n-attr="content:meta.st">
+<meta property="og:description" content="Service status page for Sentinel. Live monitoring is not connected yet; this page never shows invented uptime." data-i18n-attr="content:meta.st.d">
+<meta property="og:url" content="https://sentineldashboard.site/status.html">
+<meta property="og:image" content="https://sentineldashboard.site/sentinel.png">
+<meta name="twitter:card" content="summary">
+<link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body>
+<a class="skip" href="#main" data-i18n="skip">Skip to content</a>
+<header class="topbar"><div class="wrap topbar-in">
+<a class="brand" href="index.html" aria-label="Sentinel"><span class="brand-mark" aria-hidden="true">S</span><span>SENTINEL<span class="brand-dot">.</span></span></a>
+<nav class="nav" id="site-nav" aria-label="Main"><a class="nl" href="features.html"><span data-i18n="nav.features">Features</span></a><a class="nl" href="commands.html"><span data-i18n="nav.commands">Commands</span></a><a class="nl" href="docs.html"><span data-i18n="nav.docs">Documentation</span></a><a class="nl" href="dashboard.html"><span data-i18n="nav.dashboard">Dashboard</span></a><a class="nl" href="status.html" aria-current="page"><span data-i18n="nav.status">Status</span></a><a class="nl" href="team.html"><span data-i18n="nav.team">Team</span></a><a class="nl" href="support.html"><span data-i18n="nav.support">Support</span></a></nav>
+<div class="nav-tools"><div class="lang" role="group" aria-label="Language / Langue"><button type="button" data-lang="en" aria-pressed="true" lang="en">EN</button><button type="button" data-lang="fr" aria-pressed="false" lang="fr">FR</button></div><button class="menu-toggle" id="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Menu" data-i18n-attr="aria-label:nav.menu"><span></span></button></div>
+</div></header>
+<main id="main">
+<section class="page-head"><div class="wrap"><p class="eyebrow" data-i18n="st.eyebrow">Status</p><h1 data-i18n="st.h1">Service status.</h1><p class="lead" data-i18n="st.lead">This page is a placeholder ready for real monitoring. It does not invent uptime figures or incidents.</p></div></section><section class="section"><div class="wrap prose" style="max-width:820px">
+<div class="notice"><span class="tag"><span data-i18n="st.tag">NOT CONNECTED</span></span><p id="status-banner-text" aria-live="polite"><span data-i18n="st.none.0">Live status monitoring is not connected. This page does not show real-time information.</span></p></div>
+<div class="status-list" id="status-list" aria-live="polite"></div>
+<p class="small" id="status-updated" style="margin-top:12px"></p>
+<p><button type="button" class="btn btn-sm" id="status-retry" hidden><span data-i18n="st.retry">Retry</span></button></p>
+<h2 style="margin-top:44px"><span data-i18n="st.h2">Need to know if something is down?</span></h2>
+<p data-i18n-html="st.p">Ask in the support server. For developers: the page already supports an optional JSON status endpoint, configured in <code>assets/js/config.js</code>, and shows “Not monitored” for every component until one is provided.</p>
+<p><a class="btn" href="https://discord.gg/GsE2U5WvKh" target="_blank" rel="noopener noreferrer"><span data-i18n="st.b">Open the support server ↗</span></a></p>
+</div></section>
+</main>
+<footer class="footer"><div class="wrap">
+<div class="foot-grid"><div><a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true">S</span><span>SENTINEL<span class="brand-dot">.</span></span></a><p data-i18n="foot.tag">Moderation, security, automation and community tools for Discord, in one bot.</p></div><div><h4 data-i18n="foot.product">Product</h4><ul><li><a href="features.html"><span data-i18n="foot.features">Features</span></a></li><li><a href="commands.html"><span data-i18n="foot.commands">Commands</span></a></li><li><a href="docs.html"><span data-i18n="foot.docs">Documentation</span></a></li><li><a href="premium.html"><span data-i18n="foot.premium">Premium</span></a></li><li><a href="dashboard.html"><span data-i18n="foot.dashboard">Dashboard</span></a></li></ul></div><div><h4 data-i18n="foot.community">Community</h4><ul><li><a href="support.html"><span data-i18n="foot.support">Support</span></a></li><li><a href="status.html"><span data-i18n="foot.status">Status</span></a></li><li><a href="team.html"><span data-i18n="foot.team">Team</span></a></li><li><a href="https://discord.gg/GsE2U5WvKh" target="_blank" rel="noopener noreferrer"><span data-i18n="foot.discord">Discord server ↗</span></a></li></ul></div><div><h4 data-i18n="foot.legal">Legal</h4><ul><li><a href="terms.html"><span data-i18n="foot.terms">Terms of Service</span></a></li><li><a href="privacy.html"><span data-i18n="foot.privacy">Privacy Policy</span></a></li></ul></div></div>
+<div class="foot-bottom"><span>© <span data-year>2026</span> SENTINEL. <span data-i18n="foot.rights">All rights reserved.</span></span><span data-i18n="foot.disc">Sentinel is an independent project and is not affiliated with Discord Inc.</span></div>
+</div></footer>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/i18n-fr.js"></script>
+<script src="assets/js/app.js"></script>
+<script src="assets/js/status.js"></script>
+</body>
+</html>

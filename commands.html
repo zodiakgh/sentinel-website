@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#090909">
+<title data-i18n="meta.cmds">Commands — Sentinel</title>
+<meta name="description" content="Searchable directory of every Sentinel slash command, generated from the bot’s source code, with nested subcommands, syntax and permissions." data-i18n-attr="content:meta.cmds.d">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://sentineldashboard.site/commands.html">
+<link rel="icon" href="sentinel.png" type="image/png">
+<link rel="apple-touch-icon" href="sentinel.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Sentinel">
+<meta property="og:title" content="Commands — Sentinel" data-i18n-attr="content:meta.cmds">
+<meta property="og:description" content="Searchable directory of every Sentinel slash command, generated from the bot’s source code, with nested subcommands, syntax and permissions." data-i18n-attr="content:meta.cmds.d">
+<meta property="og:url" content="https://sentineldashboard.site/commands.html">
+<meta property="og:image" content="https://sentineldashboard.site/sentinel.png">
+<meta name="twitter:card" content="summary">
+<link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body>
+<a class="skip" href="#main" data-i18n="skip">Skip to content</a>
+<header class="topbar"><div class="wrap topbar-in">
+<a class="brand" href="index.html" aria-label="Sentinel"><span class="brand-mark" aria-hidden="true">S</span><span>SENTINEL<span class="brand-dot">.</span></span></a>
+<nav class="nav" id="site-nav" aria-label="Main"><a class="nl" href="features.html"><span data-i18n="nav.features">Features</span></a><a class="nl" href="commands.html" aria-current="page"><span data-i18n="nav.commands">Commands</span></a><a class="nl" href="docs.html"><span data-i18n="nav.docs">Documentation</span></a><a class="nl" href="dashboard.html"><span data-i18n="nav.dashboard">Dashboard</span></a><a class="nl" href="status.html"><span data-i18n="nav.status">Status</span></a><a class="nl" href="team.html"><span data-i18n="nav.team">Team</span></a><a class="nl" href="support.html"><span data-i18n="nav.support">Support</span></a></nav>
+<div class="nav-tools"><div class="lang" role="group" aria-label="Language / Langue"><button type="button" data-lang="en" aria-pressed="true" lang="en">EN</button><button type="button" data-lang="fr" aria-pressed="false" lang="fr">FR</button></div><button class="menu-toggle" id="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Menu" data-i18n-attr="aria-label:nav.menu"><span></span></button></div>
+</div></header>
+<main id="main">
+<section class="page-head"><div class="wrap"><p class="eyebrow" data-i18n="cmds.eyebrow">Command directory</p><h1 data-i18n="cmds.h1">Every command, from the source.</h1><p class="lead" data-i18n="cmds.lead">Generated from the bot’s source code by static analysis. Nested commands keep their real hierarchy. Command names, syntax and descriptions are shown exactly as defined in code.</p></div></section><div class="tools"><div class="wrap">
+<label class="search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+<span class="sr" style="position:absolute;left:-9999px"><span data-i18n="cmds.search_label">Search commands</span></span>
+<input type="search" id="cmd-search" placeholder="Search commands, e.g. “ban”, “/ticket close”, “music”…" data-i18n-attr="placeholder:cmd.placeholder" autocomplete="off" spellcheck="false">
+<button type="button" class="clear" id="cmd-clear" hidden><span data-i18n="cmds.clear">Clear</span></button></label>
+<div class="chips" id="cmd-chips" role="group" aria-label="Categories"></div></div></div>
+<section class="section-tight"><div class="wrap">
+<noscript><div class="notice"><span class="tag">JS</span><p><span data-i18n="cmds.noscript">The command directory needs JavaScript. Without it, see the documentation for the main commands.</span></p></div></noscript>
+<div class="notice"><span class="tag"><span data-i18n="cmds.note.tag">NOTE</span></span><p><span data-i18n="cmds.note">Arguments: &lt;required&gt; and [optional]. “Requires” shows the Discord permission declared on the command or its group in code; commands without a badge declare none (servers can still restrict them with Discord’s command permissions). Descriptions are English, as registered with Discord; French descriptions exist only for the ticket system.</span></p></div>
+<div class="result-meta"><span id="cmd-meta" aria-live="polite"></span><button type="button" class="btn btn-sm" id="cmd-expand" hidden aria-pressed="false">Expand all</button></div>
+<div id="cmd-loading" class="loading"><span data-i18n="cmds.loading">Loading commands…</span></div>
+<div id="cmd-error" class="empty" hidden><b><span data-i18n="cmds.err.t">The command data could not be loaded.</span></b><span data-i18n="cmds.err.d">Reload the page, or open the documentation.</span><br><a class="btn btn-sm" href="docs.html"><span data-i18n="cmds.err.b">Open documentation</span></a></div>
+<div id="cmd-root" hidden></div>
+<div id="cmd-empty" class="empty" hidden><b><span data-i18n="cmds.empty.t">No command matches your search.</span></b><span data-i18n="cmds.empty.d">Check the spelling, try a shorter keyword, or reset the filters.</span><br><button type="button" class="btn btn-sm" id="cmd-reset"><span data-i18n="cmds.empty.b">Reset search and filters</span></button></div>
+</div></section>
+<a href="#main" id="cmd-back" class="btn btn-sm backtop" style="background:#111"><span data-i18n="cmds.back">↑ Back to categories</span></a>
+</main>
+<footer class="footer"><div class="wrap">
+<div class="foot-grid"><div><a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true">S</span><span>SENTINEL<span class="brand-dot">.</span></span></a><p data-i18n="foot.tag">Moderation, security, automation and community tools for Discord, in one bot.</p></div><div><h4 data-i18n="foot.product">Product</h4><ul><li><a href="features.html"><span data-i18n="foot.features">Features</span></a></li><li><a href="commands.html"><span data-i18n="foot.commands">Commands</span></a></li><li><a href="docs.html"><span data-i18n="foot.docs">Documentation</span></a></li><li><a href="premium.html"><span data-i18n="foot.premium">Premium</span></a></li><li><a href="dashboard.html"><span data-i18n="foot.dashboard">Dashboard</span></a></li></ul></div><div><h4 data-i18n="foot.community">Community</h4><ul><li><a href="support.html"><span data-i18n="foot.support">Support</span></a></li><li><a href="status.html"><span data-i18n="foot.status">Status</span></a></li><li><a href="team.html"><span data-i18n="foot.team">Team</span></a></li><li><a href="https://discord.gg/GsE2U5WvKh" target="_blank" rel="noopener noreferrer"><span data-i18n="foot.discord">Discord server ↗</span></a></li></ul></div><div><h4 data-i18n="foot.legal">Legal</h4><ul><li><a href="terms.html"><span data-i18n="foot.terms">Terms of Service</span></a></li><li><a href="privacy.html"><span data-i18n="foot.privacy">Privacy Policy</span></a></li></ul></div></div>
+<div class="foot-bottom"><span>© <span data-year>2026</span> SENTINEL. <span data-i18n="foot.rights">All rights reserved.</span></span><span data-i18n="foot.disc">Sentinel is an independent project and is not affiliated with Discord Inc.</span></div>
+</div></footer>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/i18n-fr.js"></script>
+<script src="assets/js/app.js"></script>
+<script src="assets/js/commands-data.js"></script>
+<script src="assets/js/commands.js"></script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+name = "sentinel-auth"
+main = "index.js"
+compatibility_date = "2024-11-01"
+
+# Serve the Worker on a subdomain of your site so the session cookie is first-party
+# (same registrable domain). The domain must be managed by Cloudflare DNS.
+routes = [{ pattern = "api.sentineldashboard.site", custom_domain = true }]
+
+[vars]
+DISCORD_CLIENT_ID = "1545465845524996219"
+SITE_ORIGIN = "https://sentineldashboard.site"
+API_ORIGIN = "https://api.sentineldashboard.site"
+
+# Create with: npx wrangler kv namespace create SESSIONS   then paste the id below
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
+
+# Secrets (never put these in this file):
+#   npx wrangler secret put DISCORD_CLIENT_SECRET
+#   npx wrangler secret put STATE_SECRET        # any long random string
+#   npx wrangler secret put BOT_TOKEN           # OPTIONAL: lets the site show where Sentinel is already added

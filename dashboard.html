@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#090909">
+<title data-i18n="meta.d">Dashboard — Sentinel</title>
+<meta name="description" content="Sentinel has no web dashboard yet. Learn how servers are configured from inside Discord and what a secure dashboard would require." data-i18n-attr="content:meta.d.d">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://sentineldashboard.site/dashboard.html">
+<link rel="icon" href="sentinel.png" type="image/png">
+<link rel="apple-touch-icon" href="sentinel.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Sentinel">
+<meta property="og:title" content="Dashboard — Sentinel" data-i18n-attr="content:meta.d">
+<meta property="og:description" content="Sentinel has no web dashboard yet. Learn how servers are configured from inside Discord and what a secure dashboard would require." data-i18n-attr="content:meta.d.d">
+<meta property="og:url" content="https://sentineldashboard.site/dashboard.html">
+<meta property="og:image" content="https://sentineldashboard.site/sentinel.png">
+<meta name="twitter:card" content="summary">
+<link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body>
+<a class="skip" href="#main" data-i18n="skip">Skip to content</a>
+<header class="topbar"><div class="wrap topbar-in">
+<a class="brand" href="index.html" aria-label="Sentinel"><span class="brand-mark" aria-hidden="true">S</span><span>SENTINEL<span class="brand-dot">.</span></span></a>
+<nav class="nav" id="site-nav" aria-label="Main"><a class="nl" href="features.html"><span data-i18n="nav.features">Features</span></a><a class="nl" href="commands.html"><span data-i18n="nav.commands">Commands</span></a><a class="nl" href="docs.html"><span data-i18n="nav.docs">Documentation</span></a><a class="nl" href="dashboard.html" aria-current="page"><span data-i18n="nav.dashboard">Dashboard</span></a><a class="nl" href="status.html"><span data-i18n="nav.status">Status</span></a><a class="nl" href="team.html"><span data-i18n="nav.team">Team</span></a><a class="nl" href="support.html"><span data-i18n="nav.support">Support</span></a></nav>
+<div class="nav-tools"><div class="lang" role="group" aria-label="Language / Langue"><button type="button" data-lang="en" aria-pressed="true" lang="en">EN</button><button type="button" data-lang="fr" aria-pressed="false" lang="fr">FR</button></div><button class="menu-toggle" id="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Menu" data-i18n-attr="aria-label:nav.menu"><span></span></button></div>
+</div></header>
+<main id="main">
+<section class="page-head"><div class="wrap"><p class="eyebrow" data-i18n="d.eyebrow">Dashboard</p>
+<h1 data-dash-off><span data-i18n="d.h1">No web dashboard yet.</span></h1><h1 data-dash-on hidden><span data-i18n="d.h1.on">Your servers.</span></h1>
+<p class="lead" data-dash-off><span data-i18n="d.lead">Sentinel does not ship a web dashboard, login or API today. Servers are configured from inside Discord.</span></p>
+<p class="lead" data-dash-on hidden><span data-i18n="d.lead.on">Log in with Discord to see the servers you manage and where Sentinel is present. Settings are still changed inside Discord.</span></p></div></section>
+<div id="dash-off"><section class="section"><div class="wrap split"><div class="prose">
+<div class="notice"><span class="tag"><span data-i18n="d.tag">UNAVAILABLE</span></span><p><span data-i18n="d.n">There is no “Log in with Discord” on this site and no server settings here. Any such control would be fake, so none is shown.</span></p></div>
+<h2><span data-i18n="d.h2">Configure inside Discord today</span></h2>
+<p data-i18n="d.p">Most modules open interactive panels from a slash command:</p>
+<div class="table-wrap"><table><thead><tr><th><span data-i18n="d.th1">Command</span></th><th><span data-i18n="d.th2">Opens</span></th></tr></thead><tbody><tr><td><code>/panelsetup</code></td><td><span data-i18n="dash.p.panelsetup">Complete configuration dashboard</span></td></tr><tr><td><code>/automod panel</code></td><td><span data-i18n="dash.p.automod_panel">AutoMod control panel</span></td></tr><tr><td><code>/antinuke setup</code></td><td><span data-i18n="dash.p.antinuke_setup">AntiNuke security panel</span></td></tr><tr><td><code>/security setup</code></td><td><span data-i18n="dash.p.security_setup">Security Center</span></td></tr><tr><td><code>/ticket setup</code></td><td><span data-i18n="dash.p.ticket_setup">Ticket administration</span></td></tr><tr><td><code>/economy panel</code></td><td><span data-i18n="dash.p.economy_panel">Economy configuration</span></td></tr><tr><td><code>/tempvoice setup</code></td><td><span data-i18n="dash.p.tempvoice_setup">TempVoice wizard</span></td></tr><tr><td><code>/verify setup</code></td><td><span data-i18n="dash.p.verify_setup">Verification setup</span></td></tr><tr><td><code>/flow panel</code></td><td><span data-i18n="dash.p.flow_panel">Flow automation panel</span></td></tr><tr><td><code>/statssetup</code></td><td><span data-i18n="dash.p.statssetup">Statistics manager</span></td></tr></tbody></table></div>
+</div><div class="prose"><h2><span data-i18n="d.h2b">What a real dashboard needs</span></h2>
+<p data-i18n="d.p2">This site runs on GitHub Pages, which only serves static files. A dashboard would additionally require:</p>
+<ol><li><span data-i18n="d.r1">A server-side application that keeps the Discord OAuth2 client secret private.</span></li><li><span data-i18n="d.r2">A secure API between that application and the bot, with authorisation checks per server.</span></li><li><span data-i18n="d.r3">Hosting for that backend, separate from this static site.</span></li></ol>
+<p class="small"><span data-i18n="d.p3">The folder structure of this site leaves room for a dashboard page, but no controls are wired up.</span></p>
+<p class="btn-row"><a class="btn" href="docs.html#configuration"><span data-i18n="d.b">Read the configuration guide</span></a></p></div></div></section></div>
+<div id="dash-on" hidden><section class="section"><div class="wrap">
+<div class="notice warn" id="dash-notice" hidden><span class="tag"><span data-i18n="dash.n.tag">LOGIN</span></span><p id="dash-notice-text"></p></div>
+<div id="dash-loading" class="loading"><span data-i18n="dash.loading">Checking your session…</span></div>
+<div id="dash-error" class="empty" hidden><b><span data-i18n="dash.err.t">The login service could not be reached.</span></b><span data-i18n="dash.err.d">Nothing was changed. Try again in a moment.</span><br><button type="button" class="btn btn-sm" id="dash-retry"><span data-i18n="dash.retry">Try again</span></button></div>
+<div id="dash-anon" class="login-card" hidden><h2 style="font-size:26px"><span data-i18n="dash.anon.h">Log in with Discord</span></h2>
+<p class="muted" style='margin:14px 0 22px' data-i18n="dash.anon.p">We ask Discord for your username, avatar and the list of servers you are in (scopes identify and guilds) to show the ones you can manage. We never see your password and cannot act on your account or your servers.</p>
+<a class="btn btn-primary btn-discord" id="dash-login" href="#"><span data-i18n="dash.login">Login with Discord</span></a>
+<p class="small" style="margin-top:16px"><span data-i18n-html="dash.anon.n">See the <a class="in" href="privacy.html">Privacy Policy</a> for what is stored.</span></p></div>
+<div id="dash-user" hidden><div class="who"><div class="avatar" id="dash-avatar" aria-hidden="true"></div><div><h2 id="dash-name"></h2><p class="handle" id="dash-handle"></p></div><button type="button" class="btn btn-sm" id="dash-logout" style="margin-left:auto"><span data-i18n="dash.logout">Log out</span></button></div>
+<h3><span data-i18n="dash.servers">Servers you manage</span></h3>
+<p class="small"><span data-i18n="dash.servers.n">Shown when you own the server or have Manage Server / Administrator. Configuration itself happens in Discord with Sentinel’s commands.</span></p>
+<ul class="guilds" id="dash-guilds"></ul>
+<div class="empty" id="dash-noguilds" hidden><b><span data-i18n="dash.none.t">No manageable servers found.</span></b><span data-i18n="dash.none.d">You need the Manage Server permission on a server.</span></div></div>
+</div></section></div>
+</main>
+<footer class="footer"><div class="wrap">
+<div class="foot-grid"><div><a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true">S</span><span>SENTINEL<span class="brand-dot">.</span></span></a><p data-i18n="foot.tag">Moderation, security, automation and community tools for Discord, in one bot.</p></div><div><h4 data-i18n="foot.product">Product</h4><ul><li><a href="features.html"><span data-i18n="foot.features">Features</span></a></li><li><a href="commands.html"><span data-i18n="foot.commands">Commands</span></a></li><li><a href="docs.html"><span data-i18n="foot.docs">Documentation</span></a></li><li><a href="premium.html"><span data-i18n="foot.premium">Premium</span></a></li><li><a href="dashboard.html"><span data-i18n="foot.dashboard">Dashboard</span></a></li></ul></div><div><h4 data-i18n="foot.community">Community</h4><ul><li><a href="support.html"><span data-i18n="foot.support">Support</span></a></li><li><a href="status.html"><span data-i18n="foot.status">Status</span></a></li><li><a href="team.html"><span data-i18n="foot.team">Team</span></a></li><li><a href="https://discord.gg/GsE2U5WvKh" target="_blank" rel="noopener noreferrer"><span data-i18n="foot.discord">Discord server ↗</span></a></li></ul></div><div><h4 data-i18n="foot.legal">Legal</h4><ul><li><a href="terms.html"><span data-i18n="foot.terms">Terms of Service</span></a></li><li><a href="privacy.html"><span data-i18n="foot.privacy">Privacy Policy</span></a></li></ul></div></div>
+<div class="foot-bottom"><span>© <span data-year>2026</span> SENTINEL. <span data-i18n="foot.rights">All rights reserved.</span></span><span data-i18n="foot.disc">Sentinel is an independent project and is not affiliated with Discord Inc.</span></div>
+</div></footer>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/i18n-fr.js"></script>
+<script src="assets/js/app.js"></script>
+<script src="assets/js/dashboard.js"></script>
+</body>
+</html>
