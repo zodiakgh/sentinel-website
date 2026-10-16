@@ -29,7 +29,7 @@ window.SENTINEL_CONFIG = {
    * client secret). Leave empty until it is deployed: the dashboard page then
    * stays in its honest "no login yet" state. Example:
    *   authApiUrl: "https://api.sentineldashboard.site"                      */
-  authApiUrl: "",
+  authApiUrl: "https://api.sentineldashboard.site",
 
   statusApiUrl: ""
 };
