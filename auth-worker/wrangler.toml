@@ -10,7 +10,7 @@ routes = [{ pattern = "api.sentineldashboard.site", custom_domain = true }]
 
 [vars]
 DISCORD_CLIENT_ID = "1545465845524996219"
-SITE_ORIGIN = "https://sentineldashboard.site"
+SITE_ORIGIN = "https://www.sentineldashboard.site"
 API_ORIGIN = "https://api.sentineldashboard.site"
 # TURNSTILE_SITE_KEY = "0x..."   # public site key, only if you enable the captcha
 
