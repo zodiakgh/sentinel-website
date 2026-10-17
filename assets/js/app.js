@@ -147,6 +147,11 @@
       var onScroll = function () { bar.classList.toggle("scrolled", window.scrollY > 8); };
       window.addEventListener("scroll", onScroll, { passive: true }); onScroll();
     }
+    // Add scroll reveals to common content blocks across every page without changing page behaviour.
+    var autoReveal = document.querySelectorAll(
+      ".page-head .wrap > *, .layer-grid > li, .cap, .cmd-group, .doc-layout > *, .legal > section, .prose > section, .member, .status-row, .guild, .vsteps li, details.faq, .sform-wrap > *, .cta-band, .login-card, .vcard, .foot-grid > div"
+    );
+    autoReveal.forEach(function (n) { if (!n.hasAttribute("data-reveal")) n.setAttribute("data-reveal", ""); });
     var items = document.querySelectorAll("[data-reveal]");
     if (!items.length) return;
     if (!("IntersectionObserver" in window)) { items.forEach(function (n) { n.classList.add("in"); }); return; }
