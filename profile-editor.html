@@ -78,4 +78,39 @@
   </div>
 </main>
 <script src="/assets/js/config.js"></script><script src="/assets/js/profile-editor.js"></script>
+<script>
+/* Reliable category navigation: each tab displays only its matching settings section. */
+(function () {
+  "use strict";
+  var nav = document.querySelector(".pe-category-nav");
+  var form = document.getElementById("profile-form");
+  if (!nav || !form) return;
+  var buttons = Array.from(nav.querySelectorAll(".pe-category-btn[data-category]"));
+  var sections = Array.from(form.querySelectorAll(".pe-section[data-category]"));
+  function activate(name) {
+    buttons.forEach(function (button) {
+      var active = button.dataset.category === name;
+      button.classList.toggle("is-active", active);
+      button.setAttribute("aria-selected", active ? "true" : "false");
+      button.setAttribute("tabindex", active ? "0" : "-1");
+    });
+    sections.forEach(function (section) {
+      section.classList.toggle("pe-hide", section.dataset.category !== name);
+    });
+  }
+  buttons.forEach(function (button, index) {
+    button.setAttribute("role", "tab");
+    button.addEventListener("click", function () { activate(button.dataset.category); });
+    button.addEventListener("keydown", function (event) {
+      if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+      event.preventDefault();
+      var delta = event.key === "ArrowRight" ? 1 : -1;
+      var next = (index + delta + buttons.length) % buttons.length;
+      buttons[next].focus();
+      activate(buttons[next].dataset.category);
+    });
+  });
+  activate((buttons.find(function (button) { return button.classList.contains("is-active"); }) || buttons[0] || {}).dataset?.category || "identity");
+})();
+</script>
 </body></html>
