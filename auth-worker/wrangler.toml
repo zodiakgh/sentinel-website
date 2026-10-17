@@ -20,6 +20,7 @@ API_ORIGIN = "https://api.sentineldashboard.site"
 # Store RESEND_API_KEY as a Worker secret (never commit it to this file).
 # SUPPORT_TO = "your-real-inbox@example.com"  # set this in Worker Settings → Variables
 SUPPORT_FROM = "Sentinel Support <support@sentineldashboard.site>"
+ACCOUNT_EMAIL_FROM = "Sentinel <noreply@sentineldashboard.site>"
 
 # Create with: npx wrangler kv namespace create SESSIONS   then paste the id below
 [[kv_namespaces]]
