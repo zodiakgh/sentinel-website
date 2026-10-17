@@ -523,7 +523,7 @@ function profilePublicShape(p, views, account) {
     username: p.username, displayName: p.displayName, bio: p.bio, avatarUrl: p.avatarUrl || (account && account.discord ? cdn("avatars", account.discord.id, account.discord.avatar) || "" : ""),
     bannerUrl: p.bannerUrl, backgroundUrl: p.backgroundUrl, background: p.background, accentColor: p.accentColor,
     status: p.status, statusEmoji: p.statusEmoji, links: p.links || [], widgets: p.widgets || [], musicUrl: p.musicUrl,
-    badges, views: Number(views || 0), createdAt: p.createdAt, updatedAt: p.updatedAt
+    badges, views: Number(views || 0), customization: p.customization || {}, createdAt: p.createdAt, updatedAt: p.updatedAt
   };
 }
 async function profileMe(env, req) {
@@ -568,6 +568,33 @@ async function profileSave(env, req) {
     const title = profileText(item.title, 50), content = profileText(item.content, 500), url = type === "link" ? safeHttpUrl(item.url, 500) : "";
     if (title || content || (type === "link" && url)) widgets.push({ id: rand(8), type, title, content, url });
   }
+  const c = b.customization && typeof b.customization === "object" ? b.customization : {};
+  const enumVal = (key, allowed, fallback) => allowed.includes(String(c[key] ?? "")) ? String(c[key]) : fallback;
+  const intVal = (key, min, max, fallback) => { const n = Number(c[key]); return Number.isFinite(n) ? Math.max(min, Math.min(max, Math.round(n))) : fallback; };
+  const boolVal = (key, fallback = true) => typeof c[key] === "boolean" ? c[key] : fallback;
+  const colorVal = (key, fallback) => /^#[0-9a-f]{6}$/i.test(String(c[key] || "")) ? String(c[key]) : fallback;
+  const customization = {
+    layout: enumVal("layout", ["centered", "left", "wide"], "centered"),
+    cardStyle: enumVal("cardStyle", ["glass", "solid", "outline", "minimal"], "glass"),
+    contentWidth: intVal("contentWidth", 620, 1200, 900), bannerHeight: intVal("bannerHeight", 80, 360, 220),
+    avatarShape: enumVal("avatarShape", ["circle", "rounded", "square"], "circle"), widgetColumns: enumVal("widgetColumns", ["1", "2", "3"], "2"),
+    alignment: enumVal("alignment", ["center", "left"], "center"), spacing: enumVal("spacing", ["compact", "normal", "relaxed"], "normal"),
+    pageColor: colorVal("pageColor", "#090d17"), cardColor: colorVal("cardColor", "#0b1020"), textColor: colorVal("textColor", "#f5f7ff"),
+    mutedColor: colorVal("mutedColor", "#98a6bf"), borderColor: colorVal("borderColor", "#ffffff"), widgetColor: colorVal("widgetColor", "#ffffff"),
+    overlay: enumVal("overlay", ["none", "light", "medium", "strong"], "medium"), blur: intVal("blur", 0, 30, 18), radius: intVal("radius", 0, 40, 24),
+    shadow: enumVal("shadow", ["none", "soft", "deep", "colored"], "soft"), hoverEffect: enumVal("hoverEffect", ["none", "lift", "glow", "scale"], "lift"),
+    animation: enumVal("animation", ["none", "fade", "rise"], "fade"), borderStyle: enumVal("borderStyle", ["none", "subtle", "accent"], "subtle"),
+    showBio: boolVal("showBio"), showStatus: boolVal("showStatus"), showBadges: boolVal("showBadges"), showLinks: boolVal("showLinks"),
+    showWidgets: boolVal("showWidgets"), showMusic: boolVal("showMusic"), showViews: boolVal("showViews"), showBranding: boolVal("showBranding"),
+    linkStyle: enumVal("linkStyle", ["glass", "solid", "outline", "minimal"], "glass"), badgeStyle: enumVal("badgeStyle", ["pill", "square", "minimal"], "pill"),
+    fontFamily: enumVal("fontFamily", ["system", "inter", "mono", "serif"], "system"), nameSize: intVal("nameSize", 24, 64, 42),
+    letterSpacing: enumVal("letterSpacing", ["tight", "normal", "wide"], "normal"), bannerPosition: enumVal("bannerPosition", ["center", "top", "bottom", "left", "right"], "center"),
+    tagline: profileText(c.tagline, 100), footerText: profileText(c.footerText, 100),
+    avatarSize: intVal("avatarSize", 72, 160, 112), widgetGap: intVal("widgetGap", 6, 28, 12), cardOpacity: intVal("cardOpacity", 60, 100, 86), bioSize: intVal("bioSize", 12, 20, 15),
+    avatarBorder: enumVal("avatarBorder", ["accent", "none", "white"], "accent"), bannerOverlay: enumVal("bannerOverlay", ["none", "soft", "strong"], "none"),
+    linkAlignment: enumVal("linkAlignment", ["center", "left"], "center"), linkRadius: intVal("linkRadius", 4, 24, 12), widgetStyle: enumVal("widgetStyle", ["glass", "solid", "outline"], "glass"),
+    showAvatar: boolVal("showAvatar"), showHandle: boolVal("showHandle"), showBanner: boolVal("showBanner"), showFooter: boolVal("showFooter")
+  };
   const oldRaw = previousSlug ? await env.SESSIONS.get(`p:${previousSlug}`) : null;
   const old = oldRaw ? JSON.parse(oldRaw) : {};
   const profile = {
@@ -576,7 +603,7 @@ async function profileSave(env, req) {
     bannerUrl: safeHttpUrl(b.bannerUrl, 500, true), backgroundUrl: safeHttpUrl(b.backgroundUrl, 500, true),
     background: safeProfileBackground(b.background), accentColor: /^#[0-9a-f]{6}$/i.test(String(b.accentColor || "")) ? b.accentColor : "#8b7cff",
     status: profileText(b.status, 80), statusEmoji: profileText(b.statusEmoji, 8), links, widgets,
-    musicUrl: safeMusicUrl(b.musicUrl), createdAt: old.createdAt || Date.now(), updatedAt: Date.now()
+    musicUrl: safeMusicUrl(b.musicUrl), customization, createdAt: old.createdAt || Date.now(), updatedAt: Date.now()
   };
   await env.SESSIONS.put(`p:${username}`, JSON.stringify(profile));
   await env.SESSIONS.put(ownerIndex, username);
