@@ -1,4 +1,5 @@
 name = "sentinel-website"
+# Keeps secrets/variables added in the Cloudflare dashboard when Git deploys the Worker.
 keep_vars = true
 main = "index.js"
 compatibility_date = "2024-11-01"
@@ -11,13 +12,22 @@ routes = [{ pattern = "api.sentineldashboard.site", custom_domain = true }]
 DISCORD_CLIENT_ID = "1545465845524996219"
 SITE_ORIGIN = "https://sentineldashboard.site"
 API_ORIGIN = "https://api.sentineldashboard.site"
+# TURNSTILE_SITE_KEY = "0x..."   # public site key, only if you enable the captcha
+
+# Support form (POST /support/send). Needs Email Routing enabled on the domain and your own inbox verified there.
+# SUPPORT_TO must be that verified destination address (e.g. your Gmail), not support@ itself.
+send_email = [{ name = "SUPPORT_MAIL" }]
+# SUPPORT_TO   = "your-verified-inbox@example.com"   # add as a variable (not secret) in the dashboard or here
+# SUPPORT_FROM = "support-form@sentineldashboard.site"  # optional, must be on your domain
 
 # Create with: npx wrangler kv namespace create SESSIONS   then paste the id below
 [[kv_namespaces]]
 binding = "SESSIONS"
-id = "f76238de8c62476b9184012ecadee81e"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
 
 # Secrets (never put these in this file):
 #   npx wrangler secret put DISCORD_CLIENT_SECRET
 #   npx wrangler secret put STATE_SECRET        # any long random string
-#   npx wrangler secret put BOT_TOKEN           # OPTIONAL: lets the site show where Sentinel is already added
+#   npx wrangler secret put BOT_TOKEN           # REQUIRED for server verification (gives the role); also lets the dashboard show where Sentinel is added
+#   npx wrangler secret put BOT_API_KEY         # REQUIRED for server verification: a long random string, the same value as SENTINEL_API_KEY in the bot's env
+#   npx wrangler secret put TURNSTILE_SECRET    # OPTIONAL captcha on the verification page (also set the TURNSTILE_SITE_KEY variable below)

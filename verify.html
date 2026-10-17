@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#000000">
+<meta name="color-scheme" content="dark">
+<title data-i18n="meta.verify">Verify — Sentinel</title>
+<meta name="description" content="Verify your Discord account for a server that uses Sentinel." data-i18n-attr="content:meta.verify.d">
+<meta name="robots" content="noindex,nofollow">
+<link rel="canonical" href="https://sentineldashboard.site/verify">
+<link rel="icon" href="/sentinel.png" type="image/png">
+<link rel="apple-touch-icon" href="/sentinel.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Sentinel">
+<meta property="og:title" content="Verify — Sentinel" data-i18n-attr="content:meta.verify">
+<meta property="og:description" content="Verify your Discord account for a server that uses Sentinel." data-i18n-attr="content:meta.verify.d">
+<meta property="og:url" content="https://sentineldashboard.site/verify">
+<meta property="og:image" content="https://sentineldashboard.site/sentinel.png">
+<meta name="twitter:card" content="summary">
+<link rel="preload" href="/assets/fonts/bricolage-grotesque-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/instrument-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<script>document.documentElement.classList.add("js")</script>
+<link rel="stylesheet" href="/assets/css/main.css">
+</head>
+<body>
+<a class="skip" href="#main" data-i18n="skip">Skip to content</a>
+<header class="topbar" id="topbar"><div class="wrap topbar-in">
+<a class="brand" href="/" aria-label="Sentinel"><span class="brand-mark" aria-hidden="true">S</span><span class="brand-word">Sentinel</span></a>
+<nav class="nav" id="site-nav" aria-label="Main"><a class="nl" href="/features"><span data-i18n="nav.features">Features</span></a><a class="nl" href="/commands"><span data-i18n="nav.commands">Commands</span></a><a class="nl" href="/docs"><span data-i18n="nav.docs">Documentation</span></a><a class="nl" href="/dashboard"><span data-i18n="nav.dashboard">Dashboard</span></a><a class="nl" href="/support"><span data-i18n="nav.support">Support</span></a><a class="nl nl-cta" href="/docs#invite" data-invite><span data-i18n="nav.add">Add to Discord</span></a></nav>
+<div class="nav-tools"><div class="lang" role="group" aria-label="Language / Langue"><button type="button" data-lang="en" aria-pressed="true" lang="en">EN</button><button type="button" data-lang="fr" aria-pressed="false" lang="fr">FR</button></div><a class="btn btn-sm btn-primary nav-cta" href="/docs#invite" data-invite><span data-i18n="nav.add">Add to Discord</span></a><button class="menu-toggle" id="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Menu" data-i18n-attr="aria-label:nav.menu"><span></span></button></div>
+</div></header>
+<main id="main">
+<div class="wrap vwrap"><div class="vcard" id="v-card">
+<div class="vguild" id="v-head"><span class="g-ic" id="v-icon" aria-hidden="true">S</span><div><h1 id="v-name"><span data-i18n="v.title">Server verification</span></h1><p><span data-i18n="v.sub">Verify with Sentinel</span></p></div></div>
+<ol class="vsteps" id="v-steps"><li id="vs1" class="on"><b>1</b><span><span data-i18n="v.step1">Log in with Discord</span></span></li><li id="vs2"><b>2</b><span><span data-i18n="v.step2">Get your role</span></span></li></ol>
+<div id="v-body" aria-live="polite">
+<p class="vmsg" id="v-msg"><span data-i18n="v.loading">Checking this server…</span></p>
+</div>
+<div class="cf-turnstile" id="v-captcha" hidden></div>
+<a class="btn btn-primary btn-discord" id="v-login" href="#" hidden><span data-i18n="v.login">Log in with Discord</span></a>
+<button class="btn btn-primary" id="v-go" type="button" hidden><span data-i18n="v.go">Verify me</span></button>
+<a class="btn" id="v-open" href="https://discord.com/app" target="_blank" rel="noopener noreferrer" hidden><span data-i18n="v.open">Back to Discord ↗</span></a>
+<button class="btn" id="v-retry" type="button" hidden><span data-i18n="v.retry">Try again</span></button>
+<p class="small" id="v-note"><span data-i18n-html="v.note">Sentinel only reads your Discord username and avatar for this check and revokes access right away. See the <a class="in" href="/privacy#verification">Privacy Policy</a>.</span></p>
+</div></div><script type="application/json" id="v-en">{"v.m.invalid": "This verification link is not valid. Open the link from the verification message in your server.", "v.m.notconfigured": "This server has not set up verification with Sentinel yet. Ask a server administrator to run /verify setup.", "v.m.anon": "Log in with Discord so Sentinel can confirm which account you are. This only reads your username and avatar.", "v.m.ready": "You are logged in as {name}. Press the button to receive your role.", "v.m.done": "You are verified. Your role has been added, so you can go back to Discord.", "v.m.already": "You are already verified on this server.", "v.m.not_member": "This account is not in the server. Join the server first, then come back to this page.", "v.m.account_too_new": "This server requires Discord accounts to be at least {days} days old. Try again later.", "v.m.joined_too_recently": "This server requires you to have been a member for at least {days} days. Try again later.", "v.m.bot_error": "Sentinel could not check this server. Make sure Sentinel is still in the server, then try again.", "v.m.role_failed": "Sentinel could not give you the role. Ask a server administrator to place Sentinel’s role above the verified role and to allow Manage Roles.", "v.m.captcha_failed": "The captcha check failed. Complete it again and press the button.", "v.m.slow_down": "Please wait a minute before trying again.", "v.m.unauthenticated": "Your login expired. Log in again to continue.", "v.m.cancelled": "Login was cancelled, so nothing was verified.", "v.m.error": "Login failed. Please try again.", "v.m.unreachable": "The verification service could not be reached. Nothing was changed.", "v.m.off": "Verification is not available on this website right now.", "v.m.loading": "Checking this server…", "v.m.working": "Verifying…", "v.m.generic": "Something went wrong. Nothing was changed. Try again in a moment."}</script>
+</main>
+<footer class="footer"><div class="wrap">
+<div class="foot-grid"><div><a class="brand" href="/"><span class="brand-mark" aria-hidden="true">S</span><span class="brand-word">Sentinel</span></a><p data-i18n="foot.tag">Moderation, security, automation and community tools for Discord, in one bot.</p></div><div><h4 data-i18n="foot.product">Product</h4><ul><li><a href="/features"><span data-i18n="foot.features">Features</span></a></li><li><a href="/commands"><span data-i18n="foot.commands">Commands</span></a></li><li><a href="/docs"><span data-i18n="foot.docs">Documentation</span></a></li><li><a href="/dashboard"><span data-i18n="foot.dashboard">Dashboard</span></a></li><li><a href="/premium"><span data-i18n="foot.premium">Premium</span></a></li></ul></div><div><h4 data-i18n="foot.community">Community</h4><ul><li><a href="/support"><span data-i18n="foot.support">Support</span></a></li><li><a href="/status"><span data-i18n="foot.status">Status</span></a></li><li><a href="/team"><span data-i18n="foot.team">Team</span></a></li><li><a href="https://discord.gg/NwXnVdzyuf" data-support target="_blank" rel="noopener noreferrer"><span data-i18n="foot.discord">Discord server ↗</span></a></li></ul></div><div><h4 data-i18n="foot.legal">Legal</h4><ul><li><a href="/terms"><span data-i18n="foot.terms">Terms of Service</span></a></li><li><a href="/privacy"><span data-i18n="foot.privacy">Privacy Policy</span></a></li></ul></div></div>
+<div class="foot-bottom"><span>© <span data-year>2026</span> Sentinel. <span data-i18n="foot.rights">All rights reserved.</span></span><span data-i18n="foot.disc">Sentinel is an independent project and is not affiliated with Discord Inc.</span></div>
+</div></footer>
+<script src="/assets/js/config.js"></script>
+<script src="/assets/js/i18n-fr.js"></script>
+<script src="/assets/js/app.js"></script>
+<script src="/assets/js/verify.js"></script>
+</body>
+</html>

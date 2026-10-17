@@ -124,12 +124,47 @@
         a.setAttribute("href", url); a.dataset.href = url;
         a.setAttribute("target", "_blank"); a.setAttribute("rel", "noopener noreferrer");
       } else {
-        a.dataset.href = "docs.html#invite";
-        a.setAttribute("href", "docs.html#invite");
+        a.dataset.href = "/docs#invite";
+        a.setAttribute("href", "/docs#invite");
       }
     });
     document.querySelectorAll("[data-invite-missing]").forEach(function (n) { n.hidden = !!url; });
     document.querySelectorAll("[data-invite-ready]").forEach(function (n) { n.hidden = !url; });
+  }
+
+  /* Support server link: one place to change it (assets/js/config.js -> supportUrl) */
+  function initSupport() {
+    if (!CFG.supportUrl) return;
+    document.querySelectorAll("[data-support]").forEach(function (a) {
+      a.setAttribute("href", CFG.supportUrl); a.dataset.href = CFG.supportUrl;
+    });
+  }
+
+  /* Header gets a background once the page scrolls; blocks fade in once as they enter the viewport */
+  function initChrome() {
+    var bar = document.getElementById("topbar");
+    if (bar) {
+      var onScroll = function () { bar.classList.toggle("scrolled", window.scrollY > 8); };
+      window.addEventListener("scroll", onScroll, { passive: true }); onScroll();
+    }
+    var items = document.querySelectorAll("[data-reveal]");
+    if (!items.length) return;
+    if (!("IntersectionObserver" in window)) { items.forEach(function (n) { n.classList.add("in"); }); return; }
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) { if (en.isIntersecting) { en.target.classList.add("in"); io.unobserve(en.target); } });
+    }, { rootMargin: "0px 0px -8% 0px", threshold: 0.08 });
+    items.forEach(function (n, i) { n.style.transitionDelay = ((i % 4) * 70) + "ms"; io.observe(n); });
+  }
+
+  /* Pages are served without ".html" (/dashboard); tidy the address if someone opens the old form */
+  function cleanUrl() {
+    try {
+      var m = window.location.pathname.match(/^(.*?)(?:\/index)?\.html$/);
+      if (m && window.location.pathname !== "/404.html") {
+        var p = (m[1] === "" ? "/" : m[1]);
+        window.history.replaceState(null, "", p + window.location.search + window.location.hash);
+      }
+    } catch (e) { /* ignore */ }
   }
 
   /* Misc */
@@ -165,7 +200,7 @@
       if (img.complete && img.naturalWidth === 0) fb();
     });
     // Sidebar scroll-spy
-    var links = Array.prototype.slice.call(document.querySelectorAll(".side a[href^='#'], .side a[data-spy]"));
+    var links = Array.prototype.slice.call(document.querySelectorAll(".side a[href^='#'], .side a[data-spy], .toc a[href^='#']"));
     if (links.length && "IntersectionObserver" in window) {
       var map = {};
       links.forEach(function (a) {
@@ -185,8 +220,11 @@
   }
 
   document.addEventListener("DOMContentLoaded", function () {
+    cleanUrl();
     initNav();
     initInvite();
+    initSupport();
+    initChrome();
     initMisc();
     document.querySelectorAll(".lang button").forEach(function (b) {
       b.addEventListener("click", function () { setLang(b.dataset.lang, true); });

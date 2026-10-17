@@ -3,71 +3,75 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#090909">
+<meta name="theme-color" content="#000000">
+<meta name="color-scheme" content="dark">
 <title data-i18n="meta.home">Sentinel — All-in-one Discord Bot</title>
 <meta name="description" content="Sentinel is an all-in-one Discord bot for moderation, security, automation, support and community engagement. Explore the features, commands and documentation." data-i18n-attr="content:meta.home.d">
 <meta name="robots" content="index,follow">
-<link rel="canonical" href="https://sentineldashboard.site/">
-<link rel="icon" href="sentinel.png" type="image/png">
-<link rel="apple-touch-icon" href="sentinel.png">
+<link rel="canonical" href="https://sentineldashboard.site">
+<link rel="icon" href="/sentinel.png" type="image/png">
+<link rel="apple-touch-icon" href="/sentinel.png">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Sentinel">
 <meta property="og:title" content="Sentinel — All-in-one Discord Bot" data-i18n-attr="content:meta.home">
 <meta property="og:description" content="Sentinel is an all-in-one Discord bot for moderation, security, automation, support and community engagement. Explore the features, commands and documentation." data-i18n-attr="content:meta.home.d">
-<meta property="og:url" content="https://sentineldashboard.site/">
+<meta property="og:url" content="https://sentineldashboard.site">
 <meta property="og:image" content="https://sentineldashboard.site/sentinel.png">
 <meta name="twitter:card" content="summary">
-<link rel="stylesheet" href="assets/css/main.css">
+<link rel="preload" href="/assets/fonts/bricolage-grotesque-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/instrument-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<script>document.documentElement.classList.add("js")</script>
+<link rel="stylesheet" href="/assets/css/main.css">
 </head>
 <body>
 <a class="skip" href="#main" data-i18n="skip">Skip to content</a>
-<header class="topbar"><div class="wrap topbar-in">
-<a class="brand" href="index.html" aria-label="Sentinel"><span class="brand-mark" aria-hidden="true">S</span><span>SENTINEL<span class="brand-dot">.</span></span></a>
-<nav class="nav" id="site-nav" aria-label="Main"><a class="nl" href="features.html"><span data-i18n="nav.features">Features</span></a><a class="nl" href="commands.html"><span data-i18n="nav.commands">Commands</span></a><a class="nl" href="docs.html"><span data-i18n="nav.docs">Documentation</span></a><a class="nl" href="dashboard.html"><span data-i18n="nav.dashboard">Dashboard</span></a><a class="nl" href="status.html"><span data-i18n="nav.status">Status</span></a><a class="nl" href="team.html"><span data-i18n="nav.team">Team</span></a><a class="nl" href="support.html"><span data-i18n="nav.support">Support</span></a></nav>
-<div class="nav-tools"><div class="lang" role="group" aria-label="Language / Langue"><button type="button" data-lang="en" aria-pressed="true" lang="en">EN</button><button type="button" data-lang="fr" aria-pressed="false" lang="fr">FR</button></div><button class="menu-toggle" id="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Menu" data-i18n-attr="aria-label:nav.menu"><span></span></button></div>
+<header class="topbar" id="topbar"><div class="wrap topbar-in">
+<a class="brand" href="/" aria-label="Sentinel"><span class="brand-mark" aria-hidden="true">S</span><span class="brand-word">Sentinel</span></a>
+<nav class="nav" id="site-nav" aria-label="Main"><a class="nl" href="/features"><span data-i18n="nav.features">Features</span></a><a class="nl" href="/commands"><span data-i18n="nav.commands">Commands</span></a><a class="nl" href="/docs"><span data-i18n="nav.docs">Documentation</span></a><a class="nl" href="/dashboard"><span data-i18n="nav.dashboard">Dashboard</span></a><a class="nl" href="/support"><span data-i18n="nav.support">Support</span></a><a class="nl nl-cta" href="/docs#invite" data-invite><span data-i18n="nav.add">Add to Discord</span></a></nav>
+<div class="nav-tools"><div class="lang" role="group" aria-label="Language / Langue"><button type="button" data-lang="en" aria-pressed="true" lang="en">EN</button><button type="button" data-lang="fr" aria-pressed="false" lang="fr">FR</button></div><a class="btn btn-sm btn-primary nav-cta" href="/docs#invite" data-invite><span data-i18n="nav.add">Add to Discord</span></a><button class="menu-toggle" id="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Menu" data-i18n-attr="aria-label:nav.menu"><span></span></button></div>
 </div></header>
 <main id="main">
-<section class="hero"><div class="wrap hero-grid"><div>
-<p class="eyebrow" data-i18n="home.eyebrow">All-in-one Discord bot</p>
-<h1><span data-i18n="home.h1a">One bot.</span> <span class="muted" data-i18n="home.h1b">More control.</span></h1>
+<section class="hero"><div class="wrap hero-grid"><div class="hero-copy">
+<h1 class="hero-title"><span class="ln"><span data-i18n="home.h1a">One bot.</span></span><span class="ln"><span data-i18n="home.h1b">More control.</span></span></h1>
 <p class="lead" data-i18n="home.lead">Sentinel is an all-in-one Discord bot designed to help communities manage moderation, security, automation, support and community engagement through a unified set of tools.</p>
-<div class="btn-row"><a class="btn btn-primary" href="docs.html#invite" data-invite><span data-i18n="home.add">Add to Discord</span></a><a class="btn" href="commands.html"><span data-i18n="home.explore">Explore Commands</span></a></div>
+<div class="btn-row"><a class="btn btn-primary btn-lg" href="/docs#invite" data-invite><span data-i18n="home.add">Add to Discord</span></a><a class="btn btn-lg" href="/commands"><span data-i18n="home.explore">Explore Commands</span></a></div>
 <p class="hero-note" data-invite-missing hidden><span data-i18n="home.nolink">The public invitation link is not published yet; “Add to Discord” opens the invitation guide.</span></p>
-</div><div class="emblem" aria-hidden="true"><img src="sentinel.png" width="512" height="512" alt=""></div></div>
-<div class="wrap"><div class="stats" role="list">
-<div class="stat" role="listitem"><b>426</b><span><span data-i18n="home.s1">commands defined in the source code</span></span></div>
-<div class="stat" role="listitem"><b>65</b><span><span data-i18n="home.s2">top-level command names</span></span></div>
-<div class="stat" role="listitem"><b>9</b><span><span data-i18n="home.s3">command categories</span></span></div>
-<div class="stat" role="listitem"><b>25</b><span><span data-i18n="home.s4">documented feature areas</span></span></div>
-</div><p class="small" style="margin-top:12px"><span data-i18n="home.sn">Figures are generated from the bot’s code, not from live usage.</span></p></div></section>
+</div>
+<figure class="watch"><div class="watch-bar"><span class="watch-dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="watch-title" aria-hidden="true">#mod-log</span></div>
+<ol class="watch-list" aria-hidden="true"><li style="--i:0"><span class="w-mod"><span data-i18n="w.m0">AutoMod</span></span><span class="w-msg"><span data-i18n="w.1">Invite link removed from #general</span></span><span class="w-act"><span data-i18n="w.1a">Deleted</span></span></li><li style="--i:1"><span class="w-mod"><span data-i18n="w.m1">Verification</span></span><span class="w-msg"><span data-i18n="w.2">New member waiting for verification</span></span><span class="w-act"><span data-i18n="w.2a">Held</span></span></li><li style="--i:2"><span class="w-mod"><span data-i18n="w.m2">Moderation</span></span><span class="w-msg"><span data-i18n="w.3">Warning added to a member’s history</span></span><span class="w-act"><span data-i18n="w.3a">Warned</span></span></li><li style="--i:3"><span class="w-mod"><span data-i18n="w.m3">AntiNuke</span></span><span class="w-msg"><span data-i18n="w.4">Burst of channel deletions detected</span></span><span class="w-act"><span data-i18n="w.4a">Blocked</span></span></li><li style="--i:4"><span class="w-mod"><span data-i18n="w.m4">Tickets</span></span><span class="w-msg"><span data-i18n="w.5">Ticket opened and picked up by support</span></span><span class="w-act"><span data-i18n="w.5a">Claimed</span></span></li></ol><span class="watch-scan" aria-hidden="true"></span>
+<figcaption><span data-i18n="w.cap">Illustration of what Sentinel’s modules do. These are not live events.</span></figcaption></figure>
+</div>
+<div class="wrap"><div class="facts" role="list">
+<div class="fact" role="listitem"><b>426</b><span><span data-i18n="home.s1">commands defined in the source code</span></span></div>
+<div class="fact" role="listitem"><b>65</b><span><span data-i18n="home.s2">top-level command names</span></span></div>
+<div class="fact" role="listitem"><b>9</b><span><span data-i18n="home.s3">command categories</span></span></div>
+<div class="fact" role="listitem"><b>25</b><span><span data-i18n="home.s4">documented feature areas</span></span></div>
+</div><p class="small facts-note"><span data-i18n="home.sn">Figures are generated from the bot’s code, not from live usage.</span></p></div></section>
 
-<section class="section band"><div class="wrap">
-<div class="sec-head"><div><p class="eyebrow" data-i18n="home.f.eyebrow">What Sentinel does</p><h2><span data-i18n="home.f.h2a">Made to manage.</span> <span class="muted"><span data-i18n="home.f.h2b">Built to protect.</span></span></h2></div><p data-i18n="home.f.p">Feature highlights below are taken from what exists in the bot’s code. See the full list for details and requirements.</p></div>
-<div class="grid c3"><article class="card"><span class="num">01</span><div class="ic" aria-hidden="true">⌁</div><h3 data-i18n="home.c1">Moderation &amp; AutoMod</h3><p data-i18n="home.c1.d">Moderation commands with warning history, plus an AutoMod engine of 10 configurable modules and a monitor mode that never punishes.</p><a class="more" href="features.html#automod"><span data-i18n="home.c1.m">Learn more →</span></a></article><article class="card"><span class="num">02</span><div class="ic" aria-hidden="true">⛨</div><h3 data-i18n="home.c2">AntiNuke &amp; security</h3><p data-i18n="home.c2.d">Rate-based protection against mass deletions, bans and bot additions, a server lockdown and a honeypot trap channel.</p><a class="more" href="features.html#antinuke"><span data-i18n="home.c2.m">Learn more →</span></a></article><article class="card"><span class="num">03</span><div class="ic" aria-hidden="true">✉</div><h3 data-i18n="home.c3">Tickets</h3><p data-i18n="home.c3.d">A full ticket system with panels, claiming, priorities, notes, transcripts and statistics, in English and French.</p><a class="more" href="features.html#tickets"><span data-i18n="home.c3.m">Learn more →</span></a></article><article class="card"><span class="num">04</span><div class="ic" aria-hidden="true">✓</div><h3 data-i18n="home.c4">Welcome &amp; verification</h3><p data-i18n="home.c4.d">Welcome messages and cards, and a button-based verification gate with account-age checks and bot blocking.</p><a class="more" href="features.html#verify"><span data-i18n="home.c4.m">Learn more →</span></a></article><article class="card"><span class="num">05</span><div class="ic" aria-hidden="true">♫</div><h3 data-i18n="home.c5">Music &amp; TempVoice</h3><p data-i18n="home.c5.d">Queue-based music with audio filters, and temporary voice rooms that members control themselves.</p><a class="more" href="features.html#music"><span data-i18n="home.c5.m">Learn more →</span></a></article><article class="card"><span class="num">06</span><div class="ic" aria-hidden="true">↗</div><h3 data-i18n="home.c6">Engagement &amp; automation</h3><p data-i18n="home.c6.d">Leveling, economy, giveaways and Flow, a workflow engine with triggers, conditions and actions.</p><a class="more" href="features.html#flow"><span data-i18n="home.c6.m">Learn more →</span></a></article></div>
-<p style="margin-top:28px"><a class="btn" href="features.html"><span data-i18n="home.f.all">See every feature</span></a></p>
-</div></section>
+<section class="section light"><div class="wrap caps">
+<div class="caps-head" data-reveal><h2><span data-i18n="home.f.h2a">Made to manage.</span><br><span data-i18n="home.f.h2b">Built to protect.</span></h2><p data-i18n="home.f.p">Feature highlights below are taken from what exists in the bot’s code. See the full list for details and requirements.</p><p><a class="btn" href="/features"><span data-i18n="home.f.all">See every feature</span></a></p></div>
+<ul class="caps-list"><li data-reveal><a class="cap" href="/features#automod"><span class="cap-name"><span data-i18n="home.c1">Moderation &amp; AutoMod</span></span><span class="cap-desc"><span data-i18n="home.c1.d">Moderation commands with warning history, plus an AutoMod engine of 10 configurable modules and a monitor mode that never punishes.</span></span><span class="cap-more"><span data-i18n="home.c1.m">Learn more</span></span></a></li><li data-reveal><a class="cap" href="/features#antinuke"><span class="cap-name"><span data-i18n="home.c2">AntiNuke &amp; security</span></span><span class="cap-desc"><span data-i18n="home.c2.d">Rate-based protection against mass deletions, bans and bot additions, a server lockdown and a honeypot trap channel.</span></span><span class="cap-more"><span data-i18n="home.c2.m">Learn more</span></span></a></li><li data-reveal><a class="cap" href="/features#tickets"><span class="cap-name"><span data-i18n="home.c3">Tickets</span></span><span class="cap-desc"><span data-i18n="home.c3.d">A full ticket system with panels, claiming, priorities, notes, transcripts and statistics, in English and French.</span></span><span class="cap-more"><span data-i18n="home.c3.m">Learn more</span></span></a></li><li data-reveal><a class="cap" href="/features#verify"><span class="cap-name"><span data-i18n="home.c4">Welcome &amp; verification</span></span><span class="cap-desc"><span data-i18n="home.c4.d">Welcome messages and cards, and a button-based verification gate with account-age checks and bot blocking.</span></span><span class="cap-more"><span data-i18n="home.c4.m">Learn more</span></span></a></li><li data-reveal><a class="cap" href="/features#music"><span class="cap-name"><span data-i18n="home.c5">Music &amp; TempVoice</span></span><span class="cap-desc"><span data-i18n="home.c5.d">Queue-based music with audio filters, and temporary voice rooms that members control themselves.</span></span><span class="cap-more"><span data-i18n="home.c5.m">Learn more</span></span></a></li><li data-reveal><a class="cap" href="/features#flow"><span class="cap-name"><span data-i18n="home.c6">Engagement &amp; automation</span></span><span class="cap-desc"><span data-i18n="home.c6.d">Leveling, economy, giveaways and Flow, a workflow engine with triggers, conditions and actions.</span></span><span class="cap-more"><span data-i18n="home.c6.m">Learn more</span></span></a></li></ul></div></section>
 
-<section class="section"><div class="wrap split"><div>
-<p class="eyebrow" data-i18n="home.s.eyebrow">Security &amp; community</p>
-<h2><span data-i18n="home.s.h2">Protection that stays out of the way.</span></h2>
+<section class="section layers"><div class="wrap">
+<div class="layers-head" data-reveal><h2><span data-i18n="home.s.h2">Protection that stays out of the way.</span></h2>
 <p class="lead" data-i18n="home.s.p1">Sentinel combines preventive tools, such as verification, AutoMod, AntiNuke and a lockdown, with the community features that keep a server alive: tickets, welcome messages, levels, giveaways and temporary voice rooms.</p>
-<p class="lead" data-i18n="home.s.p2">Most modules are configured from inside Discord with guided panels and setup wizards, so administrators do not need a separate dashboard.</p>
-</div><div class="panel"><ul style="list-style:none;margin:0;padding:0">
-<li style="padding:12px 0;border-bottom:1px solid var(--line-2)"><b data-i18n="home.l1">10 AutoMod modules</b> <span class="muted">— <span data-i18n="home.l1d">8 actions, exemptions, presets, incident log</span></span></li>
-<li style="padding:12px 0;border-bottom:1px solid var(--line-2)"><b data-i18n="home.l2">10 AntiNuke protections</b> <span class="muted">— <span data-i18n="home.l2d">per-module thresholds and time windows</span></span></li>
-<li style="padding:12px 0;border-bottom:1px solid var(--line-2)"><b data-i18n="home.l3">Verification gate</b> <span class="muted">— <span data-i18n="home.l3d">verified/unverified roles, account-age check</span></span></li>
-<li style="padding:12px 0"><b data-i18n="home.l4">Backups &amp; snapshots</b> <span class="muted">— <span data-i18n="home.l4d">save, compare and restore server structure</span></span></li></ul></div></div></section>
+<p class="lead" data-i18n="home.s.p2">Most modules are configured from inside Discord with guided panels and setup wizards, so administrators do not need a separate dashboard.</p></div>
+<ul class="layer-grid">
+<li data-reveal><b><span data-i18n="home.l1">10 AutoMod modules</span></b><span><span data-i18n="home.l1d">8 actions, exemptions, presets, incident log</span></span></li>
+<li data-reveal><b><span data-i18n="home.l2">10 AntiNuke protections</span></b><span><span data-i18n="home.l2d">per-module thresholds and time windows</span></span></li>
+<li data-reveal><b><span data-i18n="home.l3">Verification gate</span></b><span><span data-i18n="home.l3d">verified/unverified roles, account-age check</span></span></li>
+<li data-reveal><b><span data-i18n="home.l4">Backups &amp; snapshots</span></b><span><span data-i18n="home.l4d">save, compare and restore server structure</span></span></li></ul></div></section>
 
-<section class="section band cta"><div class="wrap"><p class="eyebrow" data-i18n="home.cta.eyebrow">Need help?</p><h2><span data-i18n="home.cta.h2">Talk to the team.</span></h2><p data-i18n="home.cta.p">Questions about setup, a bug to report or a feature to suggest: the support server is the place to go.</p>
-<div class="btn-row"><a class="btn btn-primary" href="https://discord.gg/GsE2U5WvKh" target="_blank" rel="noopener noreferrer"><span data-i18n="home.cta.b1">Join the support server ↗</span></a><a class="btn" href="support.html"><span data-i18n="home.cta.b2">How to get help</span></a></div></div></section>
+<section class="section light cta-band"><div class="wrap" data-reveal><h2><span data-i18n="home.cta.h2">Talk to the team.</span></h2><p data-i18n="home.cta.p">Questions about setup, a bug to report or a feature to suggest: the support server is the place to go.</p>
+<div class="btn-row"><a class="btn btn-primary btn-lg" href="https://discord.gg/NwXnVdzyuf" data-support target="_blank" rel="noopener noreferrer"><span data-i18n="home.cta.b1">Join the support server ↗</span></a><a class="btn btn-lg" href="/support"><span data-i18n="home.cta.b2">How to get help</span></a></div></div></section>
 </main>
 <footer class="footer"><div class="wrap">
-<div class="foot-grid"><div><a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true">S</span><span>SENTINEL<span class="brand-dot">.</span></span></a><p data-i18n="foot.tag">Moderation, security, automation and community tools for Discord, in one bot.</p></div><div><h4 data-i18n="foot.product">Product</h4><ul><li><a href="features.html"><span data-i18n="foot.features">Features</span></a></li><li><a href="commands.html"><span data-i18n="foot.commands">Commands</span></a></li><li><a href="docs.html"><span data-i18n="foot.docs">Documentation</span></a></li><li><a href="premium.html"><span data-i18n="foot.premium">Premium</span></a></li><li><a href="dashboard.html"><span data-i18n="foot.dashboard">Dashboard</span></a></li></ul></div><div><h4 data-i18n="foot.community">Community</h4><ul><li><a href="support.html"><span data-i18n="foot.support">Support</span></a></li><li><a href="status.html"><span data-i18n="foot.status">Status</span></a></li><li><a href="team.html"><span data-i18n="foot.team">Team</span></a></li><li><a href="https://discord.gg/GsE2U5WvKh" target="_blank" rel="noopener noreferrer"><span data-i18n="foot.discord">Discord server ↗</span></a></li></ul></div><div><h4 data-i18n="foot.legal">Legal</h4><ul><li><a href="terms.html"><span data-i18n="foot.terms">Terms of Service</span></a></li><li><a href="privacy.html"><span data-i18n="foot.privacy">Privacy Policy</span></a></li></ul></div></div>
-<div class="foot-bottom"><span>© <span data-year>2026</span> SENTINEL. <span data-i18n="foot.rights">All rights reserved.</span></span><span data-i18n="foot.disc">Sentinel is an independent project and is not affiliated with Discord Inc.</span></div>
+<div class="foot-grid"><div><a class="brand" href="/"><span class="brand-mark" aria-hidden="true">S</span><span class="brand-word">Sentinel</span></a><p data-i18n="foot.tag">Moderation, security, automation and community tools for Discord, in one bot.</p></div><div><h4 data-i18n="foot.product">Product</h4><ul><li><a href="/features"><span data-i18n="foot.features">Features</span></a></li><li><a href="/commands"><span data-i18n="foot.commands">Commands</span></a></li><li><a href="/docs"><span data-i18n="foot.docs">Documentation</span></a></li><li><a href="/dashboard"><span data-i18n="foot.dashboard">Dashboard</span></a></li><li><a href="/premium"><span data-i18n="foot.premium">Premium</span></a></li></ul></div><div><h4 data-i18n="foot.community">Community</h4><ul><li><a href="/support"><span data-i18n="foot.support">Support</span></a></li><li><a href="/status"><span data-i18n="foot.status">Status</span></a></li><li><a href="/team"><span data-i18n="foot.team">Team</span></a></li><li><a href="https://discord.gg/NwXnVdzyuf" data-support target="_blank" rel="noopener noreferrer"><span data-i18n="foot.discord">Discord server ↗</span></a></li></ul></div><div><h4 data-i18n="foot.legal">Legal</h4><ul><li><a href="/terms"><span data-i18n="foot.terms">Terms of Service</span></a></li><li><a href="/privacy"><span data-i18n="foot.privacy">Privacy Policy</span></a></li></ul></div></div>
+<div class="foot-bottom"><span>© <span data-year>2026</span> Sentinel. <span data-i18n="foot.rights">All rights reserved.</span></span><span data-i18n="foot.disc">Sentinel is an independent project and is not affiliated with Discord Inc.</span></div>
 </div></footer>
-<script src="assets/js/config.js"></script>
-<script src="assets/js/i18n-fr.js"></script>
-<script src="assets/js/app.js"></script>
+<script src="/assets/js/config.js"></script>
+<script src="/assets/js/i18n-fr.js"></script>
+<script src="/assets/js/app.js"></script>
 
 </body>
 </html>
