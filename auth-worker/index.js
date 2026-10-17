@@ -483,6 +483,125 @@ async function verifyComplete(env, req) {
 }
 
 
+/* ================= SENTINEL PROFILES ================= */
+// Public profiles are stored separately from account records. Never expose email/password hashes.
+const PROFILE_RESERVED = new Set(["account", "u", "api", "profile", "profile-editor", "dashboard", "support", "admin", "auth", "assets", "terms", "privacy", "features", "commands", "docs", "status", "verify", "premium", "team", "sentinel", "www"]);
+const profileSlugOK = (s) => /^[a-z0-9][a-z0-9_-]{2,23}$/.test(s) && !PROFILE_RESERVED.has(s);
+function profileText(v, max) { return String(v ?? "").replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, max); }
+function safeHttpUrl(value, max = 500, httpsOnly = false) {
+  const s = profileText(value, max);
+  if (!s) return "";
+  try {
+    const u = new URL(s);
+    if (!(httpsOnly ? u.protocol === "https:" : (u.protocol === "https:" || u.protocol === "http:"))) return "";
+    if (u.username || u.password) return "";
+    return u.toString();
+  } catch (_) { return ""; }
+}
+function safeProfileBackground(v) {
+  const s = profileText(v, 180);
+  if (/^#[0-9a-f]{3}(?:[0-9a-f]{3})?(?:[0-9a-f]{2})?$/i.test(s)) return s;
+  const gradient = /^linear-gradient\((?:to (?:right|left|top|bottom|top right|top left|bottom right|bottom left)|\d{1,3}deg),\s*#[0-9a-f]{3,8}\s*,\s*#[0-9a-f]{3,8}(?:\s*,\s*#[0-9a-f]{3,8})?\)$/i;
+  return gradient.test(s) ? s : "linear-gradient(135deg, #0b1020, #29204d)";
+}
+function safeMusicUrl(value) {
+  const s = safeHttpUrl(value, 500, true);
+  if (!s) return "";
+  try {
+    const u = new URL(s), host = u.hostname.toLowerCase();
+    if ((host === "youtube.com" || host === "www.youtube.com" || host === "m.youtube.com") && u.pathname === "/watch" && /^[A-Za-z0-9_-]{11}$/.test(u.searchParams.get("v") || "")) return "https://www.youtube.com/watch?v=" + u.searchParams.get("v");
+    if ((host === "youtu.be" || host === "www.youtu.be") && /^[A-Za-z0-9_-]{11}$/.test(u.pathname.slice(1))) return "https://www.youtube.com/watch?v=" + u.pathname.slice(1);
+    if ((host === "open.spotify.com" || host === "www.open.spotify.com") && /^\/(?:track|album|playlist|episode|show)\/[A-Za-z0-9]+\/?$/.test(u.pathname)) return "https://open.spotify.com" + u.pathname.replace(/\/$/, "");
+  } catch (_) { /* invalid URL */ }
+  return "";
+}
+function profilePublicShape(p, views, account) {
+  const badges = [];
+  if (account && account.verified) badges.push({ id: "verified", label: "Verified", icon: "✓" });
+  if (account && account.discord && account.discord.id) badges.push({ id: "discord", label: "Discord linked", icon: "◈" });
+  return {
+    username: p.username, displayName: p.displayName, bio: p.bio, avatarUrl: p.avatarUrl || (account && account.discord ? cdn("avatars", account.discord.id, account.discord.avatar) || "" : ""),
+    bannerUrl: p.bannerUrl, backgroundUrl: p.backgroundUrl, background: p.background, accentColor: p.accentColor,
+    status: p.status, statusEmoji: p.statusEmoji, links: p.links || [], widgets: p.widgets || [], musicUrl: p.musicUrl,
+    badges, views: Number(views || 0), createdAt: p.createdAt, updatedAt: p.updatedAt
+  };
+}
+async function profileMe(env, req) {
+  const s = await session(env, req);
+  if (!s || !s.data.accountEmail) return json(env, req, { error: "unauthenticated" }, 401);
+  const ownerHash = await digest(s.data.accountEmail.trim().toLowerCase());
+  const slug = await env.SESSIONS.get(`pa:${ownerHash}`);
+  if (!slug) return json(env, req, { profile: null });
+  const raw = await env.SESSIONS.get(`p:${slug}`);
+  if (!raw) { await env.SESSIONS.delete(`pa:${ownerHash}`); return json(env, req, { profile: null }); }
+  const p = JSON.parse(raw), accountRaw = await env.SESSIONS.get(`a:${ownerHash}`), account = accountRaw ? JSON.parse(accountRaw) : null;
+  return json(env, req, { profile: profilePublicShape(p, await env.SESSIONS.get(`pv:${slug}`), account), url: `${env.SITE_ORIGIN}/u/${slug}` });
+}
+async function profileSave(env, req) {
+  if (!originOK(env, req)) return json(env, req, { error: "forbidden" }, 403);
+  const s = await session(env, req);
+  if (!s || !s.data.accountEmail) return json(env, req, { error: "unauthenticated" }, 401);
+  let b; try { b = await readBody(req); } catch (_) { return json(env, req, { error: "bad_request" }, 400); }
+  const ownerHash = await digest(s.data.accountEmail.trim().toLowerCase());
+  const accountRaw = await env.SESSIONS.get(`a:${ownerHash}`), account = accountRaw ? JSON.parse(accountRaw) : null;
+  if (!account || !account.verified) return json(env, req, { error: "email_not_verified" }, 403);
+  const username = profileText(b.username, 24).toLowerCase();
+  if (!profileSlugOK(username)) return json(env, req, { error: "invalid_username", message: "Use 3–24 lowercase letters, numbers, hyphens or underscores. Some names are reserved." }, 400);
+  const ownerIndex = `pa:${ownerHash}`, previousSlug = await env.SESSIONS.get(ownerIndex);
+  const existingRaw = await env.SESSIONS.get(`p:${username}`);
+  if (existingRaw) {
+    const existing = JSON.parse(existingRaw);
+    if (existing.ownerHash !== ownerHash) return json(env, req, { error: "username_taken", message: "That profile URL is already taken." }, 409);
+  }
+  const linksIn = Array.isArray(b.links) ? b.links.slice(0, 12) : [];
+  const links = [];
+  for (const item of linksIn) {
+    if (!item || typeof item !== "object") continue;
+    const label = profileText(item.label, 32), url = safeHttpUrl(item.url, 500);
+    if (label && url) links.push({ label, url });
+  }
+  const widgetsIn = Array.isArray(b.widgets) ? b.widgets.slice(0, 8) : [];
+  const widgets = [];
+  for (const item of widgetsIn) {
+    if (!item || typeof item !== "object") continue;
+    const type = ["text", "quote", "link"].includes(item.type) ? item.type : "text";
+    const title = profileText(item.title, 50), content = profileText(item.content, 500), url = type === "link" ? safeHttpUrl(item.url, 500) : "";
+    if (title || content || (type === "link" && url)) widgets.push({ id: rand(8), type, title, content, url });
+  }
+  const oldRaw = previousSlug ? await env.SESSIONS.get(`p:${previousSlug}`) : null;
+  const old = oldRaw ? JSON.parse(oldRaw) : {};
+  const profile = {
+    username, ownerHash, displayName: profileText(b.displayName, 40) || username,
+    bio: profileText(b.bio, 220), avatarUrl: safeHttpUrl(b.avatarUrl, 500, true),
+    bannerUrl: safeHttpUrl(b.bannerUrl, 500, true), backgroundUrl: safeHttpUrl(b.backgroundUrl, 500, true),
+    background: safeProfileBackground(b.background), accentColor: /^#[0-9a-f]{6}$/i.test(String(b.accentColor || "")) ? b.accentColor : "#8b7cff",
+    status: profileText(b.status, 80), statusEmoji: profileText(b.statusEmoji, 8), links, widgets,
+    musicUrl: safeMusicUrl(b.musicUrl), createdAt: old.createdAt || Date.now(), updatedAt: Date.now()
+  };
+  await env.SESSIONS.put(`p:${username}`, JSON.stringify(profile));
+  await env.SESSIONS.put(ownerIndex, username);
+  if (previousSlug && previousSlug !== username) await env.SESSIONS.delete(`p:${previousSlug}`);
+  return json(env, req, { ok: true, profile: profilePublicShape(profile, await env.SESSIONS.get(`pv:${username}`), account), url: `${env.SITE_ORIGIN}/u/${username}` });
+}
+async function publicProfile(env, req, username) {
+  if (!profileSlugOK(username)) return json(env, req, { error: "profile_not_found" }, 404);
+  const raw = await env.SESSIONS.get(`p:${username}`);
+  if (!raw) return json(env, req, { error: "profile_not_found" }, 404);
+  const profile = JSON.parse(raw);
+  // Best-effort unique visitor count: one count per hashed IP per profile per 24 hours.
+  const ip = req.headers.get("CF-Connecting-IP") || "unknown";
+  const visitor = (await sign(env.STATE_SECRET, `profile-view|${username}|${ip}`)).slice(0, 32);
+  const uniqueKey = `pvu:${username}:${visitor}`;
+  if (!(await env.SESSIONS.get(uniqueKey))) {
+    await env.SESSIONS.put(uniqueKey, "1", { expirationTtl: 86400 });
+    const views = Number(await env.SESSIONS.get(`pv:${username}`) || "0") + 1;
+    await env.SESSIONS.put(`pv:${username}`, String(views));
+  }
+  const accountRaw = await env.SESSIONS.get(`a:${profile.ownerHash}`), account = accountRaw ? JSON.parse(accountRaw) : null;
+  return json(env, req, { profile: profilePublicShape(profile, await env.SESSIONS.get(`pv:${username}`), account) }, 200, { "Cache-Control": "no-store" });
+}
+
+
 // ───────────────────────── SUPPORT FORM ─────────────────────────
 // POST /support/send {email, discord, subject, message, website(honeypot), turnstile?}
 // Sends the support request through Resend. RESEND_API_KEY must be stored as a Worker secret.
@@ -564,6 +683,10 @@ export default {
     if (req.method === "GET" && pathname === "/account/me") return accountMe(env, req);
     if (req.method === "POST" && pathname === "/account/password") return accountChangePassword(env, req);
     if (req.method === "POST" && pathname === "/account/discord/unlink") return accountUnlinkDiscord(env, req);
+    if (req.method === "GET" && pathname === "/profiles/me") return profileMe(env, req);
+    if (req.method === "POST" && pathname === "/profiles/save") return profileSave(env, req);
+    const publicProfileMatch = pathname.match(/^\/profiles\/([a-z0-9][a-z0-9_-]{2,23})$/);
+    if (req.method === "GET" && publicProfileMatch) return publicProfile(env, req, publicProfileMatch[1]);
     if (req.method === "POST" && pathname === "/support/send") return supportSend(env, req);
     if (pathname.startsWith("/verify/")) {
       const needBot = ["/verify/status", "/verify/complete"].includes(pathname) && !env.BOT_TOKEN;
