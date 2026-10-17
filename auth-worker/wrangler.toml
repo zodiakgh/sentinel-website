@@ -14,11 +14,12 @@ SITE_ORIGIN = "https://sentineldashboard.site"
 API_ORIGIN = "https://api.sentineldashboard.site"
 # TURNSTILE_SITE_KEY = "0x..."   # public site key, only if you enable the captcha
 
-# Support form (POST /support/send). Needs Email Routing enabled on the domain and your own inbox verified there.
-# SUPPORT_TO must be that verified destination address (e.g. your Gmail), not support@ itself.
-send_email = [{ name = "SUPPORT_MAIL" }]
-# SUPPORT_TO   = "your-verified-inbox@example.com"   # add as a variable (not secret) in the dashboard or here
-# SUPPORT_FROM = "support-form@sentineldashboard.site"  # optional, must be on your domain
+# Support form (POST /support/send) uses Resend; no Cloudflare Email Routing binding is required.
+# Add SUPPORT_TO in the Cloudflare Worker variables as your actual inbox.
+# SUPPORT_FROM is optional; use an address on the domain verified in Resend.
+# Store RESEND_API_KEY as a Worker secret (never commit it to this file).
+# SUPPORT_TO = "your-real-inbox@example.com"  # set this in Worker Settings → Variables
+SUPPORT_FROM = "Sentinel Support <support@sentineldashboard.site>"
 
 # Create with: npx wrangler kv namespace create SESSIONS   then paste the id below
 [[kv_namespaces]]

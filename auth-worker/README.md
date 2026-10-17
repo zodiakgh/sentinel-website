@@ -32,8 +32,12 @@ The same Worker also powers `https://sentineldashboard.site/verify?guild=<server
 The bot's role must be above the verified role and have Manage Roles. Every check (membership, account age, time in the server, captcha) is repeated by the Worker; the browser cannot give itself a role.
 
 
-## Support form
-`POST /support/send` e-mails the contact form (e-mail, Discord username, subject, message) with the Cloudflare Email Routing `send_email` binding.
-1. Cloudflare dashboard → your domain → **Email → Email Routing** → enable it and add your real inbox as a **verified destination address**.
-2. Add to `wrangler.toml`: `send_email = [{ name = "SUPPORT_MAIL" }]`, and a variable `SUPPORT_TO` = that verified address (optional `SUPPORT_FROM`, an address on your domain).
-3. Messages arrive with *Reply-To* set to the visitor, so you can simply reply. One message per visitor per minute, honeypot, optional Turnstile (`TURNSTILE_SECRET`, plus `turnstileSiteKey` in `assets/js/config.js`).
+## Support form (Resend)
+`POST /support/send` sends the contact form (e-mail, Discord username, subject, message) using Resend's API. Cloudflare Email Routing is not required and your existing MX records should remain unchanged.
+
+1. In Resend, verify `sentineldashboard.site` and create an API key with permission to send emails.
+2. From this folder, run `npx wrangler secret put RESEND_API_KEY` and paste the API key when prompted. Never put the key in the website or commit it to Git.
+3. In the Cloudflare Worker variables, set `SUPPORT_TO` to the real inbox where you want support requests delivered. Optionally set `SUPPORT_FROM` to an address on the domain verified in Resend. The default sender is `Sentinel Support <support@sentineldashboard.site>`.
+4. Deploy the Worker with `npx wrangler deploy`.
+
+Messages have *Reply-To* set to the visitor, so you can reply directly. The form limits each IP to one message per minute using a keyed hash that expires after 60 seconds, includes a honeypot, and supports optional Turnstile (`TURNSTILE_SECRET`, plus `turnstileSiteKey` in `assets/js/config.js`).

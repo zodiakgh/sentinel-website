@@ -322,23 +322,12 @@ async function verifyComplete(env, req) {
 
 
 // ───────────────────────── SUPPORT FORM ─────────────────────────
-// POST /support/send  {email, discord, subject, message, website(honeypot), turnstile?}
-// Sends an e-mail to SUPPORT_TO through the Cloudflare Email Routing "send_email" binding (SUPPORT_MAIL).
-const b64 = (str) => { const u = new TextEncoder().encode(str); let bin = ""; for (const c of u) bin += String.fromCharCode(c); return btoa(bin); };
-const wrap76 = (x) => x.replace(/.{1,76}/g, "$&\r\n").trimEnd();
+// POST /support/send {email, discord, subject, message, website(honeypot), turnstile?}
+// Sends the support request through Resend. RESEND_API_KEY must be stored as a Worker secret.
 const clean1 = (v, n) => String(v ?? "").replace(/[\r\n\u2028\u2029]+/g, " ").trim().slice(0, n);
 
-function buildMime({ from, to, replyTo, subject, text }) {
-  const id = `<${crypto.randomUUID()}@sentineldashboard.site>`;
-  return [
-    `From: Sentinel Support Form <${from}>`, `To: ${to}`, `Reply-To: ${replyTo}`,
-    `Subject: =?UTF-8?B?${b64(subject)}?=`, `Message-ID: ${id}`, `Date: ${new Date().toUTCString()}`,
-    "MIME-Version: 1.0", "Content-Type: text/plain; charset=UTF-8", "Content-Transfer-Encoding: base64", "", wrap76(b64(text)), "",
-  ].join("\r\n");
-}
-
 async function supportSend(env, req) {
-  if (!env.SUPPORT_MAIL || !env.SUPPORT_TO) return json(env, req, { error: "not_configured" }, 503);
+  if (!env.RESEND_API_KEY || !env.SUPPORT_TO) return json(env, req, { error: "not_configured" }, 503);
   const origin = req.headers.get("Origin");
   if (origin && origin !== env.SITE_ORIGIN) return json(env, req, { error: "forbidden" }, 403);
   let b; try { b = await req.json(); } catch { return json(env, req, { error: "bad_request" }, 400); }
@@ -358,17 +347,34 @@ async function supportSend(env, req) {
     }
     if (!ok) return json(env, req, { error: "captcha_failed" }, 400);
   }
-  // One message per visitor per minute (key = keyed hash of the IP, never the IP itself, expires after 60 s).
+  // One message per visitor per minute; only a keyed hash is stored and it expires after 60 seconds.
   const ipKey = "sp:" + (await sign(env.STATE_SECRET, "sp|" + (req.headers.get("CF-Connecting-IP") || "?"))).slice(0, 32);
   if (await env.SESSIONS.get(ipKey)) return json(env, req, { error: "slow_down" }, 429);
   await env.SESSIONS.put(ipKey, "1", { expirationTtl: 60 });
+
   const text = `New support request from the website\n\nE-mail:   ${email}\nDiscord:  ${discord}\nSubject:  ${subject}\n\n${message}\n`;
+  const from = env.SUPPORT_FROM || "Sentinel Support <support@sentineldashboard.site>";
   try {
-    const { EmailMessage } = await import("cloudflare:email");
-    const from = env.SUPPORT_FROM || "support-form@sentineldashboard.site";
-    await env.SUPPORT_MAIL.send(new EmailMessage(from, env.SUPPORT_TO,
-      buildMime({ from, to: env.SUPPORT_TO, replyTo: email, subject: `[Sentinel support] ${subject}`, text })));
-  } catch (e) {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${env.RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      },
+      body: JSON.stringify({
+        from,
+        to: [env.SUPPORT_TO],
+        reply_to: email,
+        subject: `[Sentinel support] ${subject}`,
+        text
+      })
+    });
+    if (!response.ok) {
+      await env.SESSIONS.delete(ipKey);
+      return json(env, req, { error: "send_failed" }, 502);
+    }
+  } catch {
     await env.SESSIONS.delete(ipKey);
     return json(env, req, { error: "send_failed" }, 502);
   }
