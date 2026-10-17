@@ -523,6 +523,7 @@ function profilePublicShape(p, views, account) {
     username: p.username, displayName: p.displayName, bio: p.bio, avatarUrl: p.avatarUrl || (account && account.discord ? cdn("avatars", account.discord.id, account.discord.avatar) || "" : ""),
     bannerUrl: p.bannerUrl, backgroundUrl: p.backgroundUrl, background: p.background, accentColor: p.accentColor,
     status: p.status, statusEmoji: p.statusEmoji, links: p.links || [], widgets: p.widgets || [], musicUrl: p.musicUrl,
+    backgroundVideoUrl: p.backgroundVideoUrl || "", audioAssets: p.audioAssets || [], mediaAssets: p.mediaAssets || [],
     badges, views: Number(views || 0), customization: p.customization || {}, createdAt: p.createdAt, updatedAt: p.updatedAt
   };
 }
@@ -597,13 +598,20 @@ async function profileSave(env, req) {
   };
   const oldRaw = previousSlug ? await env.SESSIONS.get(`p:${previousSlug}`) : null;
   const old = oldRaw ? JSON.parse(oldRaw) : {};
+  const assetListRaw = await env.SESSIONS.get(`paassets:${ownerHash}`);
+  const ownedAssets = assetListRaw ? JSON.parse(assetListRaw) : [];
+  const ownedUrls = new Set(ownedAssets.map(a => a.url));
+  const mediaAssets = Array.isArray(b.mediaAssets) ? b.mediaAssets.filter(id => ownedAssets.some(a => a.id === id)).slice(0, 11) : (old.mediaAssets || []);
+  const backgroundVideoCandidate = safeHttpUrl(b.backgroundVideoUrl, 700, true);
+  const backgroundVideoUrl = backgroundVideoCandidate && ownedUrls.has(backgroundVideoCandidate) && ownedAssets.some(a => a.url === backgroundVideoCandidate && a.kind === "video") ? backgroundVideoCandidate : "";
+  const audioAssets = Array.isArray(b.audioAssets) ? b.audioAssets.filter(url => typeof url === "string" && ownedUrls.has(url) && ownedAssets.some(a => a.url === url && a.kind === "audio")).slice(0, 3) : (old.audioAssets || []);
   const profile = {
     username, ownerHash, displayName: profileText(b.displayName, 40) || username,
     bio: profileText(b.bio, 220), avatarUrl: safeHttpUrl(b.avatarUrl, 500, true),
     bannerUrl: safeHttpUrl(b.bannerUrl, 500, true), backgroundUrl: safeHttpUrl(b.backgroundUrl, 500, true),
     background: safeProfileBackground(b.background), accentColor: /^#[0-9a-f]{6}$/i.test(String(b.accentColor || "")) ? b.accentColor : "#8b7cff",
     status: profileText(b.status, 80), statusEmoji: profileText(b.statusEmoji, 8), links, widgets,
-    musicUrl: safeMusicUrl(b.musicUrl), customization, createdAt: old.createdAt || Date.now(), updatedAt: Date.now()
+    musicUrl: safeMusicUrl(b.musicUrl), backgroundVideoUrl, audioAssets, mediaAssets, customization, createdAt: old.createdAt || Date.now(), updatedAt: Date.now()
   };
   await env.SESSIONS.put(`p:${username}`, JSON.stringify(profile));
   await env.SESSIONS.put(ownerIndex, username);
@@ -628,6 +636,75 @@ async function publicProfile(env, req, username) {
   return json(env, req, { profile: profilePublicShape(profile, await env.SESSIONS.get(`pv:${username}`), account) }, 200, { "Cache-Control": "no-store" });
 }
 
+
+/* ================= PROFILE MEDIA LIBRARY (Cloudflare R2) ================= */
+async function profileAssetAuth(env, req) {
+  const s = await session(env, req);
+  if (!s || !s.data.accountEmail) return { error: json(env, req, { error: "unauthenticated", message: "Sign in to manage profile media." }, 401) };
+  const ownerHash = await digest(s.data.accountEmail.trim().toLowerCase());
+  const accountRaw = await env.SESSIONS.get(`a:${ownerHash}`);
+  const account = accountRaw ? JSON.parse(accountRaw) : null;
+  if (!account || !account.verified) return { error: json(env, req, { error: "email_not_verified", message: "Verify your email before uploading media." }, 403) };
+  return { ownerHash, account };
+}
+function profileAssetPublicShape(a) { return { id: a.id, kind: a.kind, name: a.name, mime: a.mime, size: a.size, url: a.url, createdAt: a.createdAt }; }
+async function profileAssetsList(env, req) {
+  const auth = await profileAssetAuth(env, req); if (auth.error) return auth.error;
+  const raw = await env.SESSIONS.get(`paassets:${auth.ownerHash}`), assets = raw ? JSON.parse(raw) : [];
+  const counts = { image: 0, audio: 0, video: 0 }; assets.forEach(a => { if (counts[a.kind] !== undefined) counts[a.kind]++; });
+  return json(env, req, { assets: assets.map(profileAssetPublicShape), counts, limits: { image: 5, audio: 3, video: 3 } });
+}
+async function profileAssetUpload(env, req) {
+  if (!originOK(env, req)) return json(env, req, { error: "forbidden" }, 403);
+  const auth = await profileAssetAuth(env, req); if (auth.error) return auth.error;
+  if (!env.PROFILE_ASSETS || typeof env.PROFILE_ASSETS.put !== "function") return json(env, req, { error: "storage_not_configured", message: "Media storage is not configured yet. Add the PROFILE_ASSETS R2 bucket binding, then redeploy the Worker." }, 503);
+  let form; try { form = await req.formData(); } catch (_) { return json(env, req, { error: "bad_upload", message: "Could not read the uploaded file." }, 400); }
+  const file = form.get("file");
+  if (!file || typeof file.arrayBuffer !== "function") return json(env, req, { error: "missing_file", message: "Choose a file first." }, 400);
+  const mime = String(file.type || "").toLowerCase();
+  let kind = "", maxBytes = 0;
+  if (["image/png", "image/jpeg", "image/webp", "image/gif", "image/avif"].includes(mime)) { kind = "image"; maxBytes = 8 * 1024 * 1024; }
+  else if (["audio/mpeg", "audio/mp3", "audio/wav", "audio/ogg", "audio/mp4", "audio/aac", "audio/webm"].includes(mime)) { kind = "audio"; maxBytes = 15 * 1024 * 1024; }
+  else if (["video/mp4", "video/webm", "video/quicktime"].includes(mime)) { kind = "video"; maxBytes = 45 * 1024 * 1024; }
+  else return json(env, req, { error: "unsupported_type", message: "Supported: PNG/JPG/WebP/GIF/AVIF, MP3/WAV/OGG/M4A, or MP4/WebM/MOV." }, 415);
+  if (!file.size || file.size > maxBytes) return json(env, req, { error: "file_too_large", message: `This ${kind} file must be smaller than ${Math.round(maxBytes / 1024 / 1024)} MB.` }, 413);
+  const raw = await env.SESSIONS.get(`paassets:${auth.ownerHash}`), assets = raw ? JSON.parse(raw) : [];
+  const limits = { image: 5, audio: 3, video: 3 };
+  if (assets.filter(a => a.kind === kind).length >= limits[kind]) return json(env, req, { error: "quota_reached", message: `Free quota reached: ${limits[kind]} ${kind} files per account.` }, 409);
+  const id = rand(18).replace(/[^a-zA-Z0-9_-]/g, "");
+  const safeName = String(file.name || `${kind}-upload`).replace(/[^a-zA-Z0-9._ -]/g, "_").slice(0, 100);
+  const key = `profile-assets/${auth.ownerHash}/${id}`;
+  await env.PROFILE_ASSETS.put(key, file.stream(), { httpMetadata: { contentType: mime, cacheControl: "public, max-age=31536000, immutable" }, customMetadata: { assetId: id, ownerHash: auth.ownerHash, kind } });
+  const asset = { id, kind, name: safeName, mime, size: file.size, url: `${env.API_ORIGIN}/profile-assets/${id}`, createdAt: Date.now(), key };
+  assets.push(asset); await env.SESSIONS.put(`paassets:${auth.ownerHash}`, JSON.stringify(assets));
+  await env.SESSIONS.put(`paasset:${id}`, JSON.stringify({ ownerHash: auth.ownerHash, key, url: asset.url, kind, mime, size: file.size }));
+  return json(env, req, { ok: true, asset: profileAssetPublicShape(asset), assets: assets.map(profileAssetPublicShape), counts: { image: assets.filter(a=>a.kind==="image").length, audio: assets.filter(a=>a.kind==="audio").length, video: assets.filter(a=>a.kind==="video").length } }, 201);
+}
+async function profileAssetDelete(env, req) {
+  if (!originOK(env, req)) return json(env, req, { error: "forbidden" }, 403);
+  const auth = await profileAssetAuth(env, req); if (auth.error) return auth.error;
+  if (!env.PROFILE_ASSETS) return json(env, req, { error: "storage_not_configured" }, 503);
+  let b; try { b = await readBody(req); } catch (_) { return json(env, req, { error: "bad_request" }, 400); }
+  const raw = await env.SESSIONS.get(`paassets:${auth.ownerHash}`), assets = raw ? JSON.parse(raw) : [];
+  const asset = assets.find(a => a.id === String(b.id || "")); if (!asset) return json(env, req, { error: "asset_not_found" }, 404);
+  const slug = await env.SESSIONS.get(`pa:${auth.ownerHash}`), profileRaw = slug ? await env.SESSIONS.get(`p:${slug}`) : null;
+  if (profileRaw) { const p = JSON.parse(profileRaw); if ([p.avatarUrl,p.bannerUrl,p.backgroundUrl,p.backgroundVideoUrl,...(p.audioAssets||[])].includes(asset.url)) return json(env, req, { error: "asset_in_use", message: "Remove this media from your profile and save before deleting it." }, 409); }
+  await env.PROFILE_ASSETS.delete(asset.key || `profile-assets/${auth.ownerHash}/${asset.id}`);
+  await env.SESSIONS.delete(`paasset:${asset.id}`);
+  const next = assets.filter(a => a.id !== asset.id); await env.SESSIONS.put(`paassets:${auth.ownerHash}`, JSON.stringify(next));
+  return json(env, req, { ok: true, assets: next.map(profileAssetPublicShape), counts: { image: next.filter(a=>a.kind==="image").length, audio: next.filter(a=>a.kind==="audio").length, video: next.filter(a=>a.kind==="video").length } });
+}
+async function profileAssetPublic(env, req, id) {
+  if (!env.PROFILE_ASSETS) return new Response("Media storage unavailable", { status: 503 });
+  const metaRaw = await env.SESSIONS.get(`paasset:${id}`);
+  const meta = metaRaw ? JSON.parse(metaRaw) : null;
+  if (!meta) return new Response("Not found", { status: 404 });
+  const object = await env.PROFILE_ASSETS.get(meta.key || `profile-assets/${meta.ownerHash}/${id}`);
+  if (!object) return new Response("Not found", { status: 404 });
+  const headers = new Headers({ "Content-Type": object.httpMetadata?.contentType || meta.mime || "application/octet-stream", "Cache-Control": "public, max-age=86400", "X-Content-Type-Options": "nosniff", "Access-Control-Allow-Origin": env.SITE_ORIGIN, "Cross-Origin-Resource-Policy": "cross-origin" });
+  if (object.size) headers.set("Content-Length", String(object.size));
+  return new Response(req.method === "HEAD" ? null : object.body, { headers });
+}
 
 // ───────────────────────── SUPPORT FORM ─────────────────────────
 // POST /support/send {email, discord, subject, message, website(honeypot), turnstile?}
@@ -712,6 +789,11 @@ export default {
     if (req.method === "POST" && pathname === "/account/discord/unlink") return accountUnlinkDiscord(env, req);
     if (req.method === "GET" && pathname === "/profiles/me") return profileMe(env, req);
     if (req.method === "POST" && pathname === "/profiles/save") return profileSave(env, req);
+    if (req.method === "GET" && pathname === "/profiles/assets") return profileAssetsList(env, req);
+    if (req.method === "POST" && pathname === "/profiles/assets/upload") return profileAssetUpload(env, req);
+    if (req.method === "POST" && pathname === "/profiles/assets/delete") return profileAssetDelete(env, req);
+    const profileAssetMatch = pathname.match(/^\/profile-assets\/([A-Za-z0-9_-]{10,64})$/);
+    if ((req.method === "GET" || req.method === "HEAD") && profileAssetMatch) return profileAssetPublic(env, req, profileAssetMatch[1]);
     const publicProfileMatch = pathname.match(/^\/profiles\/([a-z0-9][a-z0-9_-]{2,23})$/);
     if (req.method === "GET" && publicProfileMatch) return publicProfile(env, req, publicProfileMatch[1]);
     if (req.method === "POST" && pathname === "/support/send") return supportSend(env, req);
