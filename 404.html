@@ -21,6 +21,16 @@
 <meta name="twitter:card" content="summary">
 <link rel="preload" href="/assets/fonts/bricolage-grotesque-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/instrument-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<script>
+(function(){
+  var m=location.pathname.match(/^\/u\/([a-zA-Z0-9_-]{3,24})\/?$/i);
+  if(!m)return;
+  /* GitHub Pages has no rewrite rules. Load the profile shell through a normal URL,
+     pass the username in the query, then profile.js restores the pretty /u/name URL. */
+  var username=m[1].toLowerCase();
+  location.replace('/profile.html?u='+encodeURIComponent(username));
+})();
+</script>
 <script>document.documentElement.classList.add("js")</script>
 <link rel="stylesheet" href="/assets/css/main.css">
 </head>
