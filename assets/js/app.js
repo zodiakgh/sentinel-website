@@ -147,18 +147,26 @@
       var onScroll = function () { bar.classList.toggle("scrolled", window.scrollY > 8); };
       window.addEventListener("scroll", onScroll, { passive: true }); onScroll();
     }
-    // Add scroll reveals to common content blocks across every page without changing page behaviour.
-    var autoReveal = document.querySelectorAll(
-      ".page-head .wrap > *, .layer-grid > li, .cap, .cmd-group, .doc-layout > *, .legal > section, .prose > section, .member, .status-row, .guild, .vsteps li, details.faq, .sform-wrap > *, .cta-band, .login-card, .vcard, .foot-grid > div"
-    );
-    autoReveal.forEach(function (n) { if (!n.hasAttribute("data-reveal")) n.setAttribute("data-reveal", ""); });
+    /* Reveal meaningful content blocks across every page without touching page logic. */
+    var revealSelectors = [
+      ".hero-copy > *", ".watch", ".facts > *", ".caps-head > *", ".cap",
+      ".page-head .wrap > *", ".doc-layout > *", ".side > *", ".prose > *",
+      ".cmdlist", ".cmd-group", ".status-row", ".notice", ".member",
+      ".faq", ".vcard", ".vsteps > *", ".sform-wrap > *", ".legal > section",
+      ".cta-band", ".foot-grid > div", ".table-wrap", ".toc", ".panel"
+    ];
+    revealSelectors.forEach(function (selector) {
+      document.querySelectorAll(selector).forEach(function (node) {
+        if (!node.closest("header") && !node.hasAttribute("data-reveal")) node.setAttribute("data-reveal", "");
+      });
+    });
     var items = document.querySelectorAll("[data-reveal]");
     if (!items.length) return;
     if (!("IntersectionObserver" in window)) { items.forEach(function (n) { n.classList.add("in"); }); return; }
     var io = new IntersectionObserver(function (entries) {
       entries.forEach(function (en) { if (en.isIntersecting) { en.target.classList.add("in"); io.unobserve(en.target); } });
     }, { rootMargin: "0px 0px -8% 0px", threshold: 0.08 });
-    items.forEach(function (n, i) { n.style.transitionDelay = ((i % 4) * 70) + "ms"; io.observe(n); });
+    items.forEach(function (n, i) { n.style.transitionDelay = ((i % 3) * 55) + "ms"; io.observe(n); });
   }
 
   /* Pages are served without ".html" (/dashboard); tidy the address if someone opens the old form */
