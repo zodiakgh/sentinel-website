@@ -104,6 +104,146 @@ async function revoke(env, token) {
   } catch (_) { /* best effort */ }
 }
 
+/* ---------- email accounts ---------- */
+const ACCOUNT_TTL = 60 * 60 * 24 * 30;
+const VERIFY_CODE_TTL = 10 * 60;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+async function digest(value) {
+  const out = await crypto.subtle.digest("SHA-256", enc.encode(value));
+  return Array.from(new Uint8Array(out)).map(x => x.toString(16).padStart(2, "0")).join("");
+}
+async function accountKey(email) { return `a:${await digest(email.trim().toLowerCase())}`; }
+async function passwordHash(password, salt) {
+  const key = await crypto.subtle.importKey("raw", enc.encode(password), "PBKDF2", false, ["deriveBits"]);
+  const saltB64 = salt.replace(/-/g, "+").replace(/_/g, "/");
+  const saltBytes = Uint8Array.from(atob(saltB64 + "=".repeat((4 - saltB64.length % 4) % 4)), c => c.charCodeAt(0));
+  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", salt: saltBytes, iterations: 150000, hash: "SHA-256" }, key, 256);
+  return b64url(bits);
+}
+function originOK(env, req) { return req.headers.get("Origin") === env.SITE_ORIGIN; }
+async function readBody(req) {
+  const len = Number(req.headers.get("Content-Length") || 0);
+  if (len > 12000) throw new Error("too_large");
+  const b = await req.json();
+  if (!b || typeof b !== "object" || Array.isArray(b)) throw new Error("bad_body");
+  return b;
+}
+async function sendVerification(env, email, code) {
+  if (!env.RESEND_API_KEY) throw new Error("email_not_configured");
+  const from = env.ACCOUNT_EMAIL_FROM || "Sentinel <noreply@sentineldashboard.site>";
+  const response = await fetch("https://api.resend.com/emails", { method: "POST", headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" }, body: JSON.stringify({
+    from, to: [email], subject: "Your Sentinel verification code", text: `Your Sentinel verification code is ${code}. It expires in 10 minutes. If you did not request this, you can ignore this email.`,
+    html: `<div style="font-family:Arial,sans-serif;background:#0b1020;color:#f4f7ff;padding:32px;border-radius:16px"><h1 style="margin:0 0 12px">Sentinel</h1><p>Use this code to verify your email address:</p><div style="font-size:32px;font-weight:700;letter-spacing:8px;padding:18px 0">${code}</div><p>This code expires in 10 minutes. If you did not request it, ignore this message.</p></div>`
+  }) });
+  if (!response.ok) throw new Error("email_send_failed");
+}
+async function accountRegister(env, req) {
+  if (!originOK(env, req)) return json(env, req, { error: "forbidden" }, 403);
+  let b; try { b = await readBody(req); } catch (_) { return json(env, req, { error: "bad_request" }, 400); }
+  const email = String(b.email || "").trim().toLowerCase(), password = String(b.password || "");
+  if (!EMAIL_RE.test(email) || email.length > 254 || password.length < 10 || password.length > 128) return json(env, req, { error: "invalid_input", message: "Use a valid email and a password of 10–128 characters." }, 400);
+  const key = await accountKey(email);
+  if (await env.SESSIONS.get(key)) return json(env, req, { error: "account_exists" }, 409);
+  const rateKey = `rl:reg:${await digest((req.headers.get("CF-Connecting-IP") || "unknown") + ":" + email)}`;
+  if (await env.SESSIONS.get(rateKey)) return json(env, req, { error: "rate_limited" }, 429);
+  await env.SESSIONS.put(rateKey, "1", { expirationTtl: 60 });
+  const salt = rand(16), code = String(crypto.getRandomValues(new Uint32Array(1))[0] % 1000000).padStart(6, "0");
+  const account = { email, salt, passwordHash: await passwordHash(password, salt), verified: false, created: Date.now(), discord: null };
+  await env.SESSIONS.put(key, JSON.stringify(account), { expirationTtl: VERIFY_CODE_TTL });
+  await env.SESSIONS.put(`ev:${await digest(email)}`, JSON.stringify({ codeHash: await digest(code), attempts: 0, accountKey: key }), { expirationTtl: VERIFY_CODE_TTL });
+  try { await sendVerification(env, email, code); }
+  catch (_) { await env.SESSIONS.delete(key); await env.SESSIONS.delete(`ev:${await digest(email)}`); return json(env, req, { error: "email_send_failed", message: "Email could not be sent. Please try again later." }, 502); }
+  return json(env, req, { ok: true, needsVerification: true });
+}
+async function accountVerify(env, req) {
+  if (!originOK(env, req)) return json(env, req, { error: "forbidden" }, 403);
+  let b; try { b = await readBody(req); } catch (_) { return json(env, req, { error: "bad_request" }, 400); }
+  const email = String(b.email || "").trim().toLowerCase(), code = String(b.code || "").trim();
+  if (!EMAIL_RE.test(email) || !/^\d{6}$/.test(code)) return json(env, req, { error: "invalid_code" }, 400);
+  const vh = `ev:${await digest(email)}`, raw = await env.SESSIONS.get(vh);
+  if (!raw) return json(env, req, { error: "code_expired" }, 400);
+  const v = JSON.parse(raw); if (v.attempts >= 5) { await env.SESSIONS.delete(vh); return json(env, req, { error: "too_many_attempts" }, 429); }
+  if (!safeEqual(v.codeHash, await digest(code))) { v.attempts++; await env.SESSIONS.put(vh, JSON.stringify(v), { expirationTtl: VERIFY_CODE_TTL }); return json(env, req, { error: "invalid_code" }, 400); }
+  const account = JSON.parse(await env.SESSIONS.get(v.accountKey) || "null");
+  if (!account || account.email !== email) return json(env, req, { error: "account_not_found" }, 400);
+  account.verified = true; await env.SESSIONS.put(v.accountKey, JSON.stringify(account)); await env.SESSIONS.delete(vh);
+  return json(env, req, { ok: true });
+}
+async function accountLogin(env, req) {
+  if (!originOK(env, req)) return json(env, req, { error: "forbidden" }, 403);
+  let b; try { b = await readBody(req); } catch (_) { return json(env, req, { error: "bad_request" }, 400); }
+  const email = String(b.email || "").trim().toLowerCase(), password = String(b.password || "");
+  if (!EMAIL_RE.test(email) || password.length > 128) return json(env, req, { error: "invalid_credentials" }, 401);
+  const rateKey = `rl:login:${await digest((req.headers.get("CF-Connecting-IP") || "unknown") + ":" + email)}`;
+  const attempts = Number(await env.SESSIONS.get(rateKey) || "0");
+  if (attempts >= 10) return json(env, req, { error: "rate_limited" }, 429);
+  const key = await accountKey(email), raw = await env.SESSIONS.get(key), account = raw ? JSON.parse(raw) : null;
+  if (!account || !safeEqual(account.passwordHash || "", await passwordHash(password, account.salt || rand(16)))) {
+    await env.SESSIONS.put(rateKey, String(attempts + 1), { expirationTtl: 15 * 60 });
+    return json(env, req, { error: "invalid_credentials" }, 401);
+  }
+  await env.SESSIONS.delete(rateKey);
+  if (!account.verified) return json(env, req, { error: "email_not_verified" }, 403);
+  const sid = rand(32); await env.SESSIONS.put(`s:${sid}`, JSON.stringify({ accountEmail: email, created: Date.now() }), { expirationTtl: SESSION_TTL });
+  return json(env, req, { ok: true }, 200, { "Set-Cookie": cookie("sentinel_session", sid, { maxAge: SESSION_TTL }) });
+}
+async function accountMe(env, req) {
+  const s = await session(env, req); if (!s) return json(env, req, { error: "unauthenticated" }, 401);
+  if (!s.data.accountEmail) return json(env, req, { error: "not_email_account" }, 400);
+  const raw = await env.SESSIONS.get(await accountKey(s.data.accountEmail)); if (!raw) return json(env, req, { error: "account_not_found" }, 404);
+  const a = JSON.parse(raw);
+  return json(env, req, { email: a.email, verified: !!a.verified, created: a.created, discord: a.discord ? { id: a.discord.id, username: a.discord.username, name: a.discord.name, avatarUrl: cdn("avatars", a.discord.id, a.discord.avatar) } : null });
+}
+async function accountUnlinkDiscord(env, req) {
+  if (!originOK(env, req)) return json(env, req, { error: "forbidden" }, 403);
+  const s = await session(env, req); if (!s || !s.data.accountEmail) return json(env, req, { error: "unauthenticated" }, 401);
+  let b; try { b = await readBody(req); } catch (_) { return json(env, req, { error: "bad_request" }, 400); }
+  const email = s.data.accountEmail, key = await accountKey(email), a = JSON.parse(await env.SESSIONS.get(key) || "null");
+  if (!a || !safeEqual(a.passwordHash || "", await passwordHash(String(b.password || ""), a.salt))) return json(env, req, { error: "invalid_credentials" }, 401);
+  if (a.discord && a.discord.id) await env.SESSIONS.delete(`d:${a.discord.id}`);
+  a.discord = null; await env.SESSIONS.put(key, JSON.stringify(a));
+  return json(env, req, { ok: true });
+}
+async function accountChangePassword(env, req) {
+  if (!originOK(env, req)) return json(env, req, { error: "forbidden" }, 403);
+  const s = await session(env, req); if (!s || !s.data.accountEmail) return json(env, req, { error: "unauthenticated" }, 401);
+  let b; try { b = await readBody(req); } catch (_) { return json(env, req, { error: "bad_request" }, 400); }
+  const email = s.data.accountEmail, key = await accountKey(email), a = JSON.parse(await env.SESSIONS.get(key) || "null");
+  if (!a || !safeEqual(a.passwordHash, await passwordHash(String(b.currentPassword || ""), a.salt))) return json(env, req, { error: "invalid_credentials" }, 401);
+  const next = String(b.newPassword || ""); if (next.length < 10 || next.length > 128) return json(env, req, { error: "weak_password" }, 400);
+  a.salt = rand(16); a.passwordHash = await passwordHash(next, a.salt); await env.SESSIONS.put(key, JSON.stringify(a));
+  return json(env, req, { ok: true });
+}
+async function linkDiscord(env) {
+  const state = `l-${rand(16)}`, sig = await sign(env.STATE_SECRET, state), url = new URL("https://discord.com/oauth2/authorize");
+  url.search = new URLSearchParams({ client_id: env.DISCORD_CLIENT_ID, response_type: "code", scope: "identify guilds", redirect_uri: `${env.API_ORIGIN}/auth/callback`, state, prompt: "consent" });
+  const h = new Headers({ Location: url.toString(), "Cache-Control": "no-store" });
+  h.append("Set-Cookie", cookie("sentinel_state", `${state}.${sig}`, { maxAge: STATE_TTL, path: "/auth" }));
+  h.append("Set-Cookie", cookie("sentinel_link", state, { maxAge: STATE_TTL, path: "/auth" }));
+  return new Response(null, { status: 302, headers: h });
+}
+function linkRedirect(env, query, clear) {
+  const h = new Headers({ Location: `${env.SITE_ORIGIN}/account?link=${query}`, "Cache-Control": "no-store" });
+  h.append(clear[0], clear[1]);
+  h.append("Set-Cookie", cookie("sentinel_link", "", { maxAge: 0, path: "/auth" }));
+  return new Response(null, { status: 302, headers: h });
+}
+async function linkDiscordCallback(env, req, code, state, clear) {
+  const s = await session(env, req); if (!s || !s.data.accountEmail) return linkRedirect(env, "login_required", clear);
+  try {
+    const tok = await exchange(env, code), user = await dget("/users/@me", `Bearer ${tok.access_token}`), guilds = await dget("/users/@me/guilds", `Bearer ${tok.access_token}`);
+    revoke(env, tok.access_token);
+    const mapKey = `d:${user.id}`, existing = await env.SESSIONS.get(mapKey), email = s.data.accountEmail, aKey = await accountKey(email), raw = await env.SESSIONS.get(aKey), a = raw ? JSON.parse(raw) : null;
+    if (!a || (existing && existing !== email)) return linkRedirect(env, "already_used", clear);
+    if (a.discord && a.discord.id && a.discord.id !== user.id) await env.SESSIONS.delete(`d:${a.discord.id}`);
+    a.discord = { id: user.id, username: user.username, name: user.global_name || user.username, avatar: user.avatar, linkedAt: Date.now() };
+    const manageable = guilds.filter(g => g.owner || (BigInt(g.permissions || "0") & (MANAGE_GUILD | ADMINISTRATOR)) !== 0n).map(g => ({ id: g.id, name: g.name, icon: g.icon, owner: !!g.owner, botPresent: null }));
+    a.discord.guilds = manageable;
+    await env.SESSIONS.put(aKey, JSON.stringify(a)); await env.SESSIONS.put(mapKey, email);
+    return linkRedirect(env, "ok", clear);
+  } catch (_) { return linkRedirect(env, "error", clear); }
+}
+
 /* ---------- routes ---------- */
 async function login(env) {
   const state = rand(16);
@@ -127,11 +267,27 @@ async function callback(env, req) {
   if (!code || !state || !cState || !safeEqual(state, cState) || !safeEqual(cSig || "", await sign(env.STATE_SECRET, cState)))
     return vEarly ? verifyBack(env, vEarly[1], "error", [clear]) : back(env, "error", [clear]);
   if (vEarly) return verifyCallback(env, code, vEarly[1], clear);
+  const linkState = cookies(req).sentinel_link || "";
+  if (linkState && state === linkState && state.startsWith("l-") && safeEqual(cSig || "", await sign(env.STATE_SECRET, state))) {
+    return linkDiscordCallback(env, req, code, state, clear);
+  }
   try {
     const tok = await exchange(env, code);
     const auth = `Bearer ${tok.access_token}`;
     const [user, guilds, botIds] = await Promise.all([dget("/users/@me", auth), dget("/users/@me/guilds", auth), botGuildIds(env).catch(() => null)]);
     revoke(env, tok.access_token);                       // we never keep the Discord token
+    const linkedEmail = await env.SESSIONS.get(`d:${user.id}`);
+    if (linkedEmail) {
+      const linkedAccount = await env.SESSIONS.get(await accountKey(linkedEmail));
+      if (linkedAccount) {
+        const accountData = JSON.parse(linkedAccount);
+        if (accountData.verified && accountData.discord && accountData.discord.id === user.id) {
+          const linkedSid = rand(32);
+          await env.SESSIONS.put(`s:${linkedSid}`, JSON.stringify({ accountEmail: linkedEmail, created: Date.now() }), { expirationTtl: SESSION_TTL });
+          return back(env, "ok", [clear, ["Set-Cookie", cookie("sentinel_session", linkedSid, { maxAge: SESSION_TTL })]]);
+        }
+      }
+    }
     const manageable = guilds.filter((g) => g.owner || (BigInt(g.permissions || "0") & (MANAGE_GUILD | ADMINISTRATOR)) !== 0n)
       .map((g) => ({ id: g.id, name: g.name, icon: g.icon, owner: !!g.owner, botPresent: botIds ? botIds.has(g.id) : null }));
     const sid = rand(32);
@@ -156,12 +312,18 @@ const cdn = (kind, id, hash, ext = "png") => hash ? `https://cdn.discordapp.com/
 async function me(env, req) {
   const s = await session(env, req);
   if (!s) return json(env, req, { error: "unauthenticated" }, 401);
+  if (s.data.accountEmail) {
+    const raw = await env.SESSIONS.get(await accountKey(s.data.accountEmail));
+    if (!raw) return json(env, req, { error: "account_not_found" }, 404);
+    const a = JSON.parse(raw), d = a.discord;
+    const guilds = d && Array.isArray(d.guilds) ? d.guilds : [];
+    return json(env, req, { accountType: "email", email: a.email, verified: !!a.verified,
+      user: d ? { id: d.id, username: d.username, name: d.name, avatarUrl: cdn("avatars", d.id, d.avatar) } : { id: a.email, username: a.email, name: a.email.split("@")[0], avatarUrl: null },
+      linkedDiscord: d ? { id: d.id, username: d.username, name: d.name } : null,
+      guilds: guilds.map(g => ({ id: g.id, name: g.name, iconUrl: cdn("icons", g.id, g.icon), owner: g.owner, botPresent: g.botPresent })), botStatusKnown: false });
+  }
   const { user, guilds } = s.data;
-  return json(env, req, {
-    user: { id: user.id, username: user.username, name: user.name, avatarUrl: cdn("avatars", user.id, user.avatar) },
-    guilds: guilds.map((g) => ({ id: g.id, name: g.name, iconUrl: cdn("icons", g.id, g.icon), owner: g.owner, botPresent: g.botPresent })),
-    botStatusKnown: guilds.some((g) => g.botPresent !== null),
-  });
+  return json(env, req, { accountType: "discord", user: { id: user.id, username: user.username, name: user.name, avatarUrl: cdn("avatars", user.id, user.avatar) }, guilds: guilds.map((g) => ({ id: g.id, name: g.name, iconUrl: cdn("icons", g.id, g.icon), owner: g.owner, botPresent: g.botPresent })), botStatusKnown: guilds.some((g) => g.botPresent !== null) });
 }
 
 async function logout(env, req) {
@@ -390,8 +552,18 @@ export default {
     if (missing.length && pathname !== "/api/me") return json(env, req, { error: "misconfigured", missing }, 500);
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(env, req) });
     if (req.method === "GET" && pathname === "/auth/login") return login(env);
+    if (req.method === "GET" && pathname === "/auth/link") {
+      const s = await session(env, req); if (!s || !s.data.accountEmail) return new Response(null, { status: 302, headers: { Location: `${env.SITE_ORIGIN}/account?link=login_required`, "Cache-Control": "no-store" } });
+      return linkDiscord(env);
+    }
     if (req.method === "GET" && pathname === "/auth/callback") return callback(env, req);
     if (req.method === "GET" && pathname === "/api/me") return me(env, req);
+    if (req.method === "POST" && pathname === "/account/register") return accountRegister(env, req);
+    if (req.method === "POST" && pathname === "/account/verify") return accountVerify(env, req);
+    if (req.method === "POST" && pathname === "/account/login") return accountLogin(env, req);
+    if (req.method === "GET" && pathname === "/account/me") return accountMe(env, req);
+    if (req.method === "POST" && pathname === "/account/password") return accountChangePassword(env, req);
+    if (req.method === "POST" && pathname === "/account/discord/unlink") return accountUnlinkDiscord(env, req);
     if (req.method === "POST" && pathname === "/support/send") return supportSend(env, req);
     if (pathname.startsWith("/verify/")) {
       const needBot = ["/verify/status", "/verify/complete"].includes(pathname) && !env.BOT_TOKEN;
