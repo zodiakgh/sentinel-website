@@ -24,7 +24,7 @@ SUPPORT_FROM = "Sentinel Support <support@sentineldashboard.site>"
 # Create with: npx wrangler kv namespace create SESSIONS   then paste the id below
 [[kv_namespaces]]
 binding = "SESSIONS"
-id = "REPLACE_WITH_KV_NAMESPACE_ID"
+id = "f76238de8c62476b9184012ecadee81e"
 
 # Secrets (never put these in this file):
 #   npx wrangler secret put DISCORD_CLIENT_SECRET
