@@ -483,149 +483,202 @@ async function verifyComplete(env, req) {
 }
 
 
-/* ================= SENTINEL PROFILES ================= */
-// Public profiles are stored separately from account records. Never expose email/password hashes.
-const PROFILE_RESERVED = new Set(["account", "u", "api", "profile", "profile-editor", "dashboard", "support", "admin", "auth", "assets", "terms", "privacy", "features", "commands", "docs", "status", "verify", "premium", "team", "sentinel", "www"]);
-const profileSlugOK = (s) => /^[a-z0-9][a-z0-9_-]{2,23}$/.test(s) && !PROFILE_RESERVED.has(s);
-function profileText(v, max) { return String(v ?? "").replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, max); }
-function safeHttpUrl(value, max = 500, httpsOnly = false) {
-  const s = profileText(value, max);
-  if (!s) return "";
-  try {
-    const u = new URL(s);
-    if (!(httpsOnly ? u.protocol === "https:" : (u.protocol === "https:" || u.protocol === "http:"))) return "";
-    if (u.username || u.password) return "";
-    return u.toString();
-  } catch (_) { return ""; }
+
+/* ================= PROFILE MEDIA STORAGE (R2) ================= */
+const MEDIA_LIMITS = { image: 5, audio: 3, video: 3 };
+const MEDIA_MAX_BYTES = {
+  image: 8 * 1024 * 1024,
+  audio: 15 * 1024 * 1024,
+  video: 40 * 1024 * 1024
+};
+
+function mediaKind(file) {
+  const type = (file.type || "").toLowerCase();
+  if (["image/jpeg", "image/png", "image/webp", "image/gif"].includes(type)) return "image";
+  if (["audio/mpeg", "audio/mp3", "audio/mp4", "audio/aac", "audio/ogg", "audio/wav", "audio/webm", "audio/flac"].includes(type)) return "audio";
+  if (["video/mp4", "video/webm", "video/quicktime"].includes(type)) return "video";
+  return null;
 }
-function safeProfileBackground(v) {
-  const s = profileText(v, 180);
-  if (/^#[0-9a-f]{3}(?:[0-9a-f]{3})?(?:[0-9a-f]{2})?$/i.test(s)) return s;
-  const gradient = /^linear-gradient\((?:to (?:right|left|top|bottom|top right|top left|bottom right|bottom left)|\d{1,3}deg),\s*#[0-9a-f]{3,8}\s*,\s*#[0-9a-f]{3,8}(?:\s*,\s*#[0-9a-f]{3,8})?\)$/i;
-  return gradient.test(s) ? s : "linear-gradient(135deg, #0b1020, #29204d)";
+
+function mediaCounts(assets) {
+  const counts = { image: 0, audio: 0, video: 0 };
+  for (const asset of assets) {
+    if (Object.prototype.hasOwnProperty.call(counts, asset.kind)) counts[asset.kind]++;
+  }
+  return counts;
 }
-function safeMusicUrl(value) {
-  const s = safeHttpUrl(value, 500, true);
-  if (!s) return "";
-  try {
-    const u = new URL(s), host = u.hostname.toLowerCase();
-    if ((host === "youtube.com" || host === "www.youtube.com" || host === "m.youtube.com") && u.pathname === "/watch" && /^[A-Za-z0-9_-]{11}$/.test(u.searchParams.get("v") || "")) return "https://www.youtube.com/watch?v=" + u.searchParams.get("v");
-    if ((host === "youtu.be" || host === "www.youtu.be") && /^[A-Za-z0-9_-]{11}$/.test(u.pathname.slice(1))) return "https://www.youtube.com/watch?v=" + u.pathname.slice(1);
-    if ((host === "open.spotify.com" || host === "www.open.spotify.com") && /^\/(?:track|album|playlist|episode|show)\/[A-Za-z0-9]+\/?$/.test(u.pathname)) return "https://open.spotify.com" + u.pathname.replace(/\/$/, "");
-  } catch (_) { /* invalid URL */ }
-  return "";
+
+function mediaUrl(env, id) {
+  return `${env.API_ORIGIN}/profiles/assets/file/${id}`;
 }
-function profilePublicShape(p, views, account) {
-  const badges = [];
-  if (account && account.verified) badges.push({ id: "verified", label: "Verified", icon: "✓" });
-  if (account && account.discord && account.discord.id) badges.push({ id: "discord", label: "Discord linked", icon: "◈" });
-  return {
-    username: p.username, displayName: p.displayName, bio: p.bio, avatarUrl: p.avatarUrl || (account && account.discord ? cdn("avatars", account.discord.id, account.discord.avatar) || "" : ""),
-    bannerUrl: p.bannerUrl, backgroundUrl: p.backgroundUrl, background: p.background, accentColor: p.accentColor,
-    status: p.status, statusEmoji: p.statusEmoji, links: p.links || [], widgets: p.widgets || [], musicUrl: p.musicUrl,
-    badges, views: Number(views || 0), customization: p.customization || {}, createdAt: p.createdAt, updatedAt: p.updatedAt
-  };
-}
-async function profileMe(env, req) {
+
+async function mediaIdentity(env, req) {
+  if (!originOK(env, req)) return { error: json(env, req, { error: "forbidden" }, 403) };
+
   const s = await session(env, req);
-  if (!s || !s.data.accountEmail) return json(env, req, { error: "unauthenticated" }, 401);
+  if (!s || !s.data.accountEmail) {
+    return { error: json(env, req, { error: "unauthenticated" }, 401) };
+  }
+
   const ownerHash = await digest(s.data.accountEmail.trim().toLowerCase());
-  const slug = await env.SESSIONS.get(`pa:${ownerHash}`);
-  if (!slug) return json(env, req, { profile: null });
-  const raw = await env.SESSIONS.get(`p:${slug}`);
-  if (!raw) { await env.SESSIONS.delete(`pa:${ownerHash}`); return json(env, req, { profile: null }); }
-  const p = JSON.parse(raw), accountRaw = await env.SESSIONS.get(`a:${ownerHash}`), account = accountRaw ? JSON.parse(accountRaw) : null;
-  return json(env, req, { profile: profilePublicShape(p, await env.SESSIONS.get(`pv:${slug}`), account), url: `${env.SITE_ORIGIN}/u/${slug}` });
+  const raw = await env.SESSIONS.get(`a:${ownerHash}`);
+  const account = raw ? JSON.parse(raw) : null;
+
+  if (!account || !account.verified) {
+    return { error: json(env, req, { error: "email_not_verified" }, 403) };
+  }
+
+  return { ownerHash };
 }
-async function profileSave(env, req) {
-  if (!originOK(env, req)) return json(env, req, { error: "forbidden" }, 403);
-  const s = await session(env, req);
-  if (!s || !s.data.accountEmail) return json(env, req, { error: "unauthenticated" }, 401);
-  let b; try { b = await readBody(req); } catch (_) { return json(env, req, { error: "bad_request" }, 400); }
-  const ownerHash = await digest(s.data.accountEmail.trim().toLowerCase());
-  const accountRaw = await env.SESSIONS.get(`a:${ownerHash}`), account = accountRaw ? JSON.parse(accountRaw) : null;
-  if (!account || !account.verified) return json(env, req, { error: "email_not_verified" }, 403);
-  const username = profileText(b.username, 24).toLowerCase();
-  if (!profileSlugOK(username)) return json(env, req, { error: "invalid_username", message: "Use 3–24 lowercase letters, numbers, hyphens or underscores. Some names are reserved." }, 400);
-  const ownerIndex = `pa:${ownerHash}`, previousSlug = await env.SESSIONS.get(ownerIndex);
-  const existingRaw = await env.SESSIONS.get(`p:${username}`);
-  if (existingRaw) {
-    const existing = JSON.parse(existingRaw);
-    if (existing.ownerHash !== ownerHash) return json(env, req, { error: "username_taken", message: "That profile URL is already taken." }, 409);
+
+async function mediaList(env, req) {
+  const identity = await mediaIdentity(env, req);
+  if (identity.error) return identity.error;
+  if (!env.PROFILE_ASSETS) {
+    return json(env, req, { error: "storage_not_configured" }, 500);
   }
-  const linksIn = Array.isArray(b.links) ? b.links.slice(0, 12) : [];
-  const links = [];
-  for (const item of linksIn) {
-    if (!item || typeof item !== "object") continue;
-    const label = profileText(item.label, 32), url = safeHttpUrl(item.url, 500);
-    if (label && url) links.push({ label, url });
-  }
-  const widgetsIn = Array.isArray(b.widgets) ? b.widgets.slice(0, 8) : [];
-  const widgets = [];
-  for (const item of widgetsIn) {
-    if (!item || typeof item !== "object") continue;
-    const type = ["text", "quote", "link"].includes(item.type) ? item.type : "text";
-    const title = profileText(item.title, 50), content = profileText(item.content, 500), url = type === "link" ? safeHttpUrl(item.url, 500) : "";
-    if (title || content || (type === "link" && url)) widgets.push({ id: rand(8), type, title, content, url });
-  }
-  const c = b.customization && typeof b.customization === "object" ? b.customization : {};
-  const enumVal = (key, allowed, fallback) => allowed.includes(String(c[key] ?? "")) ? String(c[key]) : fallback;
-  const intVal = (key, min, max, fallback) => { const n = Number(c[key]); return Number.isFinite(n) ? Math.max(min, Math.min(max, Math.round(n))) : fallback; };
-  const boolVal = (key, fallback = true) => typeof c[key] === "boolean" ? c[key] : fallback;
-  const colorVal = (key, fallback) => /^#[0-9a-f]{6}$/i.test(String(c[key] || "")) ? String(c[key]) : fallback;
-  const customization = {
-    layout: enumVal("layout", ["centered", "left", "wide"], "centered"),
-    cardStyle: enumVal("cardStyle", ["glass", "solid", "outline", "minimal"], "glass"),
-    contentWidth: intVal("contentWidth", 620, 1200, 900), bannerHeight: intVal("bannerHeight", 80, 360, 220),
-    avatarShape: enumVal("avatarShape", ["circle", "rounded", "square"], "circle"), widgetColumns: enumVal("widgetColumns", ["1", "2", "3"], "2"),
-    alignment: enumVal("alignment", ["center", "left"], "center"), spacing: enumVal("spacing", ["compact", "normal", "relaxed"], "normal"),
-    pageColor: colorVal("pageColor", "#090d17"), cardColor: colorVal("cardColor", "#0b1020"), textColor: colorVal("textColor", "#f5f7ff"),
-    mutedColor: colorVal("mutedColor", "#98a6bf"), borderColor: colorVal("borderColor", "#ffffff"), widgetColor: colorVal("widgetColor", "#ffffff"),
-    overlay: enumVal("overlay", ["none", "light", "medium", "strong"], "medium"), blur: intVal("blur", 0, 30, 18), radius: intVal("radius", 0, 40, 24),
-    shadow: enumVal("shadow", ["none", "soft", "deep", "colored"], "soft"), hoverEffect: enumVal("hoverEffect", ["none", "lift", "glow", "scale"], "lift"),
-    animation: enumVal("animation", ["none", "fade", "rise"], "fade"), borderStyle: enumVal("borderStyle", ["none", "subtle", "accent"], "subtle"),
-    showBio: boolVal("showBio"), showStatus: boolVal("showStatus"), showBadges: boolVal("showBadges"), showLinks: boolVal("showLinks"),
-    showWidgets: boolVal("showWidgets"), showMusic: boolVal("showMusic"), showViews: boolVal("showViews"), showBranding: boolVal("showBranding"),
-    linkStyle: enumVal("linkStyle", ["glass", "solid", "outline", "minimal"], "glass"), badgeStyle: enumVal("badgeStyle", ["pill", "square", "minimal"], "pill"),
-    fontFamily: enumVal("fontFamily", ["system", "inter", "mono", "serif"], "system"), nameSize: intVal("nameSize", 24, 64, 42),
-    letterSpacing: enumVal("letterSpacing", ["tight", "normal", "wide"], "normal"), bannerPosition: enumVal("bannerPosition", ["center", "top", "bottom", "left", "right"], "center"),
-    tagline: profileText(c.tagline, 100), footerText: profileText(c.footerText, 100),
-    avatarSize: intVal("avatarSize", 72, 160, 112), widgetGap: intVal("widgetGap", 6, 28, 12), cardOpacity: intVal("cardOpacity", 60, 100, 86), bioSize: intVal("bioSize", 12, 20, 15),
-    avatarBorder: enumVal("avatarBorder", ["accent", "none", "white"], "accent"), bannerOverlay: enumVal("bannerOverlay", ["none", "soft", "strong"], "none"),
-    linkAlignment: enumVal("linkAlignment", ["center", "left"], "center"), linkRadius: intVal("linkRadius", 4, 24, 12), widgetStyle: enumVal("widgetStyle", ["glass", "solid", "outline"], "glass"),
-    showAvatar: boolVal("showAvatar"), showHandle: boolVal("showHandle"), showBanner: boolVal("showBanner"), showFooter: boolVal("showFooter")
-  };
-  const oldRaw = previousSlug ? await env.SESSIONS.get(`p:${previousSlug}`) : null;
-  const old = oldRaw ? JSON.parse(oldRaw) : {};
-  const profile = {
-    username, ownerHash, displayName: profileText(b.displayName, 40) || username,
-    bio: profileText(b.bio, 220), avatarUrl: safeHttpUrl(b.avatarUrl, 500, true),
-    bannerUrl: safeHttpUrl(b.bannerUrl, 500, true), backgroundUrl: safeHttpUrl(b.backgroundUrl, 500, true),
-    background: safeProfileBackground(b.background), accentColor: /^#[0-9a-f]{6}$/i.test(String(b.accentColor || "")) ? b.accentColor : "#8b7cff",
-    status: profileText(b.status, 80), statusEmoji: profileText(b.statusEmoji, 8), links, widgets,
-    musicUrl: safeMusicUrl(b.musicUrl), customization, createdAt: old.createdAt || Date.now(), updatedAt: Date.now()
-  };
-  await env.SESSIONS.put(`p:${username}`, JSON.stringify(profile));
-  await env.SESSIONS.put(ownerIndex, username);
-  if (previousSlug && previousSlug !== username) await env.SESSIONS.delete(`p:${previousSlug}`);
-  return json(env, req, { ok: true, profile: profilePublicShape(profile, await env.SESSIONS.get(`pv:${username}`), account), url: `${env.SITE_ORIGIN}/u/${username}` });
+
+  const { ownerHash } = identity;
+  const listed = await env.PROFILE_ASSETS.list({ prefix: `${ownerHash}/`, limit: 100 });
+  const assets = listed.objects.map((obj) => {
+    const meta = obj.customMetadata || {};
+    return {
+      id: obj.key.slice(ownerHash.length + 1),
+      kind: meta.kind || "image",
+      name: meta.name || "upload",
+      size: obj.size,
+      url: mediaUrl(env, obj.key.slice(ownerHash.length + 1))
+    };
+  });
+
+  return json(env, req, { assets, counts: mediaCounts(assets) });
 }
-async function publicProfile(env, req, username) {
-  if (!profileSlugOK(username)) return json(env, req, { error: "profile_not_found" }, 404);
-  const raw = await env.SESSIONS.get(`p:${username}`);
-  if (!raw) return json(env, req, { error: "profile_not_found" }, 404);
-  const profile = JSON.parse(raw);
-  // Best-effort unique visitor count: one count per hashed IP per profile per 24 hours.
-  const ip = req.headers.get("CF-Connecting-IP") || "unknown";
-  const visitor = (await sign(env.STATE_SECRET, `profile-view|${username}|${ip}`)).slice(0, 32);
-  const uniqueKey = `pvu:${username}:${visitor}`;
-  if (!(await env.SESSIONS.get(uniqueKey))) {
-    await env.SESSIONS.put(uniqueKey, "1", { expirationTtl: 86400 });
-    const views = Number(await env.SESSIONS.get(`pv:${username}`) || "0") + 1;
-    await env.SESSIONS.put(`pv:${username}`, String(views));
+
+async function mediaUpload(env, req) {
+  const identity = await mediaIdentity(env, req);
+  if (identity.error) return identity.error;
+  if (!env.PROFILE_ASSETS) {
+    return json(env, req, { error: "storage_not_configured" }, 500);
   }
-  const accountRaw = await env.SESSIONS.get(`a:${profile.ownerHash}`), account = accountRaw ? JSON.parse(accountRaw) : null;
-  return json(env, req, { profile: profilePublicShape(profile, await env.SESSIONS.get(`pv:${username}`), account) }, 200, { "Cache-Control": "no-store" });
+
+  let form;
+  try {
+    form = await req.formData();
+  } catch (_) {
+    return json(env, req, { error: "bad_request", message: "Invalid upload form." }, 400);
+  }
+
+  const file = form.get("file");
+  if (!file || typeof file.arrayBuffer !== "function" || !file.size) {
+    return json(env, req, { error: "missing_file", message: "Choose a file first." }, 400);
+  }
+
+  const kind = mediaKind(file);
+  if (!kind) {
+    return json(env, req, { error: "unsupported_type", message: "Use a supported image, audio, or video format." }, 400);
+  }
+  if (file.size > MEDIA_MAX_BYTES[kind]) {
+    return json(env, req, { error: "file_too_large", message: "This file exceeds the upload size limit." }, 413);
+  }
+
+  const { ownerHash } = identity;
+  const listed = await env.PROFILE_ASSETS.list({ prefix: `${ownerHash}/`, limit: 100 });
+  const existing = listed.objects.map((obj) => ({
+    kind: obj.customMetadata?.kind || "image"
+  }));
+  const counts = mediaCounts(existing);
+
+  if (counts[kind] >= MEDIA_LIMITS[kind]) {
+    return json(env, req, {
+      error: "quota_exceeded",
+      message: `You can upload at most ${MEDIA_LIMITS[kind]} ${kind} files.`,
+      counts
+    }, 429);
+  }
+
+  const id = rand(18);
+  const key = `${ownerHash}/${id}`;
+  const cleanName = profileText(file.name || "upload", 100).replace(/[\\/]/g, "_") || "upload";
+
+  await env.PROFILE_ASSETS.put(key, await file.arrayBuffer(), {
+    httpMetadata: { contentType: file.type },
+    customMetadata: { ownerHash, kind, name: cleanName }
+  });
+
+  const asset = {
+    id,
+    kind,
+    name: cleanName,
+    size: file.size,
+    url: mediaUrl(env, id)
+  };
+
+  return json(env, req, {
+    ok: true,
+    asset,
+    assets: [
+      ...existing.map((_, i) => {
+        const obj = listed.objects[i];
+        const meta = obj.customMetadata || {};
+        return {
+          id: obj.key.slice(ownerHash.length + 1),
+          kind: meta.kind || "image",
+          name: meta.name || "upload",
+          size: obj.size,
+          url: mediaUrl(env, obj.key.slice(ownerHash.length + 1))
+        };
+      }),
+      asset
+    ],
+    counts: { ...counts, [kind]: counts[kind] + 1 }
+  });
+}
+
+async function mediaDelete(env, req) {
+  const identity = await mediaIdentity(env, req);
+  if (identity.error) return identity.error;
+  if (!env.PROFILE_ASSETS) {
+    return json(env, req, { error: "storage_not_configured" }, 500);
+  }
+
+  let body;
+  try {
+    body = await readBody(req);
+  } catch (_) {
+    return json(env, req, { error: "bad_request" }, 400);
+  }
+
+  const id = String(body.id || "");
+  if (!/^[A-Za-z0-9_-]{20,40}$/.test(id)) {
+    return json(env, req, { error: "invalid_asset_id" }, 400);
+  }
+
+  const key = `${identity.ownerHash}/${id}`;
+  const object = await env.PROFILE_ASSETS.head(key);
+  if (!object) return json(env, req, { error: "asset_not_found" }, 404);
+
+  await env.PROFILE_ASSETS.delete(key);
+  return json(env, req, { ok: true });
+}
+
+// Public media URLs are unguessable IDs; uploads and deletions remain owner-authenticated.
+async function mediaFile(env, req, id) {
+  if (!env.PROFILE_ASSETS || !/^[A-Za-z0-9_-]{20,40}$/.test(id)) {
+    return new Response("Not found", { status: 404 });
+  }
+
+  const listed = await env.PROFILE_ASSETS.list({ prefix: "", limit: 1000 });
+  const obj = listed.objects.find((item) => item.key.endsWith(`/${id}`));
+  if (!obj) return new Response("Not found", { status: 404 });
+
+  const file = await env.PROFILE_ASSETS.get(obj.key);
+  if (!file) return new Response("Not found", { status: 404 });
+
+  const headers = new Headers();
+  file.writeHttpMetadata(headers);
+  headers.set("Cache-Control", "public, max-age=3600");
+  headers.set("X-Content-Type-Options", "nosniff");
+  return new Response(file.body, { headers });
 }
 
 
