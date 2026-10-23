@@ -1,116 +1,156 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#080c16"><meta name="description" content="Customize your public Sentinel profile."><meta name="robots" content="noindex, nofollow">
 <title>Profile editor — Sentinel</title><link rel="icon" href="/sentinel.png" type="image/png">
 <link rel="stylesheet" href="/assets/css/main.css">
+<link rel="stylesheet" href="/assets/css/profile.css">
 <style>
-:root{color-scheme:dark;--ink:#f4f4f5;--muted:#92939e;--line:#292a31;--panel:#111216;--panel2:#17181e;--white:#fff;--glow:#b7ff5b;--violet:#a68bfa}.pe-shell{width:min(1500px,calc(100% - 36px));margin:34px auto 90px}.topbar{background:#08090be8!important;backdrop-filter:blur(22px);border-bottom:1px solid #ffffff0c}.pe-head{display:flex;align-items:flex-end;justify-content:space-between;gap:22px;flex-wrap:wrap;margin-bottom:24px}.pe-kicker{display:inline-flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--glow);font-weight:800}.pe-kicker:before{content:"";width:7px;height:7px;border-radius:50%;background:var(--glow);box-shadow:0 0 16px #b7ff5b88}.pe-head h1{font-size:clamp(30px,4vw,52px);letter-spacing:-.055em;line-height:1.02;font-weight:750}.pe-head p{max-width:640px;font-size:14px;line-height:1.7;color:#999aa5!important}.pe-grid{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(330px,.92fr);gap:20px;align-items:start}.pe-panel{background:linear-gradient(145deg,#15161bfa,#0d0e12f7);border:1px solid #ffffff12;border-radius:25px;padding:clamp(16px,2.3vw,30px);box-shadow:0 30px 90px #0008;position:relative;overflow:visible}.pe-panel:before{content:"";position:absolute;inset:0 20% auto;height:1px;background:linear-gradient(90deg,transparent,#ffffff2c,transparent);pointer-events:none}.pe-form{display:grid;gap:16px}.pe-form label{display:grid;gap:8px;color:#d4d4dc;font-size:12px;font-weight:650;letter-spacing:.01em}.pe-form input,.pe-form textarea,.pe-form select,.pe-row input,.pe-row select,.pe-widget-grid input,.pe-widget-grid textarea{box-sizing:border-box;width:100%;background:#0b0c10;color:#f5f5f7;border:1px solid #ffffff14;border-radius:12px;padding:12px 13px;font:inherit;min-width:0;transition:border-color .2s,background .2s,box-shadow .2s}.pe-form input:hover,.pe-form textarea:hover,.pe-form select:hover{border-color:#ffffff30}.pe-form input:focus,.pe-form textarea:focus,.pe-form select:focus{outline:none;border-color:#b7ff5b9c;box-shadow:0 0 0 3px #b7ff5b12;background:#10120d}.pe-form textarea{min-height:100px;resize:vertical}.pe-two{display:grid;grid-template-columns:1fr 1fr;gap:13px}.pe-section{border:0;border-top:1px solid #ffffff12;padding-top:24px;margin-top:4px;animation:sectionIn .32s ease both}.pe-section h2{font-size:22px;letter-spacing:-.035em;margin:0 0 5px}.pe-section h3{font-size:15px;letter-spacing:-.015em}.pe-hint{font-size:12px;line-height:1.65;color:#858691;margin:0 0 15px}.pe-row{display:grid;grid-template-columns:minmax(90px,.55fr) minmax(0,1fr) auto;gap:8px;align-items:center;margin:10px 0}.pe-row button{border:1px solid #ffffff16;background:#202126;color:#f3f3f5;border-radius:10px;padding:10px 12px;cursor:pointer;transition:.2s}.pe-row button:hover{background:#2b2d33;border-color:#ffffff35}.pe-widget{border:1px solid #ffffff12;border-radius:14px;padding:13px;margin:10px 0;background:#0d0e12}.pe-widget-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}.pe-widget-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.pe-widget-grid textarea{grid-column:1/-1;min-height:65px}.pe-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px;position:sticky;bottom:10px;padding:12px;background:#111216e8;backdrop-filter:blur(16px);border:1px solid #ffffff12;border-radius:16px;z-index:6}.pe-actions .btn{flex:1;min-height:44px}.pe-actions .btn-primary{background:var(--glow)!important;color:#0b0c08!important;border-color:var(--glow)!important;font-weight:850;box-shadow:0 5px 24px #b7ff5b1a}.pe-actions .btn-primary:hover{filter:brightness(1.06);transform:translateY(-1px)}.pe-status{font-size:13px;line-height:1.55;color:#b8b8c2;min-height:20px}.pe-status.error{color:#ff9db1}.pe-url{overflow-wrap:anywhere;color:var(--glow)}.pe-preview{position:sticky;top:18px;overflow:hidden;background:#0a0b0f;border:1px solid #ffffff14;border-radius:24px;min-height:520px;box-shadow:0 30px 100px #0008;isolation:isolate}.pe-preview:before{content:"LIVE PREVIEW";position:absolute;z-index:4;top:14px;left:14px;padding:7px 10px;border-radius:8px;border:1px solid #ffffff25;background:#08090bbd;backdrop-filter:blur(14px);font-size:9px;letter-spacing:.15em;font-weight:850;color:#e6e6ea}.pe-preview-banner{height:180px;background:radial-gradient(ellipse at 15% 15%,#b7ff5b22,transparent 45%),linear-gradient(125deg,#24262c,#111216 48%,#24202f);background-size:cover;background-position:center;transition:height .2s}.pe-preview-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-1;opacity:.48}.pe-preview-content{position:relative;padding:0 24px 26px;text-align:center}.pe-preview-avatar{width:94px;height:94px;border-radius:50%;object-fit:cover;background:#17181d;border:4px solid #0a0b0f;margin-top:-47px;position:relative;box-shadow:0 10px 38px #0009}.pe-preview-name{font-size:30px;letter-spacing:-.045em;margin:13px 0 3px;overflow-wrap:anywhere}.pe-preview-handle{color:#8c8d98;font-size:12px}.pe-preview-bio{white-space:pre-wrap;overflow-wrap:anywhere;color:#c4c4cc;font-size:13px;line-height:1.75;margin:17px auto;max-width:430px}.pe-preview-status{display:inline-flex;gap:6px;align-items:center;padding:7px 11px;border:1px solid #ffffff16;border-radius:99px;color:#dce4f5;background:#ffffff06;font-size:11px}.pe-preview-links{display:flex;justify-content:center;gap:7px;flex-wrap:wrap;margin:16px 0}.pe-preview-links span{font-size:11px;padding:8px 11px;border-radius:10px;background:#ffffff07;border:1px solid #ffffff13}.pe-preview-audio audio{display:block;width:100%;height:34px;margin:8px 0;filter:invert(.85) hue-rotate(180deg)}.pe-views{color:#777984;font-size:10px;margin-top:24px;letter-spacing:.04em}.pe-hide{display:none!important}.pe-category-nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:0 0 23px;padding:7px;background:#090a0d;border:1px solid #ffffff10;border-radius:16px;position:sticky;top:8px;z-index:8;box-shadow:0 12px 32px #0005}.pe-category-btn{display:flex;align-items:center;gap:9px;border:1px solid transparent;background:transparent;color:#9697a1;border-radius:11px;padding:10px 11px;font:inherit;font-size:12px;font-weight:750;text-align:left;cursor:pointer;transition:background .2s,color .2s,border-color .2s,transform .2s}.pe-category-btn span{font:10px ui-monospace,monospace;color:#5d5e67}.pe-category-btn:hover{color:#fff;background:#1b1c22}.pe-category-btn.is-active{background:linear-gradient(120deg,#b7ff5b1c,#b7ff5b08);color:#e7ffca;border-color:#b7ff5b30;box-shadow:inset 0 1px #ffffff08}.pe-category-btn.is-active span{color:var(--glow)}.pe-toggle-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:12px 0}.pe-toggle-grid label{display:flex;align-items:center;gap:9px;background:#0b0c10;border:1px solid #ffffff12;border-radius:12px;padding:12px;transition:.2s}.pe-toggle-grid label:hover{border-color:#ffffff28}.pe-toggle-grid input{width:16px;height:16px;accent-color:var(--glow)}.pe-form input[type=range]{padding:0;accent-color:var(--glow);height:4px;border:0;background:#34353b}.pe-form output{float:right;color:var(--glow);font-size:11px}.pe-form input[type=color]{height:44px;padding:4px;cursor:pointer}.pe-section[data-category]{scroll-margin-top:80px}.pe-form label:has(input[type=checkbox]){display:flex}.media-title-row,.media-library-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}.media-pill{white-space:nowrap;border:1px solid #b7ff5b32;color:var(--glow);border-radius:99px;padding:7px 9px;font-size:9px;letter-spacing:.1em;font-weight:850}.media-quota-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:18px 0}.media-quota{background:linear-gradient(145deg,#191a20,#101115);border:1px solid #ffffff12;border-radius:14px;padding:13px;display:grid;gap:5px}.media-quota span{font-size:11px;color:#b6b6c0}.media-quota strong{font-size:21px;letter-spacing:-.04em}.media-quota small{font-size:9px;line-height:1.4;color:#777984}.media-upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:15px 0 28px}.media-drop{min-height:160px;display:flex!important;align-items:center;justify-content:center;text-align:center;gap:9px!important;border:1px dashed #ffffff30!important;border-radius:16px;padding:20px;background:radial-gradient(ellipse at 50% 0%,#b7ff5b0d,transparent 65%),#0b0c10;cursor:pointer;transition:.2s}.media-drop:hover{border-color:#b7ff5b70!important;background-color:#10130b}.media-drop-icon{display:grid;place-items:center;width:34px;height:34px;border-radius:11px;background:#b7ff5b;color:#10120b;font-size:23px;font-weight:400}.media-drop strong{font-size:12px}.media-drop small{font-size:10px;line-height:1.5;color:#858691;font-weight:400}.media-drop input{display:none}.media-upload-copy{background:#0c0d11;border:1px solid #ffffff0d;border-radius:15px;padding:16px}.media-upload-copy strong{font-size:13px}.media-upload-copy p{font-size:12px;line-height:1.7;color:#a1a2ad}.media-library-heading{align-items:center;border-top:1px solid #ffffff12;padding-top:20px}.media-library-heading h3{margin:0 0 4px}.media-library{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0 22px}.media-empty{grid-column:1/-1;border:1px dashed #ffffff1b;border-radius:14px;padding:26px;text-align:center;color:#858691;font-size:12px}.media-asset{min-width:0;border:1px solid #ffffff13;background:#0b0c10;border-radius:14px;overflow:hidden;animation:sectionIn .25s ease both}.media-thumb{height:105px;background:#16171d;display:grid;place-items:center;overflow:hidden;color:#b7ff5b;font-size:26px}.media-thumb img,.media-thumb video{width:100%;height:100%;object-fit:cover}.media-asset-info{padding:11px;display:grid;gap:7px}.media-asset-name{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#e2e2e8}.media-asset-meta{font-size:10px;color:#797a85}.media-asset-actions{display:flex;gap:5px;flex-wrap:wrap}.media-asset-actions button{font-size:10px;padding:7px 8px;border:1px solid #ffffff15;border-radius:8px;background:#1b1c22;color:#d8d8df;cursor:pointer}.media-asset-actions button:hover{border-color:#b7ff5b50;color:#eaffd5}.media-asset-actions button.danger{color:#ff9eac}.selected-audio-list{display:grid;gap:8px}.selected-audio-item{display:flex;align-items:center;gap:9px;background:#0c0d11;border:1px solid #ffffff12;border-radius:11px;padding:10px}.selected-audio-item span{flex:1;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.selected-audio-item button{border:0;background:transparent;color:#ff9eac;cursor:pointer}.pe-preview{transition:box-shadow .25s,border-color .25s}.pe-form button,.pe-form .btn{transition:transform .18s,filter .18s,border-color .18s}.pe-form button:hover{filter:brightness(1.12)}@keyframes sectionIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}@media(max-width:900px){.pe-grid{grid-template-columns:1fr}.pe-preview{position:relative;top:auto;grid-row:1;min-height:430px}.pe-preview-banner{height:130px}.pe-category-nav{position:static}}@media(max-width:560px){.pe-shell{width:calc(100% - 20px);margin-top:20px}.pe-two,.pe-widget-grid,.media-upload-grid{grid-template-columns:1fr}.pe-widget-grid textarea{grid-column:auto}.pe-row{grid-template-columns:1fr auto}.pe-row input:first-child{grid-column:1/-1}.pe-toggle-grid{grid-template-columns:1fr}.pe-category-nav{grid-template-columns:repeat(2,minmax(0,1fr))}.media-quota-grid{gap:6px}.media-quota{padding:10px 8px}.media-quota strong{font-size:18px}.media-quota small{font-size:8px}.media-library{grid-template-columns:repeat(2,minmax(0,1fr))}.pe-actions{position:static}.pe-preview-content{padding-left:16px;padding-right:16px}}
+.pe,.pe-bar,.pe-modal{--pe-bg:#0b101b;--pe-card:#101827;--pe-card2:#162033;--pe-line:rgba(151,177,218,.16);--pe-line2:rgba(151,177,218,.3);--pe-fg:#f3f7ff;--pe-mut:#93a1ba;--pe-acc:#78e4ff;--pe-ok:#4bbe69;--pe-bad:#ff6b6b;
+  width:min(1480px,100%);margin:0 auto;padding:18px 14px 110px;color:var(--pe-fg)}
+.pe *{box-sizing:border-box}
+.pe-hide{display:none!important}
+.pe-top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.pe-top h1{margin:2px 0 4px;font-size:clamp(22px,4vw,32px);letter-spacing:-.03em}
+.pe-top p{margin:0;color:var(--pe-mut);font-size:14px}
+.pe-kicker{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--pe-acc);font-weight:700}
+.pe-status{padding:12px 14px;border-radius:12px;background:var(--pe-card);border:1px solid var(--pe-line);color:var(--pe-mut);font-size:14px}
+.pe-status.error{color:#ffb4b4;border-color:rgba(255,107,107,.4)}
+.pe-status.ok{color:#a7f0bd;border-color:rgba(75,190,105,.4)}
+.pe-app{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-items:start}
+@media(min-width:980px){.pe-app{grid-template-columns:minmax(380px,520px) minmax(0,1fr)}}
+.pe-side{min-width:0}
+.pe-tabs{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 10px;margin:0 -2px;position:sticky;top:0;z-index:20;background:linear-gradient(180deg,#0b101b 70%,transparent);scrollbar-width:none}
+.pe-tabs::-webkit-scrollbar{display:none}
+.pe-tab{flex:none;border:1px solid var(--pe-line);background:var(--pe-card);color:var(--pe-mut);padding:9px 14px;border-radius:99px;font-size:13.5px;font-weight:650;cursor:pointer;white-space:nowrap}
+.pe-tab[aria-selected=true]{background:var(--pe-fg);color:#07101b;border-color:var(--pe-fg)}
+.pe-panel{display:none;gap:14px;flex-direction:column}
+.pe-panel.on{display:flex}
+.pe-sec{background:var(--pe-card);border:1px solid var(--pe-line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:14px}
+.pe-sec>h2{margin:0;font-size:15px;letter-spacing:-.01em}
+.pe-sec>p.pe-hint{margin:-8px 0 0}
+.pe-hint{font-size:12.5px;color:var(--pe-mut);line-height:1.45}
+.pe-f{display:flex;flex-direction:column;gap:6px;min-width:0}
+.pe-f>label,.pe-lab{font-size:12.5px;font-weight:650;color:#c9d4e8;display:flex;justify-content:space-between;gap:8px}
+.pe-lab output{color:var(--pe-mut);font-weight:500;font-variant-numeric:tabular-nums}
+.pe input[type=text],.pe input[type=url],.pe textarea,.pe select{width:100%;background:#0a0f19;border:1px solid var(--pe-line);color:var(--pe-fg);border-radius:10px;padding:11px 12px;font-size:16px;font-family:inherit;outline:none;min-width:0}
+.pe textarea{min-height:84px;resize:vertical;line-height:1.45}
+.pe input:focus,.pe textarea:focus,.pe select:focus{border-color:var(--pe-acc)}
+.pe input[type=color]{width:100%;height:42px;padding:3px;border-radius:10px;background:#0a0f19;border:1px solid var(--pe-line);cursor:pointer}
+.pe input[type=range]{width:100%;accent-color:var(--pe-acc);height:28px}
+.pe-g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pe-g3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media(max-width:420px){.pe-g3{grid-template-columns:1fr 1fr}}
+.pe-seg{display:flex;flex-wrap:wrap;gap:6px}
+.pe-seg button{flex:1 1 auto;border:1px solid var(--pe-line);background:#0a0f19;color:var(--pe-mut);padding:9px 10px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;min-width:0}
+.pe-seg button[aria-pressed=true]{background:color-mix(in srgb,var(--pe-acc) 18%,#0a0f19);border-color:var(--pe-acc);color:#fff}
+.pe-tg{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid var(--pe-line);border-radius:12px;background:#0a0f19;cursor:pointer}
+.pe-tg span{font-size:14px}
+.pe-tg small{display:block;color:var(--pe-mut);font-size:12px;margin-top:1px}
+.pe-sw{width:44px;height:26px;border-radius:99px;background:#27324a;position:relative;flex:none;transition:background .2s}
+.pe-sw::after{content:"";position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s}
+.pe-tg[aria-checked=true] .pe-sw{background:var(--pe-ok)}
+.pe-tg[aria-checked=true] .pe-sw::after{transform:translateX(18px)}
+.pe-btn{border:1px solid var(--pe-line2);background:transparent;color:var(--pe-fg);border-radius:10px;padding:9px 14px;font-size:13.5px;font-weight:650;cursor:pointer;font-family:inherit}
+.pe-btn:hover{border-color:var(--pe-fg)}
+.pe-btn.pri{background:var(--pe-fg);color:#07101b;border-color:var(--pe-fg)}
+.pe-btn.bad{color:#ff9d9d;border-color:rgba(255,107,107,.4)}
+.pe-btn:disabled{opacity:.5;cursor:not-allowed}
+.pe-row{display:flex;gap:8px;align-items:center}
+.pe-row>input{flex:1}
+.pe-media-f{display:flex;flex-direction:column;gap:8px}
+.pe-media-f .pe-row{flex-wrap:wrap}
+.pe-thumb{width:44px;height:44px;border-radius:10px;background:#0a0f19 center/cover;border:1px solid var(--pe-line);flex:none;display:grid;place-items:center;color:var(--pe-mut);font-size:18px}
+.pe-item{border:1px solid var(--pe-line);border-radius:12px;padding:10px;background:#0d1422;display:flex;flex-direction:column;gap:8px}
+.pe-item-head{display:flex;align-items:center;gap:8px}
+.pe-item-head .ico{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:#0a0f19;border:1px solid var(--pe-line);flex:none}
+.pe-item-head .ico svg{width:17px;height:17px}
+.pe-item-head strong{flex:1;font-size:13px;color:var(--pe-mut);font-weight:600}
+.pe-tpl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.pe-tpl{border:1px solid var(--pe-line);background:var(--pe-card2);border-radius:14px;padding:0;overflow:hidden;cursor:pointer;text-align:left;color:var(--pe-fg);font-family:inherit}
+.pe-tpl:hover{border-color:var(--pe-acc)}
+.pe-tpl-sw{height:74px;display:flex;align-items:center;justify-content:center;position:relative}
+.pe-tpl-sw i{width:54px;height:36px;border-radius:9px;border:1px solid rgba(255,255,255,.18);display:block}
+.pe-tpl b{display:block;padding:9px 11px 2px;font-size:13.5px}
+.pe-tpl small{display:block;padding:0 11px 10px;color:var(--pe-mut);font-size:12px}
+.pe-quota{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pe-quota div{border:1px solid var(--pe-line);border-radius:12px;padding:10px;background:#0a0f19}
+.pe-quota span{display:block;font-size:11.5px;color:var(--pe-mut)}
+.pe-quota strong{font-size:16px}
+.pe-lib{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.pe-asset{border:1px solid var(--pe-line);border-radius:12px;overflow:hidden;background:#0a0f19;display:flex;flex-direction:column}
+.pe-asset .th{height:84px;background:#0d1422 center/cover;display:grid;place-items:center;font-size:26px;color:var(--pe-mut)}
+.pe-asset .nm{padding:7px 9px 0;font-size:12px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pe-asset .mt{padding:0 9px 6px;font-size:11px;color:var(--pe-mut)}
+.pe-asset .ac{display:flex;gap:6px;padding:0 8px 8px}
+.pe-asset .ac .pe-btn{flex:1;padding:6px 8px;font-size:12px}
+.pe-prog{height:6px;border-radius:99px;background:#1b2740;overflow:hidden}
+.pe-prog i{display:block;height:100%;width:0;background:var(--pe-acc);transition:width .15s}
+.pe-pv{min-width:0}
+.pe-pv-bar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;font-size:12.5px;color:var(--pe-mut)}
+.pe-pv-bar .pe-btn{padding:6px 10px;font-size:12px}
+.pe-pv-frame{height:calc(100vh - 150px);min-height:520px;border-radius:18px;overflow:hidden;border:1px solid var(--pe-line2);background:#05070d;margin:0 auto;width:100%;transition:width .25s;position:relative}
+.pe-pv-frame.phone{width:390px;max-width:100%}
+#pv{position:absolute;inset:0}
+@media(min-width:980px){.pe-pv{position:sticky;top:12px}}
+@media(max-width:979px){
+  .pe-pv{display:none;position:fixed;inset:78px 0 68px 0;z-index:60;background:#05070d;padding:8px 8px 0}
+  body.show-pv .pe-pv{display:block}
+  body.show-pv .pe-side{visibility:hidden}
+  .pe-pv-frame{height:calc(100% - 34px);min-height:0;border-radius:14px}
+  .pe-pv-frame.phone{width:100%}
+  #pv-device{display:none}
+}
+.pe-bar{position:fixed;left:0;right:0;bottom:0;z-index:70;display:flex;gap:8px;align-items:center;padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:rgba(8,12,22,.92);border-top:1px solid var(--pe-line);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.pe-bar .pe-btn{padding:12px 16px;font-size:14.5px}
+.pe-bar .grow{flex:1;min-width:0;font-size:12.5px;color:var(--pe-mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pe-bar .grow.dirty{color:#ffd37a}
+.pe-bar .grow.ok{color:#a7f0bd}
+.pe-bar .grow.error{color:#ffb4b4}
+@media(min-width:980px){#bar-pv{display:none}}
+.pe-modal{position:fixed;inset:0;z-index:90;background:rgba(3,6,12,.7);display:flex;align-items:flex-end;justify-content:center;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+@media(min-width:700px){.pe-modal{align-items:center}}
+.pe-sheet{width:min(720px,100%);max-height:84vh;overflow:auto;background:var(--pe-card);border:1px solid var(--pe-line2);border-radius:20px 20px 0 0;padding:16px}
+@media(min-width:700px){.pe-sheet{border-radius:20px}}
+.pe-sheet h3{margin:0 0 4px;font-size:17px}
+.pe-sheet-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:12px}
 </style>
 </head>
 <body>
 <header class="topbar"><div class="wrap topbar-in"><a class="brand" href="/" aria-label="Sentinel"><span class="brand-mark" aria-hidden="true">S</span><span class="brand-word">Sentinel</span></a><nav class="nav" id="site-nav" aria-label="Main"><a class="nl" href="/features">Features</a><a class="nl" href="/commands">Commands</a><a class="nl" href="/account">Account</a></nav><div class="nav-tools"><a class="btn btn-sm" href="/account">Back to account</a></div></div></header>
-<main class="pe-shell">
-  <div class="pe-head"><div><div class="pe-kicker">Sentinel Profiles</div><h1 style="margin:5px 0 6px">Customize your profile</h1><p style="margin:0;color:#9caac1">Make a public page that feels like you. Changes are saved to your Sentinel account.</p></div><a class="btn btn-sm" id="open-profile" href="#" target="_blank" rel="noopener noreferrer" hidden>View public profile ↗</a></div>
-  <div id="auth-message" class="pe-status">Checking your session…</div>
-  <div class="pe-grid pe-hide" id="editor-grid">
-    <section class="pe-panel">
-      <form class="pe-form" id="profile-form">
-        <div class="pe-category-nav" role="tablist" aria-label="Profile settings categories"><button type="button" class="pe-category-btn is-active" data-category="identity"><span>01</span> Profile</button><button type="button" class="pe-category-btn" data-category="media"><span>02</span> Media</button><button type="button" class="pe-category-btn" data-category="images"><span>03</span> Images</button><button type="button" class="pe-category-btn" data-category="social"><span>04</span> Social</button><button type="button" class="pe-category-btn" data-category="layout"><span>05</span> Layout</button><button type="button" class="pe-category-btn" data-category="colors"><span>06</span> Colors</button><button type="button" class="pe-category-btn" data-category="effects"><span>07</span> Effects</button><button type="button" class="pe-category-btn" data-category="display"><span>08</span> Visibility</button><button type="button" class="pe-category-btn" data-category="advanced"><span>09</span> Advanced</button></div>
-        <div class="pe-section" data-category="identity" style="border:0;padding-top:0"><h2>Identity</h2><p class="pe-hint">Your public URL uses your unique username.</p>
-          <label>Username / profile URL<input name="username" required minlength="3" maxlength="24" pattern="[a-zA-Z0-9_-]{3,24}" placeholder="yourname"><span class="pe-hint">3–24 letters, numbers, hyphens or underscores. The URL will be /u/yourname.</span></label>
-          <label>Display name<input name="displayName" maxlength="40" placeholder="Your display name"></label>
-          <label>Bio<textarea name="bio" maxlength="220" placeholder="A little about you…"></textarea></label>
-          <label>Status<input name="status" maxlength="80" placeholder="Listening to music / building Sentinel…"></label>
-          <div class="pe-two"><label>Status emoji<input name="statusEmoji" maxlength="8" placeholder="✨"></label><label>Accent color<input name="accentColor" type="color" value="#8b7cff"></label></div>
-        </div>
-        <div class="pe-section" data-category="images"><h2>Images & background</h2><p class="pe-hint">Use direct HTTPS image URLs. Keep images hosted somewhere you trust.</p>
-          <label>Avatar image URL<input name="avatarUrl" type="url" maxlength="500" placeholder="https://…"></label>
-          <label>Banner image URL<input name="bannerUrl" type="url" maxlength="500" placeholder="https://…"></label>
-          <label>Background image URL<input name="backgroundUrl" type="url" maxlength="500" placeholder="https://…"></label>
-          <div class="pe-two"><label>Background color or gradient<input name="background" maxlength="180" value="linear-gradient(135deg, #0b1020, #29204d)" placeholder="#0b1020 or linear-gradient(135deg, #0b1020, #29204d)"></label><label>Music URL<input name="musicUrl" type="url" maxlength="500" placeholder="YouTube or Spotify URL"></label></div>
-        </div>
 
-        <div class="pe-section" data-category="media"><div class="media-title-row"><div><h2>Media library</h2><p class="pe-hint">Upload your own assets. Files stay private to your account until you use them on your public profile.</p></div><span class="media-pill">FREE STORAGE</span></div>
-          <div class="media-quota-grid"><div class="media-quota"><span>Images</span><strong id="quota-image">0 / 5</strong><small>JPG · PNG · WebP · GIF · AVIF</small></div><div class="media-quota"><span>Audio</span><strong id="quota-audio">0 / 3</strong><small>MP3 · WAV · OGG · M4A</small></div><div class="media-quota"><span>Video</span><strong id="quota-video">0 / 3</strong><small>MP4 · WebM · MOV</small></div></div>
-          <div class="media-upload-grid"><label class="media-drop" for="media-file"><span class="media-drop-icon">＋</span><strong>Choose a file to upload</strong><small>Image up to 8 MB · audio up to 15 MB · video up to 45 MB</small><input id="media-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/avif,audio/mpeg,audio/wav,audio/ogg,audio/mp4,audio/aac,audio/webm,video/mp4,video/webm,video/quicktime"></label><div class="media-upload-copy"><strong>Your profile, your rules.</strong><p>Choose images for your avatar, banner or page background, add up to three audio tracks, or set an MP4 video as your animated page background.</p><p class="pe-hint">The browser may not preview very large videos smoothly. Keep background clips short for faster loading.</p><div id="media-status" class="pe-status" role="status" aria-live="polite"></div></div></div>
-          <div class="media-library-heading"><div><h3>Your uploads</h3><p class="pe-hint">Use an asset on your profile or remove it to free a slot.</p></div><button class="btn btn-sm" type="button" id="refresh-media">Refresh library</button></div><div id="media-library" class="media-library"><div class="media-empty">Loading your media library…</div></div>
-          <label class="media-selected-audio">Selected MP3 tracks <span id="audio-selected-count">0 / 3 selected</span><div id="selected-audio-list" class="selected-audio-list"><p class="pe-hint">Upload audio and select tracks from the library below.</p></div></label>
-        </div>
-        <div class="pe-section" data-category="social"><h2>Social links</h2><p class="pe-hint">Add up to 12 links. Only HTTP/HTTPS links are accepted.</p><div id="links-list"></div><button class="btn btn-sm" type="button" id="add-link">＋ Add link</button></div>
-        <div class="pe-section" data-category="social"><h2>Custom widgets</h2><p class="pe-hint">Add text cards, quotes, or a link card. Up to 8 widgets.</p><div id="widgets-list"></div><button class="btn btn-sm" type="button" id="add-widget">＋ Add widget</button></div>
-        <div class="pe-section" data-category="layout"><h2>Layout & structure</h2><p class="pe-hint">Choose the shape and spacing of your public profile.</p>
-          <div class="pe-two"><label>Profile layout<select name="layout"><option value="centered">Centered profile</option><option value="left">Left aligned</option><option value="wide">Wide content</option></select></label><label>Card style<select name="cardStyle"><option value="glass">Glass</option><option value="solid">Solid</option><option value="outline">Outline</option><option value="minimal">Minimal</option></select></label></div>
-          <div class="pe-two"><label>Content width <output data-output="contentWidth">900px</output><input name="contentWidth" type="range" min="620" max="1200" step="20" value="900"></label><label>Banner height <output data-output="bannerHeight">220px</output><input name="bannerHeight" type="range" min="80" max="360" step="10" value="220"></label></div>
-          <div class="pe-two"><label>Avatar shape<select name="avatarShape"><option value="circle">Circle</option><option value="rounded">Rounded square</option><option value="square">Square</option></select></label><label>Widget columns<select name="widgetColumns"><option value="1">1 column</option><option value="2" selected>2 columns</option><option value="3">3 columns</option></select></label></div>
-          <div class="pe-two"><label>Avatar size <output data-output="avatarSize">112px</output><input name="avatarSize" type="range" min="72" max="160" step="4" value="112"></label><label>Widget gap <output data-output="widgetGap">12px</output><input name="widgetGap" type="range" min="6" max="28" step="2" value="12"></label></div>
-          <div class="pe-two"><label>Content alignment<select name="alignment"><option value="center">Center</option><option value="left">Left</option></select></label><label>Spacing<select name="spacing"><option value="compact">Compact</option><option value="normal" selected>Comfortable</option><option value="relaxed">Relaxed</option></select></label></div>
-        </div>
-        <div class="pe-section" data-category="colors"><h2>Color studio</h2><p class="pe-hint">Build a consistent palette. Colors are applied to your public page and widgets.</p>
-          <div class="pe-two"><label>Page color<input name="pageColor" type="color" value="#090d17"></label><label>Card color<input name="cardColor" type="color" value="#0b1020"></label></div>
-          <div class="pe-two"><label>Main text<input name="textColor" type="color" value="#f5f7ff"></label><label>Muted text<input name="mutedColor" type="color" value="#98a6bf"></label></div>
-          <div class="pe-two"><label>Border color<input name="borderColor" type="color" value="#ffffff"></label><label>Widget color<input name="widgetColor" type="color" value="#ffffff"></label></div>
-          <div class="pe-two"><label>Card opacity <output data-output="cardOpacity">86%</output><input name="cardOpacity" type="range" min="60" max="100" step="2" value="86"></label><label>Bio font size <output data-output="bioSize">15px</output><input name="bioSize" type="range" min="12" max="20" step="1" value="15"></label></div>
-          <div class="pe-two"><label>Avatar border<select name="avatarBorder"><option value="accent">Accent color</option><option value="none">No border</option><option value="white">White</option></select></label><label>Banner overlay<select name="bannerOverlay"><option value="none">None</option><option value="soft">Soft dark</option><option value="strong">Strong dark</option></select></label></div>
-          <label>Background overlay<select name="overlay"><option value="medium">Medium overlay</option><option value="none">None</option><option value="light">Light overlay</option><option value="strong">Strong overlay</option></select></label>
-        </div>
-        <div class="pe-section" data-category="effects"><h2>Effects & motion</h2><p class="pe-hint">Fine-tune the visual atmosphere without custom code.</p>
-          <div class="pe-two"><label>Glass blur <output data-output="blur">18px</output><input name="blur" type="range" min="0" max="30" step="2" value="18"></label><label>Corner roundness <output data-output="radius">24px</output><input name="radius" type="range" min="0" max="40" step="2" value="24"></label></div>
-          <div class="pe-two"><label>Shadow<select name="shadow"><option value="soft">Soft</option><option value="none">None</option><option value="deep">Deep</option><option value="colored">Accent glow</option></select></label><label>Hover effect<select name="hoverEffect"><option value="lift">Lift</option><option value="none">None</option><option value="glow">Glow</option><option value="scale">Scale</option></select></label></div>
-          <div class="pe-two"><label>Page animation<select name="animation"><option value="fade">Fade in</option><option value="none">None</option><option value="rise">Rise in</option></select></label><label>Border style<select name="borderStyle"><option value="subtle">Subtle</option><option value="none">No border</option><option value="accent">Accent border</option></select></label></div>
-        </div>
-        <div class="pe-section" data-category="display"><h2>Visibility controls</h2><p class="pe-hint">Choose which profile elements are visible to visitors.</p>
-          <div class="pe-toggle-grid"><label><input type="checkbox" name="showAvatar" checked> Show avatar</label><label><input type="checkbox" name="showHandle" checked> Show username handle</label><label><input type="checkbox" name="showBanner" checked> Show banner</label><label><input type="checkbox" name="showFooter" checked> Show profile footer</label><label><input type="checkbox" name="showBio" checked> Show bio</label><label><input type="checkbox" name="showStatus" checked> Show status</label><label><input type="checkbox" name="showBadges" checked> Show badges</label><label><input type="checkbox" name="showLinks" checked> Show social links</label><label><input type="checkbox" name="showWidgets" checked> Show widgets</label><label><input type="checkbox" name="showMusic" checked> Show music player</label><label><input type="checkbox" name="showViews" checked> Show visit counter</label><label><input type="checkbox" name="showBranding" checked> Show Sentinel branding</label></div>
-          <div class="pe-two"><label>Link alignment<select name="linkAlignment"><option value="center">Center</option><option value="left">Left</option></select></label><label>Link corner radius <output data-output="linkRadius">12px</output><input name="linkRadius" type="range" min="4" max="24" step="2" value="12"></label></div>
-          <div class="pe-two"><label>Widget appearance<select name="widgetStyle"><option value="glass">Glass</option><option value="solid">Solid</option><option value="outline">Outline</option></select></label><label>Links appearance<select name="linkStyle"><option value="glass">Glass buttons</option><option value="solid">Solid buttons</option><option value="outline">Outline buttons</option><option value="minimal">Text links</option></select></label><label>Badge appearance<select name="badgeStyle"><option value="pill">Pill</option><option value="square">Rounded</option><option value="minimal">Minimal</option></select></label></div>
-        </div>
-        <div class="pe-section" data-category="advanced"><h2>Advanced personalization</h2><p class="pe-hint">Additional presentation preferences. These settings never run custom JavaScript.</p>
-          <div class="pe-two"><label>Profile font<select name="fontFamily"><option value="system">System</option><option value="inter">Inter-like</option><option value="mono">Monospace</option><option value="serif">Serif</option></select></label><label>Name size <output data-output="nameSize">42px</output><input name="nameSize" type="range" min="24" max="64" step="2" value="42"></label></div>
-          <div class="pe-two"><label>Name letter spacing<select name="letterSpacing"><option value="tight">Tight</option><option value="normal" selected>Normal</option><option value="wide">Wide</option></select></label><label>Banner focal point<select name="bannerPosition"><option value="center">Center</option><option value="top">Top</option><option value="bottom">Bottom</option><option value="left">Left</option><option value="right">Right</option></select></label></div>
-          <label>Custom profile tagline<input name="tagline" maxlength="100" placeholder="A short line under your name"></label><label>Custom footer text<input name="footerText" maxlength="100" placeholder="Made with Sentinel (default)"></label>
-        </div>
-        <div class="pe-actions"><button class="btn btn-primary" type="submit" id="save-profile">Save profile</button><button class="btn" type="button" id="reset-profile">Reset unsaved changes</button></div>
-        <div class="pe-status" id="save-message" role="status" aria-live="polite"></div>
-      </form>
+<main class="pe">
+  <div class="pe-top">
+    <div><div class="pe-kicker">Sentinel Profiles</div><h1>Profile editor</h1><p>Design your public page. Everything updates live in the preview.</p></div>
+    <a class="pe-btn" id="open-profile" href="#" target="_blank" rel="noopener noreferrer" hidden>View public profile ↗</a>
+  </div>
+  <div id="auth-message" class="pe-status">Checking your session…</div>
+
+  <div class="pe-app pe-hide" id="app">
+    <section class="pe-side">
+      <nav class="pe-tabs" id="tabs" role="tablist" aria-label="Editor sections"></nav>
+      <form id="profile-form" class="pe-panels" onsubmit="return false" autocomplete="off"><div id="panels"></div></form>
     </section>
-    <aside class="pe-preview" id="preview" aria-label="Profile preview"><video class="pe-preview-video pe-hide" id="preview-video" muted autoplay loop playsinline></video><div class="pe-preview-banner" id="preview-banner"></div><div class="pe-preview-content"><img class="pe-preview-avatar" id="preview-avatar" alt="Profile avatar"><h2 class="pe-preview-name" id="preview-name">Your name</h2><div class="pe-preview-handle" id="preview-handle">@username</div><p class="pe-preview-bio" id="preview-bio">Your bio appears here.</p><div class="pe-preview-status" id="preview-status">✨ <span>Set a status</span></div><div class="pe-preview-links" id="preview-links"></div><div class="pe-preview-audio" id="preview-audio"></div><div class="pe-views" id="preview-views">Public profile preview · views shown after publishing</div></div></aside>
+    <aside class="pe-pv" id="pv-pane" aria-label="Live preview">
+      <div class="pe-pv-bar"><span>Live preview</span><span style="display:flex;gap:6px"><button type="button" class="pe-btn" id="pv-splash">Enter screen</button><button type="button" class="pe-btn" id="pv-device">Mobile view</button></span></div>
+      <div class="pe-pv-frame" id="pv-frame"><div id="pv"></div></div>
+    </aside>
   </div>
 </main>
-<script src="/assets/js/config.js"></script><script src="/assets/js/profile-editor.js"></script>
-<script>
-/* Reliable category navigation: each tab displays only its matching settings section. */
-(function () {
-  "use strict";
-  var nav = document.querySelector(".pe-category-nav");
-  var form = document.getElementById("profile-form");
-  if (!nav || !form) return;
-  var buttons = Array.from(nav.querySelectorAll(".pe-category-btn[data-category]"));
-  var sections = Array.from(form.querySelectorAll(".pe-section[data-category]"));
-  function activate(name) {
-    buttons.forEach(function (button) {
-      var active = button.dataset.category === name;
-      button.classList.toggle("is-active", active);
-      button.setAttribute("aria-selected", active ? "true" : "false");
-      button.setAttribute("tabindex", active ? "0" : "-1");
-    });
-    sections.forEach(function (section) {
-      section.classList.toggle("pe-hide", section.dataset.category !== name);
-    });
-  }
-  buttons.forEach(function (button, index) {
-    button.setAttribute("role", "tab");
-    button.addEventListener("click", function () { activate(button.dataset.category); });
-    button.addEventListener("keydown", function (event) {
-      if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
-      event.preventDefault();
-      var delta = event.key === "ArrowRight" ? 1 : -1;
-      var next = (index + delta + buttons.length) % buttons.length;
-      buttons[next].focus();
-      activate(buttons[next].dataset.category);
-    });
-  });
-  activate((buttons.find(function (button) { return button.classList.contains("is-active"); }) || buttons[0] || {}).dataset?.category || "identity");
-})();
-</script>
-</body></html>
+
+<div class="pe-bar pe-hide" id="bar">
+  <button type="button" class="pe-btn" id="bar-pv">Preview</button>
+  <span class="grow" id="save-message">All changes saved</span>
+  <button type="button" class="pe-btn" id="reset-profile">Revert</button>
+  <button type="button" class="pe-btn pri" id="save-profile">Save profile</button>
+</div>
+
+<div class="pe-modal pe-hide" id="modal" role="dialog" aria-modal="true"><div class="pe-sheet" id="sheet"></div></div>
+<input type="file" id="media-file" hidden accept="image/png,image/jpeg,image/webp,image/gif,image/avif,audio/mpeg,audio/wav,audio/ogg,audio/mp4,audio/aac,audio/webm,video/mp4,video/webm,video/quicktime">
+
+<script src="/assets/js/config.js"></script>
+<script src="/assets/js/profile-render.js"></script>
+<script src="/assets/js/profile-editor.js"></script>
+</body>
+</html>
