@@ -5,7 +5,7 @@
 <meta name="theme-color" content="#080c16"><meta name="description" content="Customize your public Sentinel profile."><meta name="robots" content="noindex, nofollow">
 <title>Profile editor — Sentinel</title><link rel="icon" href="/sentinel.png" type="image/png">
 <link rel="stylesheet" href="/assets/css/main.css">
-<link rel="stylesheet" href="/assets/css/profile.css">
+<link rel="stylesheet" href="/assets/css/profile.css?v=3">
 <style>
 .pe,.pe-bar,.pe-modal{--pe-bg:#0b101b;--pe-card:#101827;--pe-card2:#162033;--pe-line:rgba(151,177,218,.16);--pe-line2:rgba(151,177,218,.3);--pe-fg:#f3f7ff;--pe-mut:#93a1ba;--pe-acc:#78e4ff;--pe-ok:#4bbe69;--pe-bad:#ff6b6b;
   width:min(1480px,100%);margin:0 auto;padding:18px 14px 110px;color:var(--pe-fg)}
@@ -67,6 +67,7 @@
 .pe-item-head .ico{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:#0a0f19;border:1px solid var(--pe-line);flex:none}
 .pe-item-head .ico svg{width:17px;height:17px}
 .pe-item-head strong{flex:1;font-size:13px;color:var(--pe-mut);font-weight:600}
+.pe-bd-list{display:grid;gap:8px}.pe-bd{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--pe-line,rgba(255,255,255,.12));border-radius:12px;background:rgba(255,255,255,.03)}.pe-bd.locked{opacity:.55}.pe-bd-ic{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-size:18px;flex:none;background:color-mix(in srgb,var(--bc,#8b7cff) 22%,#0b1020);border:1px solid color-mix(in srgb,var(--bc,#8b7cff) 45%,transparent)}.pe-bd-tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.pe-bd-tx small{opacity:.7;font-size:12px}.pe-bd .pe-btn{flex:none;padding:6px 12px}.pe-bd-lock{flex:none}
 .pe-tpl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
 .pe-tpl{border:1px solid var(--pe-line);background:var(--pe-card2);border-radius:14px;padding:0;overflow:hidden;cursor:pointer;text-align:left;color:var(--pe-fg);font-family:inherit}
 .pe-tpl:hover{border-color:var(--pe-acc)}
@@ -149,8 +150,8 @@
 <div class="pe-modal pe-hide" id="modal" role="dialog" aria-modal="true"><div class="pe-sheet" id="sheet"></div></div>
 <input type="file" id="media-file" hidden accept="image/png,image/jpeg,image/webp,image/gif,image/avif,audio/mpeg,audio/wav,audio/ogg,audio/mp4,audio/aac,audio/webm,video/mp4,video/webm,video/quicktime">
 
-<script src="/assets/js/config.js?v=2"></script>
-<script src="/assets/js/profile-render.js"></script>
-<script src="/assets/js/profile-editor.js"></script>
+<script src="/assets/js/config.js"></script>
+<script src="/assets/js/profile-render.js?v=3"></script>
+<script src="/assets/js/profile-editor.js?v=3"></script>
 </body>
 </html>
