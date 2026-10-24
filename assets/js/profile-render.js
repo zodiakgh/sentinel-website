@@ -26,7 +26,7 @@
   var FINE = !!(window.matchMedia && matchMedia("(hover: hover) and (pointer: fine)").matches);
 
   var DEF = {
-    layout: "centered", cardStyle: "glass", contentWidth: 900, bannerHeight: 220, avatarShape: "circle", widgetColumns: "2", alignment: "center",
+    linkColumns: "1", widgetsFirst: false, showShare: true, linkIconShape: "square", layout: "centered", cardStyle: "glass", contentWidth: 900, bannerHeight: 220, avatarShape: "circle", widgetColumns: "2", alignment: "center",
     spacing: "normal", cardVAlign: "top", pageColor: "#090d17", cardColor: "#0b1020", textColor: "#f5f7ff", mutedColor: "#98a6bf", borderColor: "#ffffff",
     widgetColor: "#ffffff", nameColor2: "#ffffff", glowColor: "#8b7cff", cursorColor: "#ffffff", particleColor: "#ffffff", overlay: "medium", bgDim: 55,
     bgBlur: 0, blur: 18, radius: 24, glowStrength: 0, shadow: "soft", hoverEffect: "lift", animation: "fade", borderStyle: "subtle",
@@ -243,52 +243,112 @@
   /* ---------------- fx: cursor, trail, tilt ---------------- */
   function startPointerFx(S, c) {
     stopPointerFx(S);
-    if (S.opts.preview || !FINE) return;
     var host = S.host, off = [], cur = col(c.cursorColor, "#ffffff");
     host.style.setProperty("--cursor", cur);
-    host.classList.toggle("cursor-cross", c.cursorStyle === "crosshair");
+    host.classList.toggle("cursor-cross", c.cursorStyle === "crosshair" && FINE);
+    /* one unified pointer source: mouse, pen and touch (finger) all feed the same handlers */
+    var subs = [];
+    function onPoint(fn) { subs.push(fn); }
+    function fire(x, y, target, kind) { for (var i = 0; i < subs.length; i++) subs[i](x, y, target, kind); }
+    var hp = function (e) { fire(e.clientX, e.clientY, e.target, e.type === "pointerdown" ? "down" : "move"); };
+    var ht = function (e) { var t = e.touches && e.touches[0]; if (t) fire(t.clientX, t.clientY, e.target, e.type === "touchstart" ? "down" : "move"); };
+    var he = function () { fire(0, 0, null, "up"); };
+    host.addEventListener("pointermove", hp); host.addEventListener("pointerdown", hp);
+    host.addEventListener("touchstart", ht, { passive: true }); host.addEventListener("touchmove", ht, { passive: true });
+    host.addEventListener("touchend", he, { passive: true }); host.addEventListener("pointerleave", he); host.addEventListener("touchcancel", he, { passive: true });
+    off.push(function () { host.removeEventListener("pointermove", hp); host.removeEventListener("pointerdown", hp); host.removeEventListener("touchstart", ht); host.removeEventListener("touchmove", ht); host.removeEventListener("touchend", he); host.removeEventListener("pointerleave", he); host.removeEventListener("touchcancel", he); });
+
     if (c.cursorStyle === "dot" || c.cursorStyle === "ring") {
-      host.classList.add("cursor-hidden");
-      var dot = el("div", "sp-cursor-dot"), ring = c.cursorStyle === "ring" ? el("div", "sp-cursor-ring") : null, mx = -100, my = -100, rx = -100, ry = -100, raf = 0;
+      if (FINE) host.classList.add("cursor-hidden");
+      var dot = el("div", "sp-cursor-dot"), ring = c.cursorStyle === "ring" ? el("div", "sp-cursor-ring") : null, mx = -100, my = -100, rx = -100, ry = -100, raf = 0, fade = 0;
+      dot.style.opacity = "0"; if (ring) ring.style.opacity = "0";
       host.appendChild(dot); if (ring) host.appendChild(ring);
-      var move = function (e) { mx = e.clientX; my = e.clientY; dot.style.transform = "translate(" + mx + "px," + my + "px)"; if (ring) { var t = e.target; ring.classList.toggle("hot", !!(t && t.closest && t.closest("a,button,input,[role=button]"))); } };
-      var loop = function () { raf = requestAnimationFrame(loop); rx += (mx - rx) * .2; ry += (my - ry) * .2; if (ring) ring.style.transform = "translate(" + rx + "px," + ry + "px)"; };
-      window.addEventListener("pointermove", move); loop();
-      off.push(function () { window.removeEventListener("pointermove", move); cancelAnimationFrame(raf); dot.remove(); if (ring) ring.remove(); host.classList.remove("cursor-hidden"); });
+      onPoint(function (x, y, t, kind) {
+        if (kind === "up") { if (!FINE) { fade = setTimeout(function () { dot.style.opacity = "0"; if (ring) ring.style.opacity = "0"; }, 450); } else { dot.style.opacity = "0"; if (ring) ring.style.opacity = "0"; } return; }
+        clearTimeout(fade); var r = host.getBoundingClientRect(); mx = x - r.left; my = y - r.top;
+        if (dot.style.opacity === "0") { rx = mx; ry = my; }
+        dot.style.opacity = "1"; if (ring) ring.style.opacity = "1";
+        dot.style.transform = "translate(" + mx + "px," + my + "px)";
+        if (ring) ring.classList.toggle("hot", !!(t && t.closest && t.closest("a,button,input,[role=button]")) || kind === "down");
+      });
+      var loop = function () { raf = requestAnimationFrame(loop); rx += (mx - rx) * .22; ry += (my - ry) * .22; if (ring) ring.style.transform = "translate(" + rx + "px," + ry + "px)"; };
+      loop();
+      off.push(function () { clearTimeout(fade); cancelAnimationFrame(raf); dot.remove(); if (ring) ring.remove(); host.classList.remove("cursor-hidden"); });
     }
     if (c.cursorTrail !== "none" && !REDUCED) {
-      var cv = S.trailCanvas, ctx = cv.getContext("2d"), dpr = Math.min(2, window.devicePixelRatio || 1), pts = [], tr = 0, W = 0, H = 0;
+      var cv = S.trailCanvas, ctx = cv.getContext("2d"), dpr = Math.min(2, window.devicePixelRatio || 1), pts = [], tr = 0, W = 0, H = 0, spark = c.cursorTrail === "sparkles";
       var sz = function () { var r = host.getBoundingClientRect(); W = r.width; H = r.height; cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); };
       sz(); window.addEventListener("resize", sz);
-      var add = function (e) { var r = host.getBoundingClientRect(); pts.push({ x: e.clientX - r.left, y: e.clientY - r.top, life: 1, vx: (Math.random() - .5) * 1.2, vy: (Math.random() - .5) * 1.2 - (c.cursorTrail === "sparkles" ? .4 : 0), s: c.cursorTrail === "sparkles" ? 2 + Math.random() * 3 : 4 }); if (pts.length > 80) pts.shift(); };
+      onPoint(function (x, y, t, kind) {
+        if (kind === "up") return; var r = host.getBoundingClientRect(), n = kind === "down" ? 9 : 1;
+        for (var k = 0; k < n; k++) pts.push({ x: x - r.left, y: y - r.top, life: 1, vx: (Math.random() - .5) * (kind === "down" ? 5 : 1.2), vy: (Math.random() - .5) * (kind === "down" ? 5 : 1.2) - (spark ? .4 : 0), s: spark ? 2.5 + Math.random() * 4 : 4.5 });
+        if (pts.length > 120) pts.splice(0, pts.length - 120);
+      });
       var draw = function () {
         tr = requestAnimationFrame(draw); ctx.clearRect(0, 0, W, H);
         for (var i = pts.length - 1; i >= 0; i--) {
-          var p = pts[i]; p.life -= .03; if (p.life <= 0) { pts.splice(i, 1); continue; }
+          var p = pts[i]; p.life -= .028; if (p.life <= 0) { pts.splice(i, 1); continue; }
           p.x += p.vx; p.y += p.vy; ctx.globalAlpha = p.life; ctx.fillStyle = cur;
-          if (c.cursorTrail === "sparkles") { ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.life * 3); ctx.fillRect(-p.s / 2, -p.s / 2, p.s, p.s); ctx.restore(); }
+          if (spark) { ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.life * 3); ctx.fillRect(-p.s / 2, -p.s / 2, p.s, p.s); ctx.restore(); }
           else { ctx.beginPath(); ctx.arc(p.x, p.y, p.s * p.life, 0, 6.28); ctx.fill(); }
         }
         ctx.globalAlpha = 1;
       };
-      window.addEventListener("pointermove", add); draw();
-      off.push(function () { window.removeEventListener("pointermove", add); window.removeEventListener("resize", sz); cancelAnimationFrame(tr); ctx.clearRect(0, 0, cv.width, cv.height); });
+      draw();
+      off.push(function () { window.removeEventListener("resize", sz); cancelAnimationFrame(tr); ctx.clearRect(0, 0, cv.width, cv.height); });
     }
     if (c.bgParallax && !REDUCED) {
-      var pm = function (e) { var r = host.getBoundingClientRect(); S.bgwrap.style.setProperty("--px", (((e.clientX - r.left) / r.width - .5) * -22).toFixed(1) + "px"); S.bgwrap.style.setProperty("--py", (((e.clientY - r.top) / r.height - .5) * -16).toFixed(1) + "px"); };
-      window.addEventListener("pointermove", pm); off.push(function () { window.removeEventListener("pointermove", pm); S.bgwrap.style.removeProperty("--px"); S.bgwrap.style.removeProperty("--py"); });
+      onPoint(function (x, y, t, kind) { if (kind === "up") return; var r = host.getBoundingClientRect(); S.bgwrap.style.setProperty("--px", (((x - r.left) / r.width - .5) * -22).toFixed(1) + "px"); S.bgwrap.style.setProperty("--py", (((y - r.top) / r.height - .5) * -22).toFixed(1) + "px"); });
+      off.push(function () { S.bgwrap.style.removeProperty("--px"); S.bgwrap.style.removeProperty("--py"); });
     }
     if (c.tilt && !REDUCED) {
-      var card = S.card, onMove = function (e) {
-        var r = card.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5;
-        host.classList.add("is-tilting"); card.style.transform = "perspective(1000px) rotateX(" + (-y * 7).toFixed(2) + "deg) rotateY(" + (x * 9).toFixed(2) + "deg)";
-      }, onLeave = function () { host.classList.remove("is-tilting"); card.style.transform = ""; };
-      card.addEventListener("pointermove", onMove); card.addEventListener("pointerleave", onLeave);
-      off.push(function () { card.removeEventListener("pointermove", onMove); card.removeEventListener("pointerleave", onLeave); card.style.transform = ""; host.classList.remove("is-tilting"); });
+      var card = S.card;
+      onPoint(function (x, y, t, kind) {
+        if (kind === "up") { host.classList.remove("is-tilting"); card.style.transform = ""; return; }
+        var r = card.getBoundingClientRect(), nx = Math.max(-.6, Math.min(.6, (x - r.left) / r.width - .5)), ny = Math.max(-.6, Math.min(.6, (y - r.top) / r.height - .5));
+        host.classList.add("is-tilting"); card.style.transform = "perspective(1000px) rotateX(" + (-ny * 8).toFixed(2) + "deg) rotateY(" + (nx * 10).toFixed(2) + "deg)";
+      });
+      off.push(function () { card.style.transform = ""; host.classList.remove("is-tilting"); });
     }
     S.stopPointer = function () { off.forEach(function (f) { f(); }); };
   }
   function stopPointerFx(S) { if (S.stopPointer) { S.stopPointer(); S.stopPointer = null; } S.host.classList.remove("cursor-cross", "cursor-hidden"); }
+
+  /* ---------------- special widgets ---------------- */
+  function specialWidget(S, w) {
+    var n = el("div", "sp-widget " + w.type);
+    if (w.title) n.appendChild(el("h3", "", w.title));
+    var lines = String(w.content || "");
+    if (w.type === "gallery") {
+      var urls = lines.split("\n").map(httpUrl).filter(Boolean).slice(0, 6); if (!urls.length) return null;
+      var g = el("div", "sp-gallery n" + Math.min(urls.length, 4));
+      urls.forEach(function (u) {
+        var im = el("img"); im.src = u; im.loading = "lazy"; im.alt = ""; im.referrerPolicy = "no-referrer";
+        im.addEventListener("click", function () {
+          var ov = el("div", "sp-lightbox"), big = el("img"); big.src = u; big.alt = ""; ov.appendChild(big);
+          ov.addEventListener("click", function () { ov.remove(); }); S.host.appendChild(ov);
+        });
+        g.appendChild(im);
+      });
+      n.appendChild(g); return n;
+    }
+    if (w.type === "stats") {
+      var rows = lines.split("\n").map(function (l) { var i = l.indexOf("|"); return i > 0 ? [l.slice(0, i), l.slice(i + 1)] : null; }).filter(Boolean).slice(0, 4); if (!rows.length) return null;
+      var st = el("div", "sp-stats"); rows.forEach(function (r) { var x = el("div", "sp-stat"); x.append(el("b", "", r[1]), el("span", "", r[0])); st.appendChild(x); }); n.appendChild(st); return n;
+    }
+    if (w.type === "countdown") {
+      var t = Date.parse(lines); if (!t || isNaN(t)) return null;
+      var out = el("div", "sp-count"), cells = {};
+      [["d", "days"], ["h", "hours"], ["m", "min"], ["s", "sec"]].forEach(function (k) { var c = el("div", "sp-cd"), b = el("b", "", "0"); c.append(b, el("span", "", k[1])); cells[k[0]] = b; out.appendChild(c); });
+      var tick = function () {
+        var d = Math.max(0, t - Date.now()), s = Math.floor(d / 1000);
+        cells.d.textContent = Math.floor(s / 86400); cells.h.textContent = ("0" + Math.floor(s % 86400 / 3600)).slice(-2); cells.m.textContent = ("0" + Math.floor(s % 3600 / 60)).slice(-2); cells.s.textContent = ("0" + (s % 60)).slice(-2);
+      };
+      tick(); var iv = setInterval(tick, 1000); S.typers.push(function () { clearInterval(iv); });
+      n.appendChild(out); return n;
+    }
+    return null;
+  }
 
   /* ---------------- mount ---------------- */
   function mount(host, profile, opts) {
@@ -339,7 +399,7 @@
       d.nameFx = c.nameEffect; d.avatarFx = c.avatarEffect; d.badge = c.badgeStyle; d.links = c.linkDisplay; d.linkAlign = c.linkAlignment; d.linkStyle = c.linkStyle;
       d.widgetStyle = c.widgetStyle; d.layout = c.layout === "left" || c.alignment === "left" || c.headerStyle === "inline" ? (c.layout === "wide" ? "wide" : "left") : c.layout;
       d.header = c.headerStyle; d.pattern = c.cardPattern; d.animBorder = c.animatedBorder ? "1" : "0"; d.linkHover = c.linkHover; d.linkSize = c.linkSize;
-      d.pad = c.cardPadding; d.halign = pick(c.cardHAlign, ["left", "center", "right"], "center"); d.iconBg = c.iconBg; d.stagger = opts.preview ? "0" : (c.staggerIn === false ? "0" : "1");
+      d.linkCols = pick(c.linkColumns, ["1", "2"], "1"); d.iconShape = pick(c.linkIconShape, ["circle", "square", "none"], "square"); d.pad = c.cardPadding; d.halign = pick(c.cardHAlign, ["left", "center", "right"], "center"); d.iconBg = c.iconBg; d.stagger = opts.preview ? "0" : (c.staggerIn === false ? "0" : "1");
     }
 
     function background(p) {
@@ -395,9 +455,11 @@
       if (c.showBio !== false && p.bio) { var bio = el("p", "sp-bio"); if (c.bioTypewriter && !REDUCED) S.typers.push(typewrite(bio, [p.bio], false)); else bio.textContent = p.bio; body.appendChild(bio); }
       if (c.showStatus !== false && p.status) body.appendChild(el("div", "sp-status", (p.statusEmoji ? p.statusEmoji + " " : "") + p.status));
 
+      var box = null, wb = null;
       if (c.showLinks !== false && p.links.length) {
-        var box = el("div", "sp-links"), mode = c.linkDisplay;
-        p.links.slice(0, 12).forEach(function (l) {
+        box = el("div", "sp-links"); var mode = c.linkDisplay;
+        p.links.slice(0, 20).forEach(function (l) {
+          if (l.kind === "header") { if (l.label) box.appendChild(el("div", "sp-link-head", String(l.label))); return; }
           var url = httpUrl(l.url); if (!url) return;
           var a = el("a", mode === "icons" ? "sp-icon" : "sp-link"), nm = iconName(url), ic = iconSvg(nm), colr = "";
           a.href = url; a.target = "_blank"; a.rel = "noopener noreferrer nofollow";
@@ -408,21 +470,29 @@
             var fg = colr; if (c.iconBg === "brand") { a.style.background = colr; a.style.borderColor = "transparent"; fg = lum(colr || accent) > .5 ? "#0b0b0f" : "#ffffff"; }
             a.style.color = fg; a.title = l.label; a.setAttribute("aria-label", l.label); a.appendChild(ic);
           }
-          else { ic.style.color = colr; a.append(ic, el("span", "", l.label)); }
+          else {
+            ic.style.color = colr; var lead;
+            if (l.icon) { lead = el("span", "sp-link-emoji", String(l.icon)); } else lead = ic;
+            var txt = el("span", "sp-link-text"); txt.appendChild(el("b", "", l.label)); if (l.desc) txt.appendChild(el("small", "", String(l.desc)));
+            if (l.featured) a.classList.add("featured");
+            a.append(lead, txt);
+          }
           box.appendChild(a);
         });
         if (box.firstChild) body.appendChild(box);
       }
       if (c.showWidgets !== false && p.widgets.length) {
-        var wb = el("div", "sp-widgets");
-        p.widgets.slice(0, 8).forEach(function (w) {
+        wb = el("div", "sp-widgets");
+        p.widgets.slice(0, 10).forEach(function (w) {
+          if (w.type === "gallery" || w.type === "countdown" || w.type === "stats") { var sw = specialWidget(S, w); if (sw) wb.appendChild(sw); return; }
           var url = w.type === "link" ? httpUrl(w.url) : "", n = url ? el("a", "sp-widget link") : el("div", "sp-widget " + (w.type === "quote" ? "quote" : ""));
           if (url) { n.href = url; n.target = "_blank"; n.rel = "noopener noreferrer nofollow"; }
           if (w.title) n.appendChild(el("h3", "", w.title)); if (w.content) n.appendChild(el("p", "", w.content));
           if (n.firstChild) wb.appendChild(n);
         });
-        if (wb.firstChild) body.appendChild(wb);
+        if (wb.firstChild) body.appendChild(wb); else wb = null;
       }
+      if (c.widgetsFirst && wb && box && box.parentNode === body) body.insertBefore(wb, box);
       if (c.showMusic !== false && p.musicUrl) {
         var yt = youtubeEmbed(p.musicUrl), sp = spotifyEmbed(p.musicUrl), src = yt || sp;
         if (src) { var em = el("div", "sp-embed"), fr = document.createElement("iframe"); fr.src = src; fr.height = sp ? "152" : "200"; fr.loading = "lazy"; fr.title = "Music player"; fr.allow = "autoplay; encrypted-media; clipboard-write; picture-in-picture"; fr.referrerPolicy = "strict-origin-when-cross-origin"; em.appendChild(fr); body.appendChild(em); }
@@ -437,6 +507,16 @@
       if (c.showFooter !== false) {
         var ft = el("div", "sp-foot");
         if (c.showViews !== false && p.views !== undefined && p.views !== null) { var v = el("span", "sp-meta-item"); v.append(metaIcon("eye"), document.createTextNode(Number(p.views || 0).toLocaleString() + " views")); ft.appendChild(v); }
+        if (c.showShare !== false && !opts.preview && p.username) {
+          var sh = el("button", "sp-share", "Share"); sh.type = "button";
+          sh.addEventListener("click", function () {
+            var u = location.href.split("#")[0];
+            if (navigator.share) { navigator.share({ title: p.displayName, url: u }).catch(function () { }); return; }
+            var done = function () { sh.textContent = "Link copied ✓"; setTimeout(function () { sh.textContent = "Share"; }, 1800); };
+            if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(done, function () { }); else { var ta = document.createElement("textarea"); ta.value = u; document.body.appendChild(ta); ta.select(); try { document.execCommand("copy"); done(); } catch (e) { } ta.remove(); }
+          });
+          ft.appendChild(sh);
+        }
         if (c.footerText) ft.appendChild(el("span", "", c.footerText));
         if (c.showBranding !== false) { var br = el("span"); br.appendChild(document.createTextNode("Made with ")); var bl = el("a", "", "Sentinel"); bl.href = "/"; br.appendChild(bl); ft.appendChild(br); }
         if (ft.firstChild) body.appendChild(ft);
