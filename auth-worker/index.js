@@ -658,19 +658,36 @@ async function profileSave(env, req) {
     const existing = JSON.parse(existingRaw);
     if (existing.ownerHash !== ownerHash) return json(env, req, { error: "username_taken", message: "That profile URL is already taken." }, 409);
   }
-  const linksIn = Array.isArray(b.links) ? b.links.slice(0, 12) : [];
+  const linksIn = Array.isArray(b.links) ? b.links.slice(0, 20) : [];
   const links = [];
   for (const item of linksIn) {
     if (!item || typeof item !== "object") continue;
-    const label = profileText(item.label, 32), url = safeHttpUrl(item.url, 500);
-    if (label && url) links.push({ label, url });
+    const label = profileText(item.label, 40);
+    if (item.kind === "header") { if (label) links.push({ kind: "header", label }); continue; }
+    const url = safeHttpUrl(item.url, 500);
+    if (!label || !url) continue;
+    const entry = { label, url };
+    const icon = profileText(item.icon, 4), desc = profileText(item.desc, 80);
+    if (icon) entry.icon = icon;
+    if (desc) entry.desc = desc;
+    if (item.featured === true) entry.featured = true;
+    links.push(entry);
   }
-  const widgetsIn = Array.isArray(b.widgets) ? b.widgets.slice(0, 8) : [];
+  const widgetsIn = Array.isArray(b.widgets) ? b.widgets.slice(0, 10) : [];
   const widgets = [];
   for (const item of widgetsIn) {
     if (!item || typeof item !== "object") continue;
-    const type = ["text", "quote", "link"].includes(item.type) ? item.type : "text";
-    const title = profileText(item.title, 50), content = profileText(item.content, 500), url = type === "link" ? safeHttpUrl(item.url, 500) : "";
+    const type = ["text", "quote", "link", "gallery", "countdown", "stats"].includes(item.type) ? item.type : "text";
+    const title = profileText(item.title, 50), url = type === "link" ? safeHttpUrl(item.url, 500) : "";
+    let content = "";
+    if (type === "gallery") {
+      content = String(item.content || "").split(/\s+/).map((u) => safeHttpUrl(u, 500, true)).filter(Boolean).slice(0, 6).join("\n");
+    } else if (type === "countdown") {
+      const d = String(item.content || "").trim();
+      content = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?$/.test(d) && !Number.isNaN(Date.parse(d)) ? d : "";
+    } else if (type === "stats") {
+      content = String(item.content || "").split("\n").slice(0, 4).map((l) => { const [a, ...r] = l.split("|"); const k = profileText(a, 24), v = profileText(r.join("|"), 24); return k && v ? k + "|" + v : ""; }).filter(Boolean).join("\n");
+    } else content = profileText(item.content, 500);
     if (title || content || (type === "link" && url)) widgets.push({ id: rand(8), type, title, content, url });
   }
   const c = b.customization && typeof b.customization === "object" ? b.customization : {};
@@ -680,7 +697,7 @@ async function profileSave(env, req) {
   const colorVal = (key, fallback) => /^#[0-9a-f]{6}$/i.test(String(c[key] || "")) ? String(c[key]) : fallback;
   const customization = {
     // --- structure ---
-    layout: enumVal("layout", ["centered", "left", "wide"], "centered"),
+    layout: enumVal("layout", ["centered", "left", "wide"], "centered"), linkColumns: enumVal("linkColumns", ["1", "2"], "1"), widgetsFirst: boolVal("widgetsFirst", false), showShare: boolVal("showShare", true), linkIconShape: enumVal("linkIconShape", ["circle", "square", "none"], "square"),
     cardStyle: enumVal("cardStyle", ["glass", "solid", "outline", "minimal"], "glass"),
     contentWidth: intVal("contentWidth", 320, 1200, 900), bannerHeight: intVal("bannerHeight", 0, 360, 220),
     avatarShape: enumVal("avatarShape", ["circle", "rounded", "square"], "circle"), widgetColumns: enumVal("widgetColumns", ["1", "2", "3"], "2"),
