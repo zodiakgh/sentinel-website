@@ -697,7 +697,7 @@ async function profileSave(env, req) {
   const colorVal = (key, fallback) => /^#[0-9a-f]{6}$/i.test(String(c[key] || "")) ? String(c[key]) : fallback;
   const customization = {
     // --- structure ---
-    layout: enumVal("layout", ["centered", "left", "wide"], "centered"), linkColumns: enumVal("linkColumns", ["1", "2"], "1"), widgetsFirst: boolVal("widgetsFirst", false), showShare: boolVal("showShare", true), linkIconShape: enumVal("linkIconShape", ["circle", "square", "none"], "square"),
+    layout: enumVal("layout", ["centered", "left", "wide"], "centered"), respectReducedMotion: boolVal("respectReducedMotion", false), linkColumns: enumVal("linkColumns", ["1", "2"], "1"), widgetsFirst: boolVal("widgetsFirst", false), showShare: boolVal("showShare", true), linkIconShape: enumVal("linkIconShape", ["circle", "square", "none"], "square"),
     cardStyle: enumVal("cardStyle", ["glass", "solid", "outline", "minimal"], "glass"),
     contentWidth: intVal("contentWidth", 320, 1200, 900), bannerHeight: intVal("bannerHeight", 0, 360, 220),
     avatarShape: enumVal("avatarShape", ["circle", "rounded", "square"], "circle"), widgetColumns: enumVal("widgetColumns", ["1", "2", "3"], "2"),

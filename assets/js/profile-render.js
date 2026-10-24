@@ -22,11 +22,11 @@
     [/anilist\.co$/, "anilist"], [/(^|\.)mastodon\.[a-z]+$/, "mastodon"]
   ];
   var NS = "http://www.w3.org/2000/svg";
-  var REDUCED = !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
+  var SYSRED = !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches), REDUCED = false;
   var FINE = !!(window.matchMedia && matchMedia("(hover: hover) and (pointer: fine)").matches);
 
   var DEF = {
-    linkColumns: "1", widgetsFirst: false, showShare: true, linkIconShape: "square", layout: "centered", cardStyle: "glass", contentWidth: 900, bannerHeight: 220, avatarShape: "circle", widgetColumns: "2", alignment: "center",
+    respectReducedMotion: false, linkColumns: "1", widgetsFirst: false, showShare: true, linkIconShape: "square", layout: "centered", cardStyle: "glass", contentWidth: 900, bannerHeight: 220, avatarShape: "circle", widgetColumns: "2", alignment: "center",
     spacing: "normal", cardVAlign: "top", pageColor: "#090d17", cardColor: "#0b1020", textColor: "#f5f7ff", mutedColor: "#98a6bf", borderColor: "#ffffff",
     widgetColor: "#ffffff", nameColor2: "#ffffff", glowColor: "#8b7cff", cursorColor: "#ffffff", particleColor: "#ffffff", overlay: "medium", bgDim: 55,
     bgBlur: 0, blur: 18, radius: 24, glowStrength: 0, shadow: "soft", hoverEffect: "lift", animation: "fade", borderStyle: "subtle",
@@ -399,7 +399,7 @@
       d.nameFx = c.nameEffect; d.avatarFx = c.avatarEffect; d.badge = c.badgeStyle; d.links = c.linkDisplay; d.linkAlign = c.linkAlignment; d.linkStyle = c.linkStyle;
       d.widgetStyle = c.widgetStyle; d.layout = c.layout === "left" || c.alignment === "left" || c.headerStyle === "inline" ? (c.layout === "wide" ? "wide" : "left") : c.layout;
       d.header = c.headerStyle; d.pattern = c.cardPattern; d.animBorder = c.animatedBorder ? "1" : "0"; d.linkHover = c.linkHover; d.linkSize = c.linkSize;
-      d.linkCols = pick(c.linkColumns, ["1", "2"], "1"); d.iconShape = pick(c.linkIconShape, ["circle", "square", "none"], "square"); d.pad = c.cardPadding; d.halign = pick(c.cardHAlign, ["left", "center", "right"], "center"); d.iconBg = c.iconBg; d.stagger = opts.preview ? "0" : (c.staggerIn === false ? "0" : "1");
+      REDUCED = SYSRED && !!c.respectReducedMotion; d.reduce = REDUCED ? "1" : "0"; d.linkCols = pick(c.linkColumns, ["1", "2"], "1"); d.iconShape = pick(c.linkIconShape, ["circle", "square", "none"], "square"); d.pad = c.cardPadding; d.halign = pick(c.cardHAlign, ["left", "center", "right"], "center"); d.iconBg = c.iconBg; d.stagger = opts.preview ? "0" : (c.staggerIn === false ? "0" : "1");
     }
 
     function background(p) {

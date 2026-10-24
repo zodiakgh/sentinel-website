@@ -184,7 +184,7 @@ a.sp-widget:hover{transform:translateY(-2px); border-color:color-mix(in srgb,var
   .sp-pl-vol{display:none}
 }
 @media (prefers-reduced-motion:reduce){
-  .sp-root *,.sp-root *::before,.sp-root *::after{animation-duration:.01ms!important; animation-iteration-count:1!important; transition-duration:.01ms!important}
+  .sp-root[data-reduce="1"] *,.sp-root[data-reduce="1"] *::before,.sp-root[data-reduce="1"] *::after{animation-duration:.01ms!important; animation-iteration-count:1!important; transition-duration:.01ms!important}
 }
 
 /* ---------- public page chrome ---------- */
