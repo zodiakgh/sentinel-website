@@ -526,28 +526,120 @@ function safeMusicUrl(value) {
   } catch (_) { /* invalid URL */ }
   return "";
 }
-function profilePublicShape(p, views, account) {
-  const badges = [];
-  if (account && account.verified) badges.push({ id: "verified", label: "Verified", icon: "✓" });
-  if (account && account.discord && account.discord.id) badges.push({ id: "discord", label: "Discord linked", icon: "◈" });
+/* ================= BADGES =================
+ * Badges are granted by the server only. Users can hide badges they own, never add them.
+ *   owner   -> the account whose email hashes to OWNER_HASH (the email itself is not stored in this public repo)
+ *   manual  -> granted by the owner through POST /admin/badge
+ *   auto    -> computed from the account (verified, Discord linked, founding member)
+ *   event   -> earned permanently by saving your profile during the event window
+ */
+const OWNER_HASH = "b658adb64cf43b60ce2a8bf811350a63467aa3a2ebfaf286408934344435495b";
+const OWNER_USERNAMES = new Set(["ben"]);   // profile URLs only the owner account may use
+const D = (s) => Date.parse(s + "T00:00:00Z");
+const BADGES = {
+  owner:         { label: "Owner",            icon: "👑", color: "#f5c542", tier: "staff",  kind: "owner",  desc: "Founder and owner of Sentinel.",            how: "Reserved for the owner." },
+  coowner:       { label: "Co-Owner",         icon: "💠", color: "#7dd3fc", tier: "staff",  kind: "manual", desc: "Co-owner of Sentinel.",                     how: "Given by the owner." },
+  admin:         { label: "Admin",            icon: "🛡️", color: "#f87171", tier: "staff",  kind: "manual", desc: "Sentinel administrator.",                   how: "Given by the owner." },
+  moderator:     { label: "Moderator",        icon: "⚔️", color: "#fb923c", tier: "staff",  kind: "manual", desc: "Sentinel moderator.",                       how: "Given by the owner." },
+  developer:     { label: "Developer",        icon: "💻", color: "#a78bfa", tier: "staff",  kind: "manual", desc: "Works on Sentinel's code.",                 how: "Given by the owner." },
+  support:       { label: "Support Team",     icon: "🎧", color: "#34d399", tier: "staff",  kind: "manual", desc: "Helps members on the support server.",      how: "Given by the owner." },
+  partner:       { label: "Partner",          icon: "🤝", color: "#60a5fa", tier: "special", kind: "manual", desc: "Official Sentinel partner.",               how: "Given by the owner." },
+  creator:       { label: "Content Creator",  icon: "🎬", color: "#fb7185", tier: "special", kind: "manual", desc: "Creates content about Sentinel.",          how: "Given by the owner." },
+  premium:       { label: "Premium",          icon: "💎", color: "#22d3ee", tier: "special", kind: "manual", desc: "Sentinel Premium member.",                 how: "Given by the owner." },
+  supporter:     { label: "Supporter",        icon: "💜", color: "#c084fc", tier: "special", kind: "manual", desc: "Supports Sentinel's development.",         how: "Given by the owner." },
+  bughunter:     { label: "Bug Hunter",       icon: "🐞", color: "#fbbf24", tier: "special", kind: "manual", desc: "Reported a bug that got fixed.",           how: "Given by the owner." },
+  beta:          { label: "Beta Tester",      icon: "🧪", color: "#86efac", tier: "special", kind: "manual", desc: "Helped test Sentinel before release.",     how: "Given by the owner." },
+  founding:      { label: "Founding Member",  icon: "🌟", color: "#fde047", tier: "member", kind: "auto",   desc: "Joined Sentinel in its first months.",      how: "Create your account before December 2026." },
+  verified:      { label: "Verified",         icon: "✅", color: "#4ade80", tier: "member", kind: "auto",   desc: "Has a verified email address.",             how: "Verify your email address." },
+  discord:       { label: "Discord Linked",   icon: "🔗", color: "#818cf8", tier: "member", kind: "auto",   desc: "Linked a Discord account.",                 how: "Link Discord in your account page." },
+  halloween2026: { label: "Halloween 2026",   icon: "🎃", color: "#fb923c", tier: "event",  kind: "event",  desc: "Joined the Halloween 2026 event.",          how: "Save your profile between Oct 15 and Nov 1, 2026.", from: D("2026-10-15"), to: D("2026-11-02") },
+  christmas2026: { label: "Christmas 2026",   icon: "🎄", color: "#4ade80", tier: "event",  kind: "event",  desc: "Celebrated Christmas 2026 on Sentinel.",    how: "Save your profile between Dec 1 and Dec 26, 2026.", from: D("2026-12-01"), to: D("2026-12-27") },
+  newyear2027:   { label: "New Year 2027",    icon: "🎆", color: "#facc15", tier: "event",  kind: "event",  desc: "Started 2027 on Sentinel.",                 how: "Save your profile between Dec 27, 2026 and Jan 7, 2027.", from: D("2026-12-27"), to: D("2027-01-08") },
+  autumn2026:    { label: "Autumn 2026",      icon: "🍂", color: "#f59e0b", tier: "event",  kind: "event",  desc: "Was here in autumn 2026.",                  how: "Save your profile between Sep 22 and Dec 20, 2026.", from: D("2026-09-22"), to: D("2026-12-21") },
+  winter2027:    { label: "Winter 2026-27",   icon: "❄️", color: "#93c5fd", tier: "event",  kind: "event",  desc: "Was here in winter 2026-27.",               how: "Save your profile between Dec 21, 2026 and Mar 19, 2027.", from: D("2026-12-21"), to: D("2027-03-20") },
+  spring2027:    { label: "Spring 2027",      icon: "🌸", color: "#f9a8d4", tier: "event",  kind: "event",  desc: "Was here in spring 2027.",                  how: "Save your profile between Mar 20 and Jun 20, 2027.", from: D("2027-03-20"), to: D("2027-06-21") },
+  summer2027:    { label: "Summer 2027",      icon: "☀️", color: "#fcd34d", tier: "event",  kind: "event",  desc: "Was here in summer 2027.",                  how: "Save your profile between Jun 21 and Sep 21, 2027.", from: D("2027-06-21"), to: D("2027-09-22") }
+};
+const BADGE_ORDER = ["owner", "coowner", "admin", "moderator", "developer", "support", "partner", "creator", "premium", "supporter", "bughunter", "beta", "founding", "verified", "discord", "halloween2026", "christmas2026", "newyear2027", "autumn2026", "winter2027", "spring2027", "summer2027"];
+async function badgeGrants(env, ownerHash) {
+  const raw = await env.SESSIONS.get(`bg:${ownerHash}`);
+  try { const g = raw ? JSON.parse(raw) : {}; return { manual: Array.isArray(g.manual) ? g.manual.filter(id => BADGES[id]) : [], earned: Array.isArray(g.earned) ? g.earned.filter(id => BADGES[id]) : [] }; }
+  catch (_) { return { manual: [], earned: [] }; }
+}
+async function awardEventBadges(env, ownerHash) {
+  const g = await badgeGrants(env, ownerHash), now = Date.now(); let changed = false;
+  for (const [id, bd] of Object.entries(BADGES)) if (bd.kind === "event" && now >= bd.from && now < bd.to && !g.earned.includes(id)) { g.earned.push(id); changed = true; }
+  if (changed) await env.SESSIONS.put(`bg:${ownerHash}`, JSON.stringify(g));
+}
+async function earnedBadgeIds(env, ownerHash, account) {
+  const g = await badgeGrants(env, ownerHash), ids = new Set([...g.manual, ...g.earned]), ok = !!(account && account.verified);
+  if (ownerHash === OWNER_HASH && ok) ids.add("owner");
+  if (ok) ids.add("verified");
+  if (account && account.discord && account.discord.id) ids.add("discord");
+  const created = Number(account && account.created);
+  if (ok && Number.isFinite(created) && created > 0 && created < D("2026-12-01")) ids.add("founding");
+  return BADGE_ORDER.filter(id => ids.has(id));
+}
+const badgeShape = (id) => ({ id, label: BADGES[id].label, icon: BADGES[id].icon, color: BADGES[id].color, tier: BADGES[id].tier, desc: BADGES[id].desc });
+async function badgesFor(env, p, account, includeHidden) {
+  const ids = await earnedBadgeIds(env, p.ownerHash, account), hidden = new Set(p.hiddenBadges || []);
+  return ids.filter(id => includeHidden || !hidden.has(id)).map(badgeShape);
+}
+function badgeCatalog(earned) {
+  const have = new Set(earned);
+  return BADGE_ORDER.map(id => ({ ...badgeShape(id), kind: BADGES[id].kind, how: BADGES[id].how, earned: have.has(id) }));
+}
+async function adminAuth(env, req) {
+  const s = await session(env, req); if (!s || !s.data.accountEmail) return null;
+  const h = await digest(s.data.accountEmail.trim().toLowerCase()); if (h !== OWNER_HASH) return null;
+  const raw = await env.SESSIONS.get(`a:${h}`), a = raw ? JSON.parse(raw) : null;
+  return a && a.verified ? { ownerHash: h } : null;
+}
+// POST /admin/badge { username, badge, action: "grant" | "revoke" }   (owner only)
+async function adminBadge(env, req) {
+  if (!originOK(env, req)) return json(env, req, { error: "forbidden" }, 403);
+  if (!(await adminAuth(env, req))) return json(env, req, { error: "forbidden" }, 403);
+  let b; try { b = await readBody(req); } catch (_) { return json(env, req, { error: "bad_request" }, 400); }
+  const username = profileText(b.username, 25).toLowerCase().replace(/^@/, ""), id = String(b.badge || ""), action = b.action === "revoke" ? "revoke" : b.action === "grant" ? "grant" : "";
+  if (!profileSlugOK(username) || !action) return json(env, req, { error: "bad_request", message: "Enter a valid username." }, 400);
+  if (!BADGES[id] || BADGES[id].kind === "auto" || id === "owner") return json(env, req, { error: "bad_badge", message: "That badge cannot be granted manually." }, 400);
+  const raw = await env.SESSIONS.get(`p:${username}`); if (!raw) return json(env, req, { error: "profile_not_found", message: "No profile with that username." }, 404);
+  const p = JSON.parse(raw), g = await badgeGrants(env, p.ownerHash);
+  if (action === "grant") { if (!g.manual.includes(id)) g.manual.push(id); }
+  else { g.manual = g.manual.filter(x => x !== id); g.earned = g.earned.filter(x => x !== id); }
+  await env.SESSIONS.put(`bg:${p.ownerHash}`, JSON.stringify(g));
+  return json(env, req, { ok: true, username, manual: g.manual, earned: g.earned });
+}
+async function adminLookup(env, req) {
+  if (!(await adminAuth(env, req))) return json(env, req, { error: "forbidden" }, 403);
+  const username = profileText(new URL(req.url).searchParams.get("username"), 25).toLowerCase().replace(/^@/, "");
+  const raw = profileSlugOK(username) ? await env.SESSIONS.get(`p:${username}`) : null; if (!raw) return json(env, req, { error: "profile_not_found" }, 404);
+  const g = await badgeGrants(env, JSON.parse(raw).ownerHash);
+  return json(env, req, { username, manual: g.manual, earned: g.earned });
+}
+
+function profilePublicShape(p, views, account, badges) {
   return {
     username: p.username, displayName: p.displayName, bio: p.bio, avatarUrl: p.avatarUrl || (account && account.discord ? cdn("avatars", account.discord.id, account.discord.avatar) || "" : ""),
     bannerUrl: p.bannerUrl, backgroundUrl: p.backgroundUrl, background: p.background, accentColor: p.accentColor,
     status: p.status, statusEmoji: p.statusEmoji, links: p.links || [], widgets: p.widgets || [], musicUrl: p.musicUrl,
     backgroundVideoUrl: p.backgroundVideoUrl || "", audioAssets: p.audioAssets || [], mediaAssets: p.mediaAssets || [],
-    badges, views: Number(views || 0), customization: p.customization || {}, createdAt: p.createdAt, updatedAt: p.updatedAt
+    badges: badges || [], views: Number(views || 0), customization: p.customization || {}, createdAt: p.createdAt, updatedAt: p.updatedAt
   };
 }
 async function profileMe(env, req) {
   const s = await session(env, req);
   if (!s || !s.data.accountEmail) return json(env, req, { error: "unauthenticated" }, 401);
   const ownerHash = await digest(s.data.accountEmail.trim().toLowerCase());
+  const accountRaw = await env.SESSIONS.get(`a:${ownerHash}`), account = accountRaw ? JSON.parse(accountRaw) : null;
+  const earned = await earnedBadgeIds(env, ownerHash, account);
+  const extra = { allBadges: earned.map(badgeShape), catalog: badgeCatalog(earned), isOwner: ownerHash === OWNER_HASH && !!(account && account.verified) };
   const slug = await env.SESSIONS.get(`pa:${ownerHash}`);
-  if (!slug) return json(env, req, { profile: null });
+  if (!slug) return json(env, req, { profile: null, hiddenBadges: [], ...extra });
   const raw = await env.SESSIONS.get(`p:${slug}`);
-  if (!raw) { await env.SESSIONS.delete(`pa:${ownerHash}`); return json(env, req, { profile: null }); }
-  const p = JSON.parse(raw), accountRaw = await env.SESSIONS.get(`a:${ownerHash}`), account = accountRaw ? JSON.parse(accountRaw) : null;
-  return json(env, req, { profile: profilePublicShape(p, await env.SESSIONS.get(`pv:${slug}`), account), url: `${env.SITE_ORIGIN}/u/${slug}` });
+  if (!raw) { await env.SESSIONS.delete(`pa:${ownerHash}`); return json(env, req, { profile: null, hiddenBadges: [], ...extra }); }
+  const p = JSON.parse(raw);
+  return json(env, req, { profile: profilePublicShape(p, await env.SESSIONS.get(`pv:${slug}`), account, await badgesFor(env, p, account)), hiddenBadges: p.hiddenBadges || [], ...extra, url: `${env.SITE_ORIGIN}/u/${slug}` });
 }
 async function profileSave(env, req) {
   if (!originOK(env, req)) return json(env, req, { error: "forbidden" }, 403);
@@ -559,6 +651,7 @@ async function profileSave(env, req) {
   if (!account || !account.verified) return json(env, req, { error: "email_not_verified" }, 403);
   const username = profileText(b.username, 24).toLowerCase();
   if (!profileSlugOK(username)) return json(env, req, { error: "invalid_username", message: "Use 3–24 lowercase letters, numbers, hyphens or underscores. Some names are reserved." }, 400);
+  if (OWNER_USERNAMES.has(username) && ownerHash !== OWNER_HASH) return json(env, req, { error: "username_taken", message: "That profile URL is reserved." }, 409);
   const ownerIndex = `pa:${ownerHash}`, previousSlug = await env.SESSIONS.get(ownerIndex);
   const existingRaw = await env.SESSIONS.get(`p:${username}`);
   if (existingRaw) {
@@ -608,7 +701,7 @@ async function profileSave(env, req) {
     showAvatar: boolVal("showAvatar"), showHandle: boolVal("showHandle"), showBanner: boolVal("showBanner"), showFooter: boolVal("showFooter"),
     showLocation: boolVal("showLocation"), showJoined: boolVal("showJoined", false),
     // --- text ---
-    linkStyle: enumVal("linkStyle", ["glass", "solid", "outline", "minimal"], "glass"), badgeStyle: enumVal("badgeStyle", ["pill", "square", "minimal"], "pill"),
+    linkStyle: enumVal("linkStyle", ["glass", "solid", "outline", "minimal"], "glass"), badgeStyle: enumVal("badgeStyle", ["pill", "square", "minimal", "icons"], "pill"),
     fontFamily: enumVal("fontFamily", ["system", "inter", "mono", "serif", "bricolage", "instrument"], "system"), nameSize: intVal("nameSize", 24, 72, 42),
     letterSpacing: enumVal("letterSpacing", ["tight", "normal", "wide"], "normal"), bannerPosition: enumVal("bannerPosition", ["center", "top", "bottom", "left", "right"], "center"),
     tagline: profileText(c.tagline, 160), footerText: profileText(c.footerText, 100), location: profileText(c.location, 40), pageTitle: profileText(c.pageTitle, 60),
@@ -624,13 +717,24 @@ async function profileSave(env, req) {
     splashEnabled: boolVal("splashEnabled", false), splashText: profileText(c.splashText, 40) || "click to enter",
     tilt: boolVal("tilt", false),
     cursorStyle: enumVal("cursorStyle", ["default", "dot", "ring", "crosshair"], "default"), cursorTrail: enumVal("cursorTrail", ["none", "dots", "sparkles"], "none"),
-    particles: enumVal("particles", ["none", "snow", "stars", "embers", "rain", "fireflies", "bubbles"], "none"), particleDensity: intVal("particleDensity", 10, 100, 40),
+    particles: enumVal("particles", ["none", "snow", "stars", "embers", "rain", "fireflies", "bubbles", "leaves", "petals"], "none"), particleDensity: intVal("particleDensity", 10, 100, 40),
     // --- audio player ---
     playerStyle: enumVal("playerStyle", ["card", "bar", "minimal", "hidden"], "card"), audioVolume: intVal("audioVolume", 0, 100, 60),
-    audioLoop: boolVal("audioLoop", true), audioAutoplay: boolVal("audioAutoplay", true)
+    audioLoop: boolVal("audioLoop", true), audioAutoplay: boolVal("audioAutoplay", true),
+    // --- v3 polish ---
+    nameFont: enumVal("nameFont", ["inherit", "system", "inter", "mono", "serif", "bricolage", "instrument"], "inherit"), nameWeight: intVal("nameWeight", 400, 900, 760),
+    nameTransform: enumVal("nameTransform", ["none", "uppercase", "lowercase"], "none"),
+    animatedBorder: boolVal("animatedBorder", false), cardPattern: enumVal("cardPattern", ["none", "grid", "dots", "scanlines", "noise"], "none"),
+    bgGrain: boolVal("bgGrain", false), bgVignette: intVal("bgVignette", 0, 100, 0), bgParallax: boolVal("bgParallax", false),
+    linkHover: enumVal("linkHover", ["lift", "glow", "fill", "none"], "lift"), linkSize: enumVal("linkSize", ["small", "medium", "large"], "medium"),
+    headerStyle: enumVal("headerStyle", ["stacked", "inline"], "stacked"), statusDot: enumVal("statusDot", ["none", "online", "idle", "dnd", "offline"], "none"),
+    cardPadding: enumVal("cardPadding", ["compact", "normal", "spacious"], "normal"), staggerIn: boolVal("staggerIn", true),
+    cardHAlign: enumVal("cardHAlign", ["left", "center", "right"], "center"), avatarBorderColor: colorVal("avatarBorderColor", ""), avatarBorderWidth: intVal("avatarBorderWidth", 0, 10, 4),
+    iconBg: enumVal("iconBg", ["soft", "brand", "none"], "soft")
   };
   const oldRaw = previousSlug ? await env.SESSIONS.get(`p:${previousSlug}`) : null;
   const old = oldRaw ? JSON.parse(oldRaw) : {};
+  const hiddenBadges = Array.isArray(b.hiddenBadges) ? [...new Set(b.hiddenBadges.filter(id => typeof id === "string" && BADGES[id]))].slice(0, 40) : (old.hiddenBadges || []);
   const assetListRaw = await env.SESSIONS.get(`paassets:${ownerHash}`);
   const ownedAssets = assetListRaw ? JSON.parse(assetListRaw) : [];
   const ownedUrls = new Set(ownedAssets.map(a => a.url));
@@ -644,12 +748,14 @@ async function profileSave(env, req) {
     bannerUrl: safeHttpUrl(b.bannerUrl, 500, true), backgroundUrl: safeHttpUrl(b.backgroundUrl, 500, true),
     background: safeProfileBackground(b.background), accentColor: /^#[0-9a-f]{6}$/i.test(String(b.accentColor || "")) ? b.accentColor : "#8b7cff",
     status: profileText(b.status, 80), statusEmoji: profileText(b.statusEmoji, 8), links, widgets,
-    musicUrl: safeMusicUrl(b.musicUrl), backgroundVideoUrl, audioAssets, mediaAssets, customization, createdAt: old.createdAt || Date.now(), updatedAt: Date.now()
+    musicUrl: safeMusicUrl(b.musicUrl), backgroundVideoUrl, audioAssets, mediaAssets, customization, hiddenBadges, createdAt: old.createdAt || Date.now(), updatedAt: Date.now()
   };
   await env.SESSIONS.put(`p:${username}`, JSON.stringify(profile));
   await env.SESSIONS.put(ownerIndex, username);
   if (previousSlug && previousSlug !== username) await env.SESSIONS.delete(`p:${previousSlug}`);
-  return json(env, req, { ok: true, profile: profilePublicShape(profile, await env.SESSIONS.get(`pv:${username}`), account), url: `${env.SITE_ORIGIN}/u/${username}` });
+  await awardEventBadges(env, ownerHash);
+  const allBadges = await badgesFor(env, profile, account, true);
+  return json(env, req, { ok: true, profile: profilePublicShape(profile, await env.SESSIONS.get(`pv:${username}`), account, await badgesFor(env, profile, account)), hiddenBadges, allBadges, catalog: badgeCatalog(allBadges.map(x => x.id)), url: `${env.SITE_ORIGIN}/u/${username}` });
 }
 async function publicProfile(env, req, username) {
   if (!profileSlugOK(username)) return json(env, req, { error: "profile_not_found" }, 404);
@@ -666,7 +772,7 @@ async function publicProfile(env, req, username) {
     await env.SESSIONS.put(`pv:${username}`, String(views));
   }
   const accountRaw = await env.SESSIONS.get(`a:${profile.ownerHash}`), account = accountRaw ? JSON.parse(accountRaw) : null;
-  return json(env, req, { profile: profilePublicShape(profile, await env.SESSIONS.get(`pv:${username}`), account) }, 200, { "Cache-Control": "no-store" });
+  return json(env, req, { profile: profilePublicShape(profile, await env.SESSIONS.get(`pv:${username}`), account, await badgesFor(env, profile, account)) }, 200, { "Cache-Control": "no-store" });
 }
 
 
@@ -832,6 +938,8 @@ export default {
     if (req.method === "GET" && publicProfileMatch) return publicProfile(env, req, publicProfileMatch[1]);
     const shortProfileMatch = pathname.match(/^\/u\/([a-z0-9][a-z0-9_-]{2,23})$/);
     if (req.method === "GET" && shortProfileMatch) return publicProfile(env, req, shortProfileMatch[1]);
+    if (req.method === "POST" && pathname === "/admin/badge") return adminBadge(env, req);
+    if (req.method === "GET" && pathname === "/admin/lookup") return adminLookup(env, req);
     if (req.method === "POST" && pathname === "/support/send") return supportSend(env, req);
     if (pathname.startsWith("/verify/")) {
       const needBot = ["/verify/status", "/verify/complete"].includes(pathname) && !env.BOT_TOKEN;
