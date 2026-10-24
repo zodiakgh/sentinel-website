@@ -64,7 +64,7 @@
   /* ---------------- control builders ---------------- */
   function field(label, input, hint) { var f = E("div", "pe-f"), l = E("label", "", label); f.append(l, input); if (hint) f.append(E("span", "pe-hint", hint)); return f; }
   function tText(label, path, o) {
-    o = o || {}; var i = E("input"); i.type = o.url ? "url" : "text"; i.maxLength = o.max || 200; i.placeholder = o.ph || ""; i.value = val(path) || "";
+    o = o || {}; var i = E("input"); i.type = o.url ? "url" : "text"; i.maxLength = o.max || 200; i.placeholder = o.ph || ""; i.value = val(path) || ""; if (o.readonly) { i.readOnly = true; i.style.opacity = ".6"; }
     if (o.url) { i.inputMode = "url"; i.autocapitalize = "off"; }
     i.addEventListener("input", function () { put(path, o.lower ? i.value.toLowerCase() : i.value); }); return field(label, i, o.hint);
   }
@@ -381,7 +381,7 @@
     ["templates", "Templates", templatesPanel],
     ["profile", "Profile", function () {
       return [
-        sec("Identity", "Your public address is /u/username.", tText("Username", "username", { max: 24, lower: true, ph: "yourname", hint: "3–24 letters, numbers, hyphens or underscores." }), tText("Display name", "displayName", { max: 40 }),
+        sec("Identity", "Your public address is /u/username.", tText("Username", "username", { max: 16, lower: true, ph: "yourname", readonly: serverProfile && serverProfile.canRename === false, hint: serverProfile && serverProfile.canRename === false ? "You already used your one username change." : serverProfile ? "1–16 letters, numbers, hyphens or underscores. You can change it only once." : "1–16 letters, numbers, hyphens or underscores. After you publish, you can change it only once." }), tText("Display name", "displayName", { max: 40 }),
           tArea("Bio", "bio", { max: 220, ph: "A little about you…" }), grid("pe-g2", tText("Status", "status", { max: 80, ph: "Building Sentinel" }), tText("Status emoji", "statusEmoji", { max: 8, ph: "✨" })), tColor("Accent color", "accentColor", "#8b7cff")),
         sec("Details", "Small touches that make the page feel personal.", tText("Tagline", "customization.tagline", { max: 160, ph: "dev | gamer | security", hint: "Separate several phrases with | to rotate them." }),
           tToggle("Typewriter tagline", "customization.taglineTypewriter", "Types and deletes your tagline phrases."), tToggle("Typewriter bio", "customization.bioTypewriter", "Types your bio once when the page opens."),
@@ -480,16 +480,16 @@
   }
   async function save() {
     if (saving) return;
-    if (!/^[a-z0-9][a-z0-9_-]{2,23}$/.test(state.username)) { say("Username: 3–24 lowercase letters, numbers, - or _.", "error"); showTab("profile"); return; }
+    if (!(state.username === (serverProfile && serverProfile.username) ? /^[a-z0-9][a-z0-9_-]{0,23}$/ : /^[a-z0-9][a-z0-9_-]{0,15}$/).test(state.username)) { say("Username: 1–16 lowercase letters, numbers, - or _.", "error"); showTab("profile"); return; }
     saving = true; $("save-profile").disabled = true; $("save-profile").textContent = "Saving…"; say("Saving…", "dirty");
     var payload = clone(state); payload.mediaAssets = usedMediaIds(); payload.links = state.links.filter(function (l) { return l.label && l.url; }); payload.widgets = state.widgets.filter(function (w) { return w.title || w.content || w.url; });
     try {
       var r = await api("/profiles/save", payload);
-      serverProfile = r.profile; if (r.allBadges) badgeData.all = r.allBadges; if (r.catalog) badgeData.catalog = r.catalog; var link = $("open-profile"); link.href = "/u/" + r.profile.username; link.hidden = false;
+      var hadRename = serverProfile ? serverProfile.canRename : true; serverProfile = Object.assign({}, r.profile, { nameChanges: r.nameChanges, canRename: r.canRename }); if (hadRename !== r.canRename) { buildPanels(); } if (r.allBadges) badgeData.all = r.allBadges; if (r.catalog) badgeData.catalog = r.catalog; var link = $("open-profile"); link.href = "/u/" + r.profile.username; link.hidden = false;
       state.username = r.profile.username; saved = serialize(); savedState = clone(state);
       say("Saved · " + location.host + "/u/" + r.profile.username, "ok");
     } catch (e) {
-      say(e.code === "username_taken" ? "That username is already taken." : e.code === "unauthenticated" ? "Session expired. Sign in again." : (e.message || "Could not save."), "error");
+      say(e.code === "username_change_limit" ? "You already changed your username once." : e.code === "username_taken" ? "That username is already taken." : e.code === "unauthenticated" ? "Session expired. Sign in again." : (e.message || "Could not save."), "error");
     } finally { saving = false; $("save-profile").disabled = false; $("save-profile").textContent = "Save profile"; }
   }
   $("save-profile").addEventListener("click", save);
@@ -505,7 +505,7 @@
     try {
       account = await api("/account/me");
       if (!account.verified) { msg.textContent = "Verify your email before publishing a profile."; msg.className = "pe-status error"; return; }
-      var data = await api("/profiles/me"); serverProfile = data.profile; badgeData = { all: data.allBadges || [], catalog: data.catalog || [], isOwner: !!data.isOwner };
+      var data = await api("/profiles/me"); serverProfile = data.profile ? Object.assign({}, data.profile, { nameChanges: data.nameChanges, canRename: data.canRename }) : null; badgeData = { all: data.allBadges || [], catalog: data.catalog || [], isOwner: !!data.isOwner };
       try { var m = await api("/profiles/assets"); assets = m.assets || []; counts = m.counts || {}; } catch (_) { }
       state = fromProfile(data.profile, account); saved = data.profile ? serialize() : ""; savedState = clone(state);
       if (data.profile) { var l = $("open-profile"); l.href = "/u/" + data.profile.username; l.hidden = false; }

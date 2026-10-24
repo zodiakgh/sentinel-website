@@ -17,7 +17,7 @@
   var m = location.pathname.match(/^\/u\/([^/]+)\/?$/i), qs = new URLSearchParams(location.search).get("u"), slug = m ? decodeURIComponent(m[1]) : qs;
   if (!slug || !API) return state("Profile not found", "This profile doesn't exist or is not public.", ["Create your own profile", "/account"]);
   slug = slug.toLowerCase();
-  if (!m && qs && /^[a-z0-9][a-z0-9_-]{2,23}$/.test(slug) && history.replaceState) history.replaceState(null, "", "/u/" + encodeURIComponent(slug));
+  if (!m && qs && /^[a-z0-9][a-z0-9_-]{0,23}$/.test(slug) && history.replaceState) history.replaceState(null, "", "/u/" + encodeURIComponent(slug));
   state("Loading profile…", "One moment.");
 
   fetch(API + "/profiles/" + encodeURIComponent(slug), { headers: { Accept: "application/json" }, credentials: "omit" })

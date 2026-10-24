@@ -497,7 +497,8 @@ async function verifyComplete(env, req) {
 /* ================= SENTINEL PROFILES ================= */
 // Public profiles are stored separately from account records. Never expose email/password hashes.
 const PROFILE_RESERVED = new Set(["account", "u", "api", "profile", "profile-editor", "dashboard", "support", "admin", "auth", "assets", "terms", "privacy", "features", "commands", "docs", "status", "verify", "premium", "team", "sentinel", "www"]);
-const profileSlugOK = (s) => /^[a-z0-9][a-z0-9_-]{2,23}$/.test(s) && !PROFILE_RESERVED.has(s);
+const profileSlugOK = (s) => /^[a-z0-9][a-z0-9_-]{0,23}$/.test(s) && !PROFILE_RESERVED.has(s); // reading: tolerates older names up to 24
+const profileNewSlugOK = (s) => /^[a-z0-9][a-z0-9_-]{0,15}$/.test(s) && !PROFILE_RESERVED.has(s); // new names: 1–16
 function profileText(v, max) { return String(v ?? "").replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, max); }
 function safeHttpUrl(value, max = 500, httpsOnly = false) {
   const s = profileText(value, max);
@@ -639,7 +640,7 @@ async function profileMe(env, req) {
   const raw = await env.SESSIONS.get(`p:${slug}`);
   if (!raw) { await env.SESSIONS.delete(`pa:${ownerHash}`); return json(env, req, { profile: null, hiddenBadges: [], ...extra }); }
   const p = JSON.parse(raw);
-  return json(env, req, { profile: profilePublicShape(p, await env.SESSIONS.get(`pv:${slug}`), account, await badgesFor(env, p, account)), hiddenBadges: p.hiddenBadges || [], ...extra, url: `${env.SITE_ORIGIN}/u/${slug}` });
+  return json(env, req, { profile: profilePublicShape(p, await env.SESSIONS.get(`pv:${slug}`), account, await badgesFor(env, p, account)), hiddenBadges: p.hiddenBadges || [], nameChanges: Number(p.nameChanges) || 0, canRename: (Number(p.nameChanges) || 0) < 1 || ownerHash === OWNER_HASH, ...extra, url: `${env.SITE_ORIGIN}/u/${slug}` });
 }
 async function profileSave(env, req) {
   if (!originOK(env, req)) return json(env, req, { error: "forbidden" }, 403);
@@ -650,9 +651,14 @@ async function profileSave(env, req) {
   const accountRaw = await env.SESSIONS.get(`a:${ownerHash}`), account = accountRaw ? JSON.parse(accountRaw) : null;
   if (!account || !account.verified) return json(env, req, { error: "email_not_verified" }, 403);
   const username = profileText(b.username, 24).toLowerCase();
-  if (!profileSlugOK(username)) return json(env, req, { error: "invalid_username", message: "Use 3–24 lowercase letters, numbers, hyphens or underscores. Some names are reserved." }, 400);
+  const prevName = await env.SESSIONS.get(`pa:${ownerHash}`);
+  if (!(username === prevName ? profileSlugOK(username) : profileNewSlugOK(username))) return json(env, req, { error: "invalid_username", message: "Use 1–16 lowercase letters, numbers, hyphens or underscores. Some names are reserved." }, 400);
   if (OWNER_USERNAMES.has(username) && ownerHash !== OWNER_HASH) return json(env, req, { error: "username_taken", message: "That profile URL is reserved." }, 409);
   const ownerIndex = `pa:${ownerHash}`, previousSlug = await env.SESSIONS.get(ownerIndex);
+  let nameChanges = 0;
+  if (previousSlug) { const prevRaw = await env.SESSIONS.get(`p:${previousSlug}`); if (prevRaw) { try { nameChanges = Number(JSON.parse(prevRaw).nameChanges) || 0; } catch (_) { } } }
+  const renaming = !!previousSlug && previousSlug !== username;
+  if (renaming && nameChanges >= 1 && !(ownerHash === OWNER_HASH)) return json(env, req, { error: "username_change_limit", message: "You already changed your username once. It can't be changed again." }, 403);
   const existingRaw = await env.SESSIONS.get(`p:${username}`);
   if (existingRaw) {
     const existing = JSON.parse(existingRaw);
@@ -765,14 +771,14 @@ async function profileSave(env, req) {
     bannerUrl: safeHttpUrl(b.bannerUrl, 500, true), backgroundUrl: safeHttpUrl(b.backgroundUrl, 500, true),
     background: safeProfileBackground(b.background), accentColor: /^#[0-9a-f]{6}$/i.test(String(b.accentColor || "")) ? b.accentColor : "#8b7cff",
     status: profileText(b.status, 80), statusEmoji: profileText(b.statusEmoji, 8), links, widgets,
-    musicUrl: safeMusicUrl(b.musicUrl), backgroundVideoUrl, audioAssets, mediaAssets, customization, hiddenBadges, createdAt: old.createdAt || Date.now(), updatedAt: Date.now()
+    musicUrl: safeMusicUrl(b.musicUrl), backgroundVideoUrl, audioAssets, mediaAssets, customization, hiddenBadges, nameChanges: nameChanges + (renaming ? 1 : 0), createdAt: old.createdAt || Date.now(), updatedAt: Date.now()
   };
   await env.SESSIONS.put(`p:${username}`, JSON.stringify(profile));
   await env.SESSIONS.put(ownerIndex, username);
   if (previousSlug && previousSlug !== username) await env.SESSIONS.delete(`p:${previousSlug}`);
   await awardEventBadges(env, ownerHash);
   const allBadges = await badgesFor(env, profile, account, true);
-  return json(env, req, { ok: true, profile: profilePublicShape(profile, await env.SESSIONS.get(`pv:${username}`), account, await badgesFor(env, profile, account)), hiddenBadges, allBadges, catalog: badgeCatalog(allBadges.map(x => x.id)), url: `${env.SITE_ORIGIN}/u/${username}` });
+  return json(env, req, { ok: true, nameChanges: profile.nameChanges, canRename: profile.nameChanges < 1 || ownerHash === OWNER_HASH, profile: profilePublicShape(profile, await env.SESSIONS.get(`pv:${username}`), account, await badgesFor(env, profile, account)), hiddenBadges, allBadges, catalog: badgeCatalog(allBadges.map(x => x.id)), url: `${env.SITE_ORIGIN}/u/${username}` });
 }
 async function publicProfile(env, req, username) {
   if (!profileSlugOK(username)) return json(env, req, { error: "profile_not_found" }, 404);
@@ -951,9 +957,9 @@ export default {
     if (req.method === "POST" && pathname === "/profiles/assets/delete") return profileAssetDelete(env, req);
     const profileAssetMatch = pathname.match(/^\/profile-assets\/([A-Za-z0-9_-]{10,64})$/);
     if ((req.method === "GET" || req.method === "HEAD") && profileAssetMatch) return profileAssetPublic(env, req, profileAssetMatch[1]);
-    const publicProfileMatch = pathname.match(/^\/profiles\/([a-z0-9][a-z0-9_-]{2,23})$/);
+    const publicProfileMatch = pathname.match(/^\/profiles\/([a-z0-9][a-z0-9_-]{0,23})$/);
     if (req.method === "GET" && publicProfileMatch) return publicProfile(env, req, publicProfileMatch[1]);
-    const shortProfileMatch = pathname.match(/^\/u\/([a-z0-9][a-z0-9_-]{2,23})$/);
+    const shortProfileMatch = pathname.match(/^\/u\/([a-z0-9][a-z0-9_-]{0,23})$/);
     if (req.method === "GET" && shortProfileMatch) return publicProfile(env, req, shortProfileMatch[1]);
     if (req.method === "POST" && pathname === "/admin/badge") return adminBadge(env, req);
     if (req.method === "GET" && pathname === "/admin/lookup") return adminLookup(env, req);
