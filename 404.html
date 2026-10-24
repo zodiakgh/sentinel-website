@@ -23,7 +23,7 @@
 <link rel="preload" href="/assets/fonts/instrument-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <script>
 (function(){
-  var m=location.pathname.match(/^\/u\/([a-zA-Z0-9_-]{3,24})\/?$/i);
+  var m=location.pathname.match(/^\/u\/([a-zA-Z0-9_-]{1,24})\/?$/i);
   if(!m)return;
   /* GitHub Pages has no rewrite rules. Load the profile shell through a normal URL,
      pass the username in the query, then profile.js restores the pretty /u/name URL. */

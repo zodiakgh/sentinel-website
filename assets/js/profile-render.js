@@ -131,7 +131,7 @@
 
   /* ---------------- audio player ---------------- */
   var PI = {
-    play: "M8 5v14l11-7z", pause: "M6 5h4v14H6zM14 5h4v14h-4z", prev: "M6 6h2v12H6zM9.5 12L18 18V6z", next: "M16 6h2v12h-2zM6 18l8.5-6L6 6z",
+    note: "M12 3v10.55A4 4 0 1014 17V7h4V3h-6z", play: "M8 5v14l11-7z", pause: "M6 5h4v14H6zM14 5h4v14h-4z", prev: "M6 6h2v12H6zM9.5 12L18 18V6z", next: "M16 6h2v12h-2zM6 18l8.5-6L6 6z",
     vol: "M3 10v4h4l5 4V6L7 10H3zm13.5 2a4.5 4.5 0 00-2.5-4v8a4.5 4.5 0 002.5-4z", mute: "M3 10v4h4l5 4V6L7 10H3zm12.6 2l2.4-2.4-1.1-1.1L14.5 11l-2.4-2.4-1.1 1.1L13.4 12l-2.4 2.4 1.1 1.1 2.4-2.4 2.4 2.4 1.1-1.1z"
   };
   function pIcon(name) { var s = svg("svg", { viewBox: "0 0 24 24", "aria-hidden": "true" }); s.appendChild(svg("path", { d: PI[name] })); return s; }
@@ -163,27 +163,34 @@
   Player.prototype.ui = function (style) {
     var self = this, a = this.audio, multi = this.tracks.length > 1;
     var box = el("div", "sp-player " + style);
+    var art = el("div", "sp-pl-art"); art.appendChild(pIcon("note"));
     var prev = el("button", "sp-pl-btn sp-pl-skip"); prev.type = "button"; prev.setAttribute("aria-label", "Previous track"); prev.appendChild(pIcon("prev"));
     var play = el("button", "sp-pl-btn main"); play.type = "button"; play.setAttribute("aria-label", "Play or pause");
     var next = el("button", "sp-pl-btn sp-pl-skip"); next.type = "button"; next.setAttribute("aria-label", "Next track"); next.appendChild(pIcon("next"));
-    var mid = el("div", "sp-pl-mid"), title = el("div", "sp-pl-title"), seek = el("input", "sp-pl-seek"), times = el("div", "sp-pl-times"), t1 = el("span", "", "0:00"), t2 = el("span", "", "0:00");
+    var mid = el("div", "sp-pl-mid"), title = el("div", "sp-pl-title"), sub = el("div", "sp-pl-sub"), seek = el("input", "sp-pl-seek"), times = el("div", "sp-pl-times"), t1 = el("span", "", "0:00"), t2 = el("span", "", "0:00");
     seek.type = "range"; seek.min = 0; seek.max = 1000; seek.value = 0; seek.setAttribute("aria-label", "Seek");
-    times.append(t1, t2); mid.append(title, seek, times);
+    times.append(t1, t2); mid.append(title, sub, seek, times);
+    var vbox = el("div", "sp-pl-volbox"), mute = el("button", "sp-pl-btn sp-pl-mute"); mute.type = "button"; mute.setAttribute("aria-label", "Mute");
     var vol = el("input", "sp-pl-vol"); vol.type = "range"; vol.min = 0; vol.max = 100; vol.value = Math.round(a.volume * 100); vol.setAttribute("aria-label", "Volume");
-    if (multi) box.append(prev);
-    box.append(play); if (multi) box.append(next); box.append(mid, vol);
+    vbox.append(mute, vol);
+    box.append(art); if (multi) box.append(prev);
+    box.append(play); if (multi) box.append(next); box.append(mid, vbox);
     play.addEventListener("click", function () { self.toggle(); });
     prev.addEventListener("click", function () { self.prev(); }); next.addEventListener("click", function () { self.next(false); });
-    var seeking = false;
-    seek.addEventListener("input", function () { seeking = true; if (a.duration) a.currentTime = a.duration * seek.value / 1000; });
+    var seeking = false, lastVol = a.volume || .6;
+    seek.addEventListener("input", function () { seeking = true; if (a.duration) a.currentTime = a.duration * seek.value / 1000; seek.style.setProperty("--p", (seek.value / 10) + "%"); });
     seek.addEventListener("change", function () { seeking = false; });
-    vol.addEventListener("input", function () { a.volume = vol.value / 100; });
+    vol.addEventListener("input", function () { a.volume = vol.value / 100; if (a.volume > 0) lastVol = a.volume; });
+    mute.addEventListener("click", function () { if (a.volume > 0) { lastVol = a.volume; a.volume = 0; } else a.volume = lastVol || .6; });
     function sync() {
       clear(play); play.appendChild(pIcon(a.paused ? "play" : "pause"));
-      title.textContent = self.tracks.length > 1 ? "Track " + (self.index + 1) + " of " + self.tracks.length : "Now playing";
+      box.classList.toggle("playing", !a.paused);
+      title.textContent = a.paused ? "Paused" : "Now playing"; sub.textContent = multi ? "Track " + (self.index + 1) + " of " + self.tracks.length : "Background music";
       t1.textContent = fmt(a.currentTime); t2.textContent = fmt(a.duration);
-      if (!seeking && a.duration) seek.value = Math.round(a.currentTime / a.duration * 1000);
-      vol.value = Math.round(a.volume * 100);
+      if (!seeking && a.duration) { seek.value = Math.round(a.currentTime / a.duration * 1000); }
+      seek.style.setProperty("--p", (seek.value / 10) + "%");
+      vol.value = Math.round(a.volume * 100); vol.style.setProperty("--p", vol.value + "%");
+      clear(mute); mute.appendChild(pIcon(a.volume === 0 ? "mute" : "vol"));
     }
     this.uis.push(sync); sync();
     return box;
