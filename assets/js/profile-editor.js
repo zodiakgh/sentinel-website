@@ -214,41 +214,61 @@
   /* ---------------- links + widgets ---------------- */
   function linksSection() {
     var box = E("div"); box.style.cssText = "display:flex;flex-direction:column;gap:10px";
+    function move(arr, i, d, redraw) { var j = i + d; if (j < 0 || j >= arr.length) return; arr.splice(j, 0, arr.splice(i, 1)[0]); redraw(); changed(); }
     function redraw() {
       while (box.firstChild) box.removeChild(box.firstChild);
       state.links.forEach(function (l, i) {
-        var it = E("div", "pe-item"), head = E("div", "pe-item-head"), ico = E("span", "ico"), name = E("strong", "", "Link " + (i + 1));
-        function setIcon() { while (ico.firstChild) ico.removeChild(ico.firstChild); ico.appendChild(SP.iconSvg(SP.iconName(l.url || ""))); name.textContent = SP.iconName(l.url || "") || "Link " + (i + 1); }
+        var it = E("div", "pe-item"), head = E("div", "pe-item-head"), ico = E("span", "ico"), name = E("strong", "");
+        var isHead = l.kind === "header";
+        function setIcon() { while (ico.firstChild) ico.removeChild(ico.firstChild); if (isHead) { ico.textContent = "≡"; name.textContent = "Section title"; return; } ico.appendChild(SP.iconSvg(SP.iconName(l.url || ""))); name.textContent = SP.iconName(l.url || "") || "Link " + (i + 1); }
         setIcon();
-        head.append(ico, name, btn("↑", function () { if (i > 0) { state.links.splice(i - 1, 0, state.links.splice(i, 1)[0]); redraw(); changed(); } }), btn("↓", function () { if (i < state.links.length - 1) { state.links.splice(i + 1, 0, state.links.splice(i, 1)[0]); redraw(); changed(); } }), btn("✕", function () { state.links.splice(i, 1); redraw(); changed(); }, "bad"));
-        var lab = E("input"), url = E("input"); lab.type = "text"; lab.maxLength = 32; lab.placeholder = "Label (Discord)"; lab.value = l.label || ""; url.type = "url"; url.maxLength = 500; url.placeholder = "https://…"; url.value = l.url || ""; url.inputMode = "url"; url.autocapitalize = "off";
-        lab.addEventListener("input", function () { l.label = lab.value; changed(); }); url.addEventListener("input", function () { l.url = url.value.trim(); setIcon(); changed(); });
-        it.append(head, lab, url); box.appendChild(it);
+        head.append(ico, name, btn("↑", function () { move(state.links, i, -1, redraw); }), btn("↓", function () { move(state.links, i, 1, redraw); }), btn("✕", function () { state.links.splice(i, 1); redraw(); changed(); }, "bad"));
+        it.appendChild(head);
+        var lab = E("input"); lab.type = "text"; lab.maxLength = 40; lab.placeholder = isHead ? "Section name (Socials, Projects…)" : "Label (Discord)"; lab.value = l.label || "";
+        lab.addEventListener("input", function () { l.label = lab.value; changed(); }); it.appendChild(lab);
+        if (!isHead) {
+          var url = E("input"); url.type = "url"; url.maxLength = 500; url.placeholder = "https://…"; url.value = l.url || ""; url.inputMode = "url"; url.autocapitalize = "off";
+          url.addEventListener("input", function () { l.url = url.value.trim(); setIcon(); changed(); });
+          var row = E("div", "pe-g2"), emo = E("input"), desc = E("input");
+          emo.type = "text"; emo.maxLength = 4; emo.placeholder = "Emoji (optional)"; emo.value = l.icon || ""; emo.addEventListener("input", function () { l.icon = emo.value; changed(); });
+          desc.type = "text"; desc.maxLength = 80; desc.placeholder = "Short description (optional)"; desc.value = l.desc || ""; desc.addEventListener("input", function () { l.desc = desc.value; changed(); });
+          row.append(emo, desc);
+          var ft = E("button", "pe-tg"), t = E("div"); ft.type = "button"; ft.setAttribute("role", "switch"); t.append(E("span", "", "Highlight this link ★")); ft.append(t, E("span", "pe-sw")); ft.setAttribute("aria-checked", String(!!l.featured));
+          ft.addEventListener("click", function () { l.featured = !l.featured; ft.setAttribute("aria-checked", String(l.featured)); changed(); });
+          it.append(url, row, ft);
+        }
+        box.appendChild(it);
       });
       if (!state.links.length) box.appendChild(E("p", "pe-hint", "No links yet."));
     }
     redraw();
-    var add = btn("＋ Add link", function () { if (state.links.length >= 12) { say("Maximum 12 links.", "error"); return; } state.links.push({ label: "", url: "" }); redraw(); changed(); });
-    return sec("Social links", "Up to 12 links. Brand icons are detected automatically from the address (Discord, TikTok, GitHub, YouTube, Spotify and more).", box, add);
+    var add = btn("＋ Add link", function () { if (state.links.length >= 20) { say("Maximum 20 entries.", "error"); return; } state.links.push({ label: "", url: "" }); redraw(); changed(); });
+    var addH = btn("＋ Add section title", function () { if (state.links.length >= 20) { say("Maximum 20 entries.", "error"); return; } state.links.push({ kind: "header", label: "" }); redraw(); changed(); });
+    var rowb = E("div", "pe-g2"); rowb.append(add, addH);
+    return sec("Links", "Up to 20 entries. Brand icons are detected from the address; add an emoji, a short description or a highlight, and group links under section titles.", box, rowb);
   }
+  var WTYPES = [["text", "Text card"], ["quote", "Quote"], ["link", "Link card"], ["gallery", "Photo gallery"], ["countdown", "Countdown"], ["stats", "Stats"]];
+  var WHINT = { text: "Text", quote: "Quote", link: "Text under the title", gallery: "One HTTPS image address per line (up to 6)", countdown: "Date: 2027-01-01 or 2027-01-01T20:00", stats: "One per line: Label|Value  (e.g. Followers|12k)" };
   function widgetsSection() {
     var box = E("div"); box.style.cssText = "display:flex;flex-direction:column;gap:10px";
     function redraw() {
       while (box.firstChild) box.removeChild(box.firstChild);
       state.widgets.forEach(function (w, i) {
         var it = E("div", "pe-item"), head = E("div", "pe-item-head"), sel = E("select"), title = E("input"), content = E("textarea"), url = E("input");
-        [["text", "Text card"], ["quote", "Quote"], ["link", "Link card"]].forEach(function (o) { var op = E("option", "", o[1]); op.value = o[0]; sel.appendChild(op); }); sel.value = ["text", "quote", "link"].indexOf(w.type) >= 0 ? w.type : "text";
-        title.type = "text"; title.maxLength = 50; title.placeholder = "Title"; title.value = w.title || ""; content.maxLength = 500; content.placeholder = "Text / quote"; content.value = w.content || ""; content.style.minHeight = "64px";
-        url.type = "url"; url.maxLength = 500; url.placeholder = "Link URL"; url.value = w.url || ""; url.inputMode = "url"; url.autocapitalize = "off"; url.classList.toggle("pe-hide", sel.value !== "link");
-        sel.addEventListener("change", function () { w.type = sel.value; url.classList.toggle("pe-hide", sel.value !== "link"); changed(); });
+        WTYPES.forEach(function (o) { var op = E("option", "", o[1]); op.value = o[0]; sel.appendChild(op); }); sel.value = WTYPES.some(function (o) { return o[0] === w.type; }) ? w.type : "text";
+        title.type = "text"; title.maxLength = 50; title.placeholder = "Title"; title.value = w.title || ""; content.maxLength = 1500; content.value = w.content || ""; content.style.minHeight = "64px";
+        url.type = "url"; url.maxLength = 500; url.placeholder = "Link URL"; url.value = w.url || ""; url.inputMode = "url"; url.autocapitalize = "off";
+        var sync = function () { content.placeholder = WHINT[sel.value] || ""; url.classList.toggle("pe-hide", sel.value !== "link"); }; sync();
+        sel.addEventListener("change", function () { w.type = sel.value; sync(); changed(); });
         title.addEventListener("input", function () { w.title = title.value; changed(); }); content.addEventListener("input", function () { w.content = content.value; changed(); }); url.addEventListener("input", function () { w.url = url.value.trim(); changed(); });
-        head.append(sel, btn("✕", function () { state.widgets.splice(i, 1); redraw(); changed(); }, "bad")); it.append(head, title, content, url); box.appendChild(it);
+        head.append(sel, btn("↑", function () { if (i > 0) { state.widgets.splice(i - 1, 0, state.widgets.splice(i, 1)[0]); redraw(); changed(); } }), btn("↓", function () { if (i < state.widgets.length - 1) { state.widgets.splice(i + 1, 0, state.widgets.splice(i, 1)[0]); redraw(); changed(); } }), btn("✕", function () { state.widgets.splice(i, 1); redraw(); changed(); }, "bad"));
+        it.append(head, title, content, url); box.appendChild(it);
       });
       if (!state.widgets.length) box.appendChild(E("p", "pe-hint", "No widgets yet."));
     }
     redraw();
-    var add = btn("＋ Add widget", function () { if (state.widgets.length >= 8) { say("Maximum 8 widgets.", "error"); return; } state.widgets.push({ type: "text", title: "", content: "", url: "" }); redraw(); changed(); });
-    return sec("Widgets", "Text cards, quotes or link cards. Up to 8.", box, add);
+    var add = btn("＋ Add widget", function () { if (state.widgets.length >= 10) { say("Maximum 10 widgets.", "error"); return; } state.widgets.push({ type: "text", title: "", content: "", url: "" }); redraw(); changed(); });
+    return sec("Widgets", "Text, quotes, link cards, photo galleries, countdowns and stats. Up to 10.", box, add);
   }
 
   /* ---------------- page background (solid / gradient) ---------------- */
@@ -330,6 +350,32 @@
     return sec("Owner tools", "Only you can see this. Grant or revoke manual badges (Co-Owner, Admin, Partner, Christmas, …).", field("Username", u), field("Badge", sel), grid("pe-g2", btn("Grant", function () { run("grant"); }, "pri"), btn("Revoke", function () { run("revoke"); })), btn("Look up user", look), msg);
   }
 
+
+  function toolsSection() {
+    var ta = E("textarea"); ta.placeholder = "Paste a design here to import it…"; ta.style.minHeight = "90px";
+    var msg = E("p", "pe-hint", "");
+    var exp = btn("Copy my design", function () {
+      var d = JSON.stringify({ accentColor: state.accentColor, background: state.background, customization: state.customization });
+      var done = function () { msg.textContent = "Design copied. Share it, then paste it into another profile."; };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(d).then(done, function () { ta.value = d; ta.select(); msg.textContent = "Copy the text above."; }); else { ta.value = d; ta.select(); msg.textContent = "Copy the text above."; }
+    });
+    var imp = btn("Import design", function () {
+      try {
+        var d = JSON.parse(ta.value); if (!d || typeof d !== "object") throw 0;
+        if (/^#[0-9a-f]{6}$/i.test(d.accentColor || "")) state.accentColor = d.accentColor;
+        if (typeof d.background === "string") state.background = d.background.slice(0, 200);
+        if (d.customization && typeof d.customization === "object") { Object.keys(d.customization).forEach(function (k) { if (k in DEF) state.customization[k] = d.customization[k]; }); }
+        buildPanels(); changed(); if (view) view.update(previewProfile()); msg.textContent = "Design imported. Review it, then save.";
+      } catch (e) { msg.textContent = "That doesn't look like a Sentinel design."; }
+    });
+    var copyLink = btn("Copy my profile link", function () {
+      var u = location.origin + "/u/" + state.username; var done = function () { msg.textContent = "Copied " + u; };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(done, function () { msg.textContent = u; }); else msg.textContent = u;
+    });
+    var g = E("div", "pe-g2"); g.append(exp, imp);
+    return sec("Tools", "Share your look with friends, or copy someone else's.", g, ta, copyLink, msg);
+  }
+
   /* ---------------- panels ---------------- */
   var TABS = [
     ["templates", "Templates", templatesPanel],
@@ -349,8 +395,8 @@
       return [linksSection(),
         sec("How links look", null, tSeg("Display", "customization.linkDisplay", [["buttons", "Buttons"], ["icons", "Icons only"], ["chips", "Chips"]]),
           tSeg("Icon color", "customization.iconColorMode", [["brand", "Brand"], ["accent", "Accent"], ["text", "Text"]]), tRange("Icon size", "customization.iconSize", 16, 48, 1, "px"),
-          tSeg("Button style", "customization.linkStyle", [["glass", "Glass"], ["solid", "Solid"], ["outline", "Outline"], ["minimal", "Minimal"]]), tRange("Corner radius", "customization.linkRadius", 0, 30, 1, "px"), tSeg("Size", "customization.linkSize", [["small", "Small"], ["medium", "Medium"], ["large", "Large"]]), tSeg("Hover", "customization.linkHover", [["lift", "Lift"], ["glow", "Glow"], ["fill", "Fill"], ["none", "None"]]), tSeg("Icon background", "customization.iconBg", [["soft", "Soft"], ["brand", "Brand"], ["none", "None"]])),
-        widgetsSection(), sec("Widget layout", null, tSeg("Columns", "customization.widgetColumns", [["1", "1"], ["2", "2"], ["3", "3"]]), tSeg("Style", "customization.widgetStyle", [["glass", "Glass"], ["solid", "Solid"], ["outline", "Outline"]]), tRange("Spacing", "customization.widgetGap", 6, 28, 1, "px"))];
+          tSeg("Button style", "customization.linkStyle", [["glass", "Glass"], ["solid", "Solid"], ["outline", "Outline"], ["minimal", "Minimal"]]), tRange("Corner radius", "customization.linkRadius", 0, 30, 1, "px"), tSeg("Size", "customization.linkSize", [["small", "Small"], ["medium", "Medium"], ["large", "Large"]]), tSeg("Columns", "customization.linkColumns", [["1", "1"], ["2", "2"]]), tSeg("Icon shape", "customization.linkIconShape", [["square", "Square"], ["circle", "Circle"], ["none", "None"]]), tSeg("Hover", "customization.linkHover", [["lift", "Lift"], ["glow", "Glow"], ["fill", "Fill"], ["none", "None"]]), tSeg("Icon background", "customization.iconBg", [["soft", "Soft"], ["brand", "Brand"], ["none", "None"]])),
+        widgetsSection(), sec("Widget layout", null, tToggle("Widgets above links", "customization.widgetsFirst"), tSeg("Columns", "customization.widgetColumns", [["1", "1"], ["2", "2"], ["3", "3"]]), tSeg("Style", "customization.widgetStyle", [["glass", "Glass"], ["solid", "Solid"], ["outline", "Outline"]]), tRange("Spacing", "customization.widgetGap", 6, 28, 1, "px"))];
     }],
     ["style", "Style", function () {
       return [backgroundSection(),
@@ -380,7 +426,7 @@
         sec("Card glow", null, tRange("Glow strength", "customization.glowStrength", 0, 80, 1), tColor("Glow color", "customization.glowColor", "#8b7cff")),
         sec("Particles", "Animated background. Turned off automatically for visitors who reduce motion.", tSelect("Type", "customization.particles", [["none", "None"], ["snow", "Snow"], ["stars", "Stars"], ["embers", "Embers"], ["rain", "Rain"], ["fireflies", "Fireflies"], ["bubbles", "Bubbles"], ["leaves", "Autumn leaves"], ["petals", "Petals"]]),
           tRange("Amount", "customization.particleDensity", 10, 100, 1, "%"), tColor("Color", "customization.particleColor", "#ffffff")),
-        sec("Cursor & interaction", "Cursor effects only appear on computers with a mouse.", tSeg("Cursor", "customization.cursorStyle", [["default", "Default"], ["dot", "Dot"], ["ring", "Ring"], ["crosshair", "Cross"]]), tColor("Cursor color", "customization.cursorColor", "#ffffff"),
+        sec("Cursor & interaction", "Works with a mouse and with your finger on phones (the dot, ring and trail follow your touch).", tSeg("Cursor", "customization.cursorStyle", [["default", "Default"], ["dot", "Dot"], ["ring", "Ring"], ["crosshair", "Cross"]]), tColor("Cursor color", "customization.cursorColor", "#ffffff"),
           tSeg("Mouse trail", "customization.cursorTrail", [["none", "None"], ["dots", "Dots"], ["sparkles", "Sparkles"]]), tToggle("3D tilt on hover", "customization.tilt")),
         sec("Motion", null, tSeg("Entrance", "customization.animation", [["none", "None"], ["fade", "Fade"], ["rise", "Rise"], ["zoom", "Zoom"], ["blur", "Blur"]]), tSeg("Card hover", "customization.hoverEffect", [["none", "None"], ["lift", "Lift"], ["glow", "Glow"], ["scale", "Scale"]]))
       ];
@@ -392,10 +438,11 @@
           tToggle("Loop playlist", "customization.audioLoop"), tToggle("Start automatically", "customization.audioAutoplay", "Browsers only allow sound after a click, so pair this with the enter screen.")),
         sec("Streaming embed", "Optional YouTube or Spotify player under your links.", tText("YouTube / Spotify URL", "musicUrl", { url: true, max: 500, ph: "https://open.spotify.com/track/…" }))];
     }],
+    ["tools", "Tools", function () { return [toolsSection()]; }],
     ["visibility", "Visibility", function () {
       var T = function (l, k) { return tToggle(l, "customization." + k); };
       return [sec("Show on your page", null, T("Avatar", "showAvatar"), T("Username (@handle)", "showHandle"), T("Banner", "showBanner"), T("Badges", "showBadges"), T("Bio", "showBio"), T("Status", "showStatus"), T("Location", "showLocation"), T("Join date", "showJoined"), T("Links", "showLinks"), T("Widgets", "showWidgets"), T("Music", "showMusic")),
-        sec("Footer & browser tab", null, T("Footer", "showFooter"), T("View counter", "showViews"), T("“Made with Sentinel”", "showBranding"), tText("Footer text", "customization.footerText", { max: 100 }), tText("Browser tab title", "customization.pageTitle", { max: 60, ph: "Zodiak (@zodiak)" }))];
+        sec("Footer & browser tab", null, T("Share button", "showShare"), T("Footer", "showFooter"), T("View counter", "showViews"), T("“Made with Sentinel”", "showBranding"), tText("Footer text", "customization.footerText", { max: 100 }), tText("Browser tab title", "customization.pageTitle", { max: 60, ph: "Zodiak (@zodiak)" }))];
     }]
   ];
 
