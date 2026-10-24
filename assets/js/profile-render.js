@@ -37,7 +37,9 @@
     cardOpacity: 86, bioSize: 15, avatarBorder: "accent", avatarEffect: "none", bannerOverlay: "none", linkAlignment: "center", linkRadius: 12,
     widgetStyle: "glass", linkDisplay: "buttons", iconSize: 26, iconColorMode: "brand", splashEnabled: false, splashText: "click to enter", tilt: false,
     cursorStyle: "default", cursorTrail: "none", particles: "none", particleDensity: 40, playerStyle: "card", audioVolume: 60, audioLoop: true,
-    audioAutoplay: true
+    audioAutoplay: true, nameFont: "inherit", nameWeight: 760, nameTransform: "none", animatedBorder: false, cardPattern: "none", bgGrain: false, bgVignette: 0,
+    bgParallax: false, linkHover: "lift", linkSize: "medium", headerStyle: "stacked", statusDot: "none", cardPadding: "normal", staggerIn: true,
+    cardHAlign: "center", avatarBorderColor: "", avatarBorderWidth: 4, iconBg: "soft"
   };
   var FONTS = {
     system: 'system-ui,-apple-system,"Segoe UI",Roboto,sans-serif', inter: 'Inter,system-ui,sans-serif', mono: '"JetMono",ui-monospace,SFMono-Regular,monospace',
@@ -201,6 +203,7 @@
       else if (type === "embers") { p.r = .8 + r() * 2.2; p.vy = -(.4 + r() * 1.1); p.vx = -.2 + r() * .4; p.a = .4 + r() * .6; }
       else if (type === "rain") { p.r = 8 + r() * 14; p.vy = 9 + r() * 7; p.vx = 1.2; p.a = .18 + r() * .3; }
       else if (type === "fireflies") { p.y = r() * H; p.r = 1.2 + r() * 1.8; p.vx = -.3 + r() * .6; p.vy = -.3 + r() * .6; p.a = r(); p.sp = .01 + r() * .02; }
+      else if (type === "leaves" || type === "petals") { p.r = type === "leaves" ? 4 + r() * 5 : 3 + r() * 3; p.vy = .5 + r() * 1.1; p.vx = -.3 + r() * .9; p.a = .55 + r() * .4; p.rot = r() * 6.28; p.vr = (r() - .5) * .06; p.c = (type === "leaves" ? ["#f59e0b", "#ea580c", "#b45309", "#dc2626", "#d97706"] : ["#f9a8d4", "#fbcfe8", "#fda4af", "#fecdd3"])[Math.floor(r() * (type === "leaves" ? 5 : 4))]; }
       else { p.r = 3 + r() * 9; p.vy = -(.25 + r() * .6); p.vx = -.2 + r() * .4; p.a = .15 + r() * .3; }
     }
     function size() {
@@ -217,9 +220,13 @@
         var p = P[i];
         if (type === "stars" || type === "fireflies") { p.a += p.sp * (p.up ? 1 : -1); if (p.a > 1) { p.a = 1; p.up = false; } if (p.a < .05) { p.a = .05; p.up = true; } }
         p.ph += .02; p.x += p.vx + (type === "snow" ? Math.sin(p.ph) * .35 : type === "fireflies" ? Math.sin(p.ph) * .4 : 0); p.y += p.vy;
-        if (p.y > H + 20 || p.y < -30 || p.x < -20 || p.x > W + 20) { if (type !== "stars") { spawn(p, false); if (type === "snow" || type === "rain") p.y = -10; } }
+        if (p.y > H + 20 || p.y < -30 || p.x < -20 || p.x > W + 20) { if (type !== "stars") { spawn(p, false); if (type === "snow" || type === "rain" || type === "leaves" || type === "petals") p.y = -10; } }
         ctx.globalAlpha = Math.max(0, Math.min(1, p.a));
         if (type === "rain") { ctx.strokeStyle = color; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.vx, p.y - p.r); ctx.stroke(); continue; }
+        if (type === "leaves" || type === "petals") {
+          p.rot += p.vr; ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.fillStyle = p.c; ctx.beginPath(); ctx.ellipse(0, 0, p.r, p.r * (type === "leaves" ? .55 : .7), 0, 0, 6.28); ctx.fill();
+          if (type === "leaves") { ctx.strokeStyle = "rgba(0,0,0,.25)"; ctx.lineWidth = .8; ctx.beginPath(); ctx.moveTo(-p.r, 0); ctx.lineTo(p.r, 0); ctx.stroke(); } ctx.restore(); continue;
+        }
         if (type === "bubbles") { ctx.strokeStyle = color; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.28); ctx.stroke(); continue; }
         ctx.fillStyle = type === "embers" ? "#ff9a3c" : color;
         if (type === "fireflies" || type === "embers") { ctx.shadowColor = type === "embers" ? "#ff6a00" : color; ctx.shadowBlur = 10; }
@@ -267,6 +274,10 @@
       window.addEventListener("pointermove", add); draw();
       off.push(function () { window.removeEventListener("pointermove", add); window.removeEventListener("resize", sz); cancelAnimationFrame(tr); ctx.clearRect(0, 0, cv.width, cv.height); });
     }
+    if (c.bgParallax && !REDUCED) {
+      var pm = function (e) { var r = host.getBoundingClientRect(); S.bgwrap.style.setProperty("--px", (((e.clientX - r.left) / r.width - .5) * -22).toFixed(1) + "px"); S.bgwrap.style.setProperty("--py", (((e.clientY - r.top) / r.height - .5) * -16).toFixed(1) + "px"); };
+      window.addEventListener("pointermove", pm); off.push(function () { window.removeEventListener("pointermove", pm); S.bgwrap.style.removeProperty("--px"); S.bgwrap.style.removeProperty("--py"); });
+    }
     if (c.tilt && !REDUCED) {
       var card = S.card, onMove = function (e) {
         var r = card.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5;
@@ -288,8 +299,8 @@
     S.bgwrap = el("div", "sp-bgwrap");
     S.bgColor = el("div", "sp-bg-color"); S.bgImg = el("img", "sp-bg-img sp-hidden"); S.bgImg.alt = ""; S.bgImg.decoding = "async";
     S.bgVideo = el("video", "sp-bg-video sp-hidden"); S.bgVideo.muted = true; S.bgVideo.loop = true; S.bgVideo.playsInline = true; S.bgVideo.setAttribute("muted", ""); S.bgVideo.setAttribute("playsinline", "");
-    S.dim = el("div", "sp-dim"); S.fxCanvas = el("canvas", "sp-fx");
-    S.bgwrap.append(S.bgColor, S.bgImg, S.bgVideo, S.dim, S.fxCanvas);
+    S.dim = el("div", "sp-dim"); S.vig = el("div", "sp-vig"); S.grain = el("div", "sp-grain sp-hidden"); S.fxCanvas = el("canvas", "sp-fx");
+    S.bgwrap.append(S.bgColor, S.bgImg, S.bgVideo, S.dim, S.vig, S.grain, S.fxCanvas);
     S.scroll = el("div", "sp-scroll"); S.stage = el("div", "sp-stage"); S.card = el("main", "sp-card");
     S.stage.appendChild(S.card); S.scroll.appendChild(S.stage);
     S.trailCanvas = el("canvas", "sp-trail");
@@ -317,16 +328,26 @@
       var bh = c.showBanner !== false ? num(c.bannerHeight, 0, 360, 220) : 0; st.setProperty("--banner-h", bh + "px");
       st.setProperty("--banner-pos", pick(c.bannerPosition, ["center", "top", "bottom", "left", "right"], "center"));
       st.setProperty("--banner-shade", c.bannerOverlay === "soft" ? "linear-gradient(180deg,transparent 40%,rgba(0,0,0,.4))" : c.bannerOverlay === "strong" ? "rgba(0,0,0,.55)" : "transparent");
+      st.setProperty("--name-font", c.nameFont && c.nameFont !== "inherit" ? (FONTS[c.nameFont] || "inherit") : "inherit");
+      st.setProperty("--name-weight", String(num(c.nameWeight, 400, 900, 760)));
+      st.setProperty("--name-tt", pick(c.nameTransform, ["none", "uppercase", "lowercase"], "none"));
+      st.setProperty("--av-bw", num(c.avatarBorderWidth, 0, 10, 4) + "px");
+      st.setProperty("--avatar-border", c.avatarBorder === "none" ? "transparent" : col(c.avatarBorderColor, "") || (c.avatarBorder === "white" ? "#ffffff" : accent));
+      st.setProperty("--vig", String(num(c.bgVignette, 0, 100, 0) / 100 * .85));
       var d = host.dataset;
       d.valign = pick(c.cardVAlign, ["top", "center"], "top"); d.card = c.cardStyle; d.border = c.borderStyle; d.hover = c.hoverEffect; d.anim = opts.preview ? "none" : c.animation;
       d.nameFx = c.nameEffect; d.avatarFx = c.avatarEffect; d.badge = c.badgeStyle; d.links = c.linkDisplay; d.linkAlign = c.linkAlignment; d.linkStyle = c.linkStyle;
-      d.widgetStyle = c.widgetStyle; d.layout = c.layout === "left" || c.alignment === "left" ? (c.layout === "wide" ? "wide" : "left") : c.layout;
+      d.widgetStyle = c.widgetStyle; d.layout = c.layout === "left" || c.alignment === "left" || c.headerStyle === "inline" ? (c.layout === "wide" ? "wide" : "left") : c.layout;
+      d.header = c.headerStyle; d.pattern = c.cardPattern; d.animBorder = c.animatedBorder ? "1" : "0"; d.linkHover = c.linkHover; d.linkSize = c.linkSize;
+      d.pad = c.cardPadding; d.halign = pick(c.cardHAlign, ["left", "center", "right"], "center"); d.iconBg = c.iconBg; d.stagger = opts.preview ? "0" : (c.staggerIn === false ? "0" : "1");
     }
 
     function background(p) {
       var c = p.customization, bg = safeBg(p.background) || col(c.pageColor, "#090d17");
       S.bgColor.style.background = bg;
       var blur = num(c.bgBlur, 0, 24, 0), filter = blur ? "blur(" + blur + "px)" : "", scale = blur ? 1 + blur / 120 + .04 : 1;
+      if (c.bgParallax && !opts.preview) scale = Math.max(scale, 1.08);
+      S.grain.classList.toggle("sp-hidden", !c.bgGrain);
       var img = httpUrl(p.backgroundUrl), vid = httpUrl(p.backgroundVideoUrl);
       [S.bgImg, S.bgVideo].forEach(function (n) { n.style.filter = filter; n.style.setProperty("--bg-scale", scale); });
       if (img) { if (S.bgImg.getAttribute("src") !== img) S.bgImg.src = img; S.bgImg.classList.remove("sp-hidden"); } else { S.bgImg.removeAttribute("src"); S.bgImg.classList.add("sp-hidden"); }
@@ -342,19 +363,35 @@
       if (bh > 0) { var ban = el("div", "sp-banner"), bu = httpUrl(p.bannerUrl); if (bu) ban.style.backgroundImage = "url(" + JSON.stringify(bu) + ")"; card.appendChild(ban); }
       var body = el("div", "sp-body" + (bh > 0 ? "" : " no-banner")); card.appendChild(body);
 
-      if (c.showAvatar !== false) { var aw = el("div", "sp-avatar-wrap"), im = el("img", "sp-avatar"); im.alt = ""; im.src = httpUrl(p.avatarUrl) || "/sentinel.png"; im.referrerPolicy = "no-referrer"; aw.appendChild(im); body.appendChild(aw); }
-      var name = el("h1", "sp-name", p.displayName); name.setAttribute("data-text", p.displayName); body.appendChild(name);
-      if (c.showHandle !== false && p.username) body.appendChild(el("div", "sp-handle", "@" + p.username));
+      var head = el("div", "sp-head"), idbox = el("div", "sp-id"); body.appendChild(head);
+      if (c.showAvatar !== false) {
+        var aw = el("div", "sp-avatar-wrap"), im = el("img", "sp-avatar"); im.alt = ""; im.src = httpUrl(p.avatarUrl) || "/sentinel.png"; im.referrerPolicy = "no-referrer"; aw.appendChild(im);
+        if (["online", "idle", "dnd", "offline"].indexOf(c.statusDot) >= 0) { var dot = el("span", "sp-dot " + c.statusDot); dot.title = c.statusDot === "dnd" ? "Do not disturb" : c.statusDot.charAt(0).toUpperCase() + c.statusDot.slice(1); aw.appendChild(dot); }
+        head.appendChild(aw);
+      }
+      var name = el("h1", "sp-name", p.displayName); name.setAttribute("data-text", p.displayName); idbox.appendChild(name);
+      if (c.showHandle !== false && p.username) idbox.appendChild(el("div", "sp-handle", "@" + p.username));
       if (c.tagline) {
         var tg = el("div", "sp-tagline"), phrases = String(c.tagline).split("|").map(function (x) { return x.trim(); }).filter(Boolean);
         if (c.taglineTypewriter && !REDUCED && phrases.length) S.typers.push(typewrite(tg, phrases, true)); else tg.textContent = phrases.join(" · ");
-        body.appendChild(tg);
+        idbox.appendChild(tg);
       }
+      head.appendChild(idbox);
       var meta = el("div", "sp-meta"), hasMeta = false;
       if (c.showLocation !== false && c.location) { var m1 = el("span", "sp-meta-item"); m1.append(metaIcon("pin"), document.createTextNode(c.location)); meta.appendChild(m1); hasMeta = true; }
       if (c.showJoined && p.createdAt) { var m2 = el("span", "sp-meta-item"); m2.append(metaIcon("cal"), document.createTextNode("Joined " + new Date(p.createdAt).toLocaleDateString(undefined, { month: "short", year: "numeric" }))); meta.appendChild(m2); hasMeta = true; }
       if (hasMeta) body.appendChild(meta);
-      if (c.showBadges !== false && p.badges.length) { var bd = el("div", "sp-badges"); p.badges.slice(0, 8).forEach(function (b) { var x = el("span", "sp-badge"); x.append(el("span", "", String(b.icon || "")), el("span", "", String(b.label || ""))); bd.appendChild(x); }); body.appendChild(bd); }
+      if (c.showBadges !== false && p.badges.length) {
+        var bd = el("div", "sp-badges"), iconsOnly = c.badgeStyle === "icons";
+        p.badges.slice(0, 16).forEach(function (b) {
+          var x = el("span", "sp-badge tier-" + String(b.tier || "member").replace(/[^a-z]/g, "")); x.tabIndex = 0; x.style.setProperty("--bc", col(b.color, accent));
+          x.setAttribute("data-tip", iconsOnly ? String(b.label || "") : String(b.desc || b.label || "")); x.setAttribute("aria-label", String(b.label || ""));
+          x.appendChild(el("i", "", String(b.icon || "")));
+          if (!iconsOnly) x.appendChild(el("span", "", String(b.label || "")));
+          bd.appendChild(x);
+        });
+        body.appendChild(bd);
+      }
       if (c.showBio !== false && p.bio) { var bio = el("p", "sp-bio"); if (c.bioTypewriter && !REDUCED) S.typers.push(typewrite(bio, [p.bio], false)); else bio.textContent = p.bio; body.appendChild(bio); }
       if (c.showStatus !== false && p.status) body.appendChild(el("div", "sp-status", (p.statusEmoji ? p.statusEmoji + " " : "") + p.status));
 
@@ -367,7 +404,10 @@
           var mdl = c.iconColorMode, brand = nm && ICONS[nm] ? "#" + ICONS[nm].h : "";
           if (mdl === "brand" && brand) colr = lum(brand) < .12 ? col(c.textColor, "#f5f7ff") : brand; else if (mdl === "accent") colr = accent; else colr = col(c.textColor, "#f5f7ff");
           a.style.setProperty("--ic", colr || accent);
-          if (mode === "icons") { a.style.color = colr; a.title = l.label; a.setAttribute("aria-label", l.label); a.appendChild(ic); }
+          if (mode === "icons") {
+            var fg = colr; if (c.iconBg === "brand") { a.style.background = colr; a.style.borderColor = "transparent"; fg = lum(colr || accent) > .5 ? "#0b0b0f" : "#ffffff"; }
+            a.style.color = fg; a.title = l.label; a.setAttribute("aria-label", l.label); a.appendChild(ic);
+          }
           else { ic.style.color = colr; a.append(ic, el("span", "", l.label)); }
           box.appendChild(a);
         });
@@ -401,6 +441,7 @@
         if (c.showBranding !== false) { var br = el("span"); br.appendChild(document.createTextNode("Made with ")); var bl = el("a", "", "Sentinel"); bl.href = "/"; br.appendChild(bl); ft.appendChild(br); }
         if (ft.firstChild) body.appendChild(ft);
       }
+      Array.prototype.forEach.call(body.children, function (n, i) { n.style.setProperty("--i", i); });
     }
 
     function splash(p) {
