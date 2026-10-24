@@ -164,9 +164,9 @@ a.sp-widget:hover{transform:translateY(-2px); border-color:color-mix(in srgb,var
 @keyframes sp-splashpulse{0%,100%{opacity:.55}50%{opacity:1}}
 
 /* ---------- cursor ---------- */
-.sp-cursor-dot,.sp-cursor-ring{position:fixed; left:0; top:0; pointer-events:none; z-index:60; border-radius:50%; transform:translate(-100px,-100px); will-change:transform}
+.sp-cursor-dot,.sp-cursor-ring{position:absolute; left:0; top:0; pointer-events:none; z-index:60; border-radius:50%; transform:translate(-100px,-100px); will-change:transform; transition:opacity .25s}
 .sp-cursor-dot{width:8px; height:8px; margin:-4px 0 0 -4px; background:var(--cursor,#fff)}
-.sp-cursor-ring{width:34px; height:34px; margin:-17px 0 0 -17px; border:2px solid var(--cursor,#fff); transition:width .2s,height .2s,margin .2s,background .2s}
+.sp-cursor-ring{width:34px; height:34px; margin:-17px 0 0 -17px; border:2px solid var(--cursor,#fff); transition:width .2s,height .2s,margin .2s,background .2s,opacity .25s}
 .sp-cursor-ring.hot{width:50px; height:50px; margin:-25px 0 0 -25px; background:color-mix(in srgb,var(--cursor,#fff) 14%,transparent)}
 .sp-root.cursor-hidden,.sp-root.cursor-hidden *{cursor:none!important}
 .sp-root.cursor-cross,.sp-root.cursor-cross *{cursor:crosshair!important}
@@ -253,3 +253,44 @@ body.sp-page-body::before,body.sp-page-body::after{display:none}
 .sp-root[data-link-size="small"] .sp-link{padding:9px 14px; font-size:14px}
 .sp-root[data-link-size="large"] .sp-link{padding:17px 20px; font-size:16px}
 .sp-root[data-icon-bg="none"] .sp-icon{background:transparent; border-color:transparent}
+
+.sp-root{touch-action:pan-y; -webkit-tap-highlight-color:transparent}
+
+/* ================= v4 ================= */
+.sp-links{display:flex; flex-direction:column; gap:var(--gap); width:100%}
+.sp-root[data-link-cols="2"] .sp-links:not(.x){display:grid; grid-template-columns:1fr 1fr}
+.sp-root[data-link-cols="2"] .sp-link-head{grid-column:1/-1}
+@media (max-width:420px){.sp-root[data-link-cols="2"] .sp-links{grid-template-columns:1fr}}
+.sp-link-head{margin:10px 0 0; font-size:11.5px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); text-align:left; display:flex; align-items:center; gap:10px}
+.sp-link-head::after{content:""; flex:1; height:1px; background:linear-gradient(90deg,rgba(255,255,255,.18),transparent)}
+.sp-link{display:flex; align-items:center; gap:14px; text-align:left}
+.sp-link .sp-link-text{display:flex; flex-direction:column; min-width:0; flex:1; text-align:inherit}
+.sp-link .sp-link-text b{font-weight:650}
+.sp-link .sp-link-text small{font-size:12px; font-weight:450; opacity:.65; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.sp-root[data-link-align="center"] .sp-link{justify-content:center}
+.sp-root[data-link-align="center"] .sp-link .sp-link-text{flex:0 1 auto; text-align:center}
+.sp-link svg{flex:none}
+.sp-link-emoji{font-size:22px; line-height:1; flex:none; width:var(--icon-size); text-align:center}
+.sp-root[data-icon-shape="circle"] .sp-link > svg, .sp-root[data-icon-shape="circle"] .sp-link-emoji{padding:7px; box-sizing:content-box; border-radius:50%; background:rgba(255,255,255,.08)}
+.sp-root[data-icon-shape="square"] .sp-link > svg, .sp-root[data-icon-shape="square"] .sp-link-emoji{padding:7px; box-sizing:content-box; border-radius:10px; background:rgba(255,255,255,.07)}
+.sp-link.featured{border-color:color-mix(in srgb,var(--accent) 70%,transparent); background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 24%,transparent),color-mix(in srgb,var(--accent) 6%,transparent)); box-shadow:0 0 28px color-mix(in srgb,var(--accent) 22%,transparent)}
+.sp-link.featured::after{content:"★"; font-size:13px; color:var(--accent); flex:none}
+.sp-widget.gallery,.sp-widget.stats,.sp-widget.countdown{grid-column:1/-1}
+.sp-gallery{display:grid; gap:8px; grid-template-columns:repeat(3,1fr); margin-top:8px}
+.sp-gallery.n1{grid-template-columns:1fr}.sp-gallery.n2{grid-template-columns:1fr 1fr}
+.sp-gallery img{width:100%; aspect-ratio:1; object-fit:cover; border-radius:12px; cursor:zoom-in; transition:transform .2s, filter .2s}
+.sp-gallery.n1 img{aspect-ratio:16/10}
+.sp-gallery img:hover{transform:scale(1.03); filter:brightness(1.1)}
+.sp-lightbox{position:absolute; inset:0; z-index:80; background:rgba(0,0,0,.88); display:grid; place-items:center; padding:20px; cursor:zoom-out; animation:sp-up .25s both}
+.sp-lightbox img{max-width:100%; max-height:100%; border-radius:14px}
+.sp-stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(90px,1fr)); gap:10px; margin-top:8px}
+.sp-stat{padding:12px 8px; border-radius:12px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08); text-align:center}
+.sp-stat b{display:block; font-size:22px; font-weight:760; color:var(--text); font-variant-numeric:tabular-nums}
+.sp-stat span{font-size:11.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em}
+.sp-count{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:8px}
+.sp-cd{padding:12px 4px; border-radius:12px; text-align:center; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08)}
+.sp-cd b{display:block; font-size:24px; font-weight:760; font-variant-numeric:tabular-nums; color:var(--accent)}
+.sp-cd span{font-size:10.5px; text-transform:uppercase; letter-spacing:.1em; color:var(--muted)}
+.sp-share{font:inherit; font-size:12px; color:var(--muted); background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); border-radius:99px; padding:5px 12px; cursor:pointer; transition:background .2s,color .2s}
+.sp-share:hover{background:rgba(255,255,255,.14); color:var(--text)}
+.sp-foot{flex-wrap:wrap; justify-content:center; align-items:center}
