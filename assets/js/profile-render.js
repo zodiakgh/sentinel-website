@@ -78,6 +78,7 @@
     out.widgets = Array.isArray(p.widgets) ? p.widgets : [];
     out.badges = Array.isArray(p.badges) ? p.badges : [];
     out.audioAssets = Array.isArray(p.audioAssets) ? p.audioAssets : [];
+    out.audioMeta = Array.isArray(p.audioMeta) ? p.audioMeta : [];
     return out;
   }
 
@@ -144,7 +145,8 @@
     this.audio.addEventListener("ended", function () { self.next(true); });
     ["play", "pause", "timeupdate", "loadedmetadata", "volumechange"].forEach(function (ev) { self.audio.addEventListener(ev, function () { self.sync(); }); });
   }
-  Player.prototype.setTracks = function (urls, vol, loop) {
+  Player.prototype.setTracks = function (urls, vol, loop, meta) {
+    this.meta = meta || [];
     var sig = urls.join("|");
     this.loop = loop; this.audio.volume = Math.max(0, Math.min(1, vol / 100));
     if (sig !== this.sig) { this.sig = sig; this.tracks = urls; this.index = 0; var was = !this.audio.paused; this.audio.pause(); this.audio.removeAttribute("src"); if (urls.length) { this.audio.src = urls[0]; } this.audio.load(); if (was) this.sync(); }
@@ -185,7 +187,12 @@
     function sync() {
       clear(play); play.appendChild(pIcon(a.paused ? "play" : "pause"));
       box.classList.toggle("playing", !a.paused);
-      title.textContent = a.paused ? "Paused" : "Now playing"; sub.textContent = multi ? "Track " + (self.index + 1) + " of " + self.tracks.length : "Background music";
+      var m = (self.meta && self.meta[self.index]) || {};
+      title.textContent = m.title || (a.paused ? "Paused" : "Now playing");
+      sub.textContent = m.artist || (multi ? "Track " + (self.index + 1) + " of " + self.tracks.length : "Background music");
+      var cv = httpUrl(m.cover) || "";
+      if (art.getAttribute("data-cover") !== cv) { art.setAttribute("data-cover", cv); clear(art); if (cv) { var im = document.createElement("img"); im.src = cv; im.alt = ""; im.loading = "lazy"; art.appendChild(im); } else art.appendChild(pIcon("note")); }
+      art.classList.toggle("has-cover", !!cv);
       t1.textContent = fmt(a.currentTime); t2.textContent = fmt(a.duration);
       if (!seeking && a.duration) { seek.value = Math.round(a.currentTime / a.duration * 1000); }
       seek.style.setProperty("--p", (seek.value / 10) + "%");
@@ -505,7 +512,7 @@
         if (src) { var em = el("div", "sp-embed"), fr = document.createElement("iframe"); fr.src = src; fr.height = sp ? "152" : "200"; fr.loading = "lazy"; fr.title = "Music player"; fr.allow = "autoplay; encrypted-media; clipboard-write; picture-in-picture"; fr.referrerPolicy = "strict-origin-when-cross-origin"; em.appendChild(fr); body.appendChild(em); }
       }
       var tracks = p.audioAssets.map(httpUrl).filter(Boolean).slice(0, 3);
-      S.player.setTracks(tracks, num(c.audioVolume, 0, 100, 60), c.audioLoop !== false);
+      S.player.setTracks(tracks, num(c.audioVolume, 0, 100, 60), c.audioLoop !== false, p.audioAssets.map(function (u, i) { return httpUrl(u) ? (p.audioMeta[i] || {}) : null; }).filter(function (x) { return x; }));
       S.floatPlayer = null;
       if (tracks.length && c.showMusic !== false && c.playerStyle !== "hidden") {
         if (c.playerStyle === "card") { var pc = el("div", "sp-card-player"); pc.appendChild(S.player.ui("card")); body.appendChild(pc); }

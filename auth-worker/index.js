@@ -625,7 +625,7 @@ function profilePublicShape(p, views, account, badges) {
     username: p.username, displayName: p.displayName, bio: p.bio, avatarUrl: p.avatarUrl || (account && account.discord ? cdn("avatars", account.discord.id, account.discord.avatar) || "" : ""),
     bannerUrl: p.bannerUrl, backgroundUrl: p.backgroundUrl, background: p.background, accentColor: p.accentColor,
     status: p.status, statusEmoji: p.statusEmoji, links: p.links || [], widgets: p.widgets || [], musicUrl: p.musicUrl,
-    backgroundVideoUrl: p.backgroundVideoUrl || "", audioAssets: p.audioAssets || [], mediaAssets: p.mediaAssets || [],
+    backgroundVideoUrl: p.backgroundVideoUrl || "", audioAssets: p.audioAssets || [], audioMeta: p.audioMeta || [], mediaAssets: p.mediaAssets || [],
     badges: badges || [], views: Number(views || 0), customization: p.customization || {}, createdAt: p.createdAt, updatedAt: p.updatedAt
   };
 }
@@ -766,13 +766,14 @@ async function profileSave(env, req) {
   const backgroundVideoCandidate = safeHttpUrl(b.backgroundVideoUrl, 700, true);
   const backgroundVideoUrl = backgroundVideoCandidate && ownedUrls.has(backgroundVideoCandidate) && ownedAssets.some(a => a.url === backgroundVideoCandidate && a.kind === "video") ? backgroundVideoCandidate : "";
   const audioAssets = Array.isArray(b.audioAssets) ? b.audioAssets.filter(url => typeof url === "string" && ownedUrls.has(url) && ownedAssets.some(a => a.url === url && a.kind === "audio")).slice(0, 3) : (old.audioAssets || []);
+  const audioMeta = Array.isArray(b.audioMeta) ? b.audioMeta.slice(0, 3).map(m => ({ title: profileText(m && m.title, 60), artist: profileText(m && m.artist, 60), cover: safeHttpUrl(m && m.cover, 700, true) || "" })) : (old.audioMeta || []);
   const profile = {
     username, ownerHash, displayName: profileText(b.displayName, 40) || username,
     bio: profileText(b.bio, 220), avatarUrl: safeHttpUrl(b.avatarUrl, 500, true),
     bannerUrl: safeHttpUrl(b.bannerUrl, 500, true), backgroundUrl: safeHttpUrl(b.backgroundUrl, 500, true),
     background: safeProfileBackground(b.background), accentColor: /^#[0-9a-f]{6}$/i.test(String(b.accentColor || "")) ? b.accentColor : "#8b7cff",
     status: profileText(b.status, 80), statusEmoji: profileText(b.statusEmoji, 8), links, widgets,
-    musicUrl: safeMusicUrl(b.musicUrl), backgroundVideoUrl, audioAssets, mediaAssets, customization, hiddenBadges, nameChanges: nameChanges + (renaming ? 1 : 0), createdAt: old.createdAt || Date.now(), updatedAt: Date.now()
+    musicUrl: safeMusicUrl(b.musicUrl), backgroundVideoUrl, audioAssets, audioMeta, mediaAssets, customization, hiddenBadges, nameChanges: nameChanges + (renaming ? 1 : 0), createdAt: old.createdAt || Date.now(), updatedAt: Date.now()
   };
   await env.SESSIONS.put(`p:${username}`, JSON.stringify(profile));
   await env.SESSIONS.put(ownerIndex, username);

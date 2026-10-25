@@ -21,10 +21,10 @@
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
 
   /* ---------------- state ---------------- */
-  var KEYS = ["username", "displayName", "bio", "status", "statusEmoji", "accentColor", "avatarUrl", "bannerUrl", "backgroundUrl", "background", "musicUrl", "backgroundVideoUrl", "audioAssets", "links", "widgets", "customization", "hiddenBadges"];
+  var KEYS = ["username", "displayName", "bio", "status", "statusEmoji", "accentColor", "avatarUrl", "bannerUrl", "backgroundUrl", "background", "musicUrl", "backgroundVideoUrl", "audioAssets", "audioMeta", "links", "widgets", "customization", "hiddenBadges"];
   function serialize() { var o = {}; KEYS.forEach(function (k) { o[k] = state[k]; }); return JSON.stringify(o); }
   function fromProfile(p, acc) {
-    var base = { username: "", displayName: "", bio: "", status: "", statusEmoji: "✨", accentColor: "#8b7cff", avatarUrl: "", bannerUrl: "", backgroundUrl: "", background: "linear-gradient(135deg, #0b1020, #29204d)", musicUrl: "", backgroundVideoUrl: "", audioAssets: [], links: [], widgets: [], customization: {} };
+    var base = { username: "", displayName: "", bio: "", status: "", statusEmoji: "✨", accentColor: "#8b7cff", avatarUrl: "", bannerUrl: "", backgroundUrl: "", background: "linear-gradient(135deg, #0b1020, #29204d)", musicUrl: "", backgroundVideoUrl: "", audioAssets: [], audioMeta: [], links: [], widgets: [], customization: {} };
     if (!p) {
       var local = (acc.email || "member").split("@")[0].toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 24);
       base.username = local.length >= 3 ? local : "member" + local; base.displayName = (acc.discord && acc.discord.name) || (acc.email || "").split("@")[0];
@@ -298,17 +298,26 @@
     function nameOf(u) { var a = assets.filter(function (x) { return x.url === u; })[0]; return a ? a.name : u; }
     function redraw() {
       while (box.firstChild) box.removeChild(box.firstChild);
+      state.audioMeta = Array.isArray(state.audioMeta) ? state.audioMeta : [];
+      while (state.audioMeta.length < state.audioAssets.length) state.audioMeta.push({ title: "", artist: "", cover: "" });
+      state.audioMeta.length = state.audioAssets.length;
       state.audioAssets.forEach(function (u, i) {
+        var m = state.audioMeta[i] = state.audioMeta[i] || { title: "", artist: "", cover: "" };
         var it = E("div", "pe-item"), head = E("div", "pe-item-head"); head.append(E("span", "ico", "♫"), E("strong", "", (i + 1) + ". " + nameOf(u)),
-          btn("↑", function () { if (i > 0) { state.audioAssets.splice(i - 1, 0, state.audioAssets.splice(i, 1)[0]); redraw(); changed(); } }),
-          btn("✕", function () { state.audioAssets.splice(i, 1); redraw(); changed(); }, "bad")); it.appendChild(head); box.appendChild(it);
+          btn("↑", function () { if (i > 0) { state.audioAssets.splice(i - 1, 0, state.audioAssets.splice(i, 1)[0]); state.audioMeta.splice(i - 1, 0, state.audioMeta.splice(i, 1)[0]); redraw(); changed(); } }),
+          btn("✕", function () { state.audioAssets.splice(i, 1); state.audioMeta.splice(i, 1); redraw(); changed(); }, "bad")); it.appendChild(head);
+        function inp(label, key, ph, url) { var x = E("input"); x.type = url ? "url" : "text"; x.maxLength = url ? 700 : 60; x.placeholder = ph; x.value = m[key] || ""; if (url) { x.inputMode = "url"; x.autocapitalize = "off"; } x.addEventListener("input", function () { m[key] = x.value; changed(); }); return field(label, x); }
+        var cov = inp("Cover image URL", "cover", "https://…", true);
+        it.append(inp("Title", "title", "Song title"), inp("Artist", "artist", "Artist name"), cov);
+        var pick = E("div", "pe-row"); pick.append(btn("Pick cover from library", function () { openLibrary("image", function (a) { m.cover = a.url; redraw(); changed(); }); }), m.cover ? btn("Remove cover", function () { m.cover = ""; redraw(); changed(); }, "bad") : E("span"));
+        it.appendChild(pick); box.appendChild(it);
       });
       if (!state.audioAssets.length) box.appendChild(E("p", "pe-hint", "No tracks selected."));
     }
-    function add(a) { if (state.audioAssets.length >= 3) { say("Maximum 3 tracks.", "error"); return; } if (state.audioAssets.indexOf(a.url) < 0) state.audioAssets.push(a.url); redraw(); changed(); }
+    function add(a) { if (state.audioAssets.length >= 3) { say("Maximum 3 tracks.", "error"); return; } if (state.audioAssets.indexOf(a.url) < 0) { state.audioAssets.push(a.url); state.audioMeta = state.audioMeta || []; state.audioMeta.push({ title: String(a.name || "").replace(/\.[a-z0-9]{2,4}$/i, "").slice(0, 60), artist: "", cover: "" }); } redraw(); changed(); }
     redraw();
     var row = E("div", "pe-row"); row.append(btn("Upload track", function () { pickUpload("audio", add); }), btn("Choose from library", function () { openLibrary("audio", add); }));
-    return sec("Your tracks", "Up to 3 audio files (MP3, WAV, OGG, M4A). They play in order.", box, row);
+    return sec("Your tracks", "Up to 3 audio files (MP3, WAV, OGG, M4A). They play in order. Set a title, artist and cover for each.", box, row);
   }
 
 
