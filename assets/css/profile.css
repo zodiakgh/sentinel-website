@@ -339,3 +339,13 @@ body.sp-page-body::before,body.sp-page-body::after{display:none}
 .sp-root[data-badge="icons"] .sp-badge i{width:100%; height:100%; background:transparent; box-shadow:none}
 .sp-root[data-badge="minimal"] .sp-badge{background:transparent; box-shadow:none}
 .sp-badge[data-tip]:hover::after,.sp-badge[data-tip]:focus::after{z-index:50; box-shadow:0 8px 24px rgba(0,0,0,.45)}
+
+/* badges v6: professional polish */
+.sp-badge{height:30px; padding:0 12px 0 3px; gap:7px; font-size:12px; font-weight:600; letter-spacing:.015em; background:linear-gradient(180deg,color-mix(in srgb,var(--bc) 15%,rgba(255,255,255,.04)),color-mix(in srgb,var(--bc) 6%,rgba(255,255,255,.02))); border:1px solid color-mix(in srgb,var(--bc) 34%,rgba(255,255,255,.08)); box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 1px 2px rgba(0,0,0,.25)}
+.sp-badge i{width:24px; height:24px; background:radial-gradient(circle at 32% 25%,color-mix(in srgb,var(--bc) 62%,#fff 8%),color-mix(in srgb,var(--bc) 30%,#0b1020) 78%); box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--bc) 55%,transparent),inset 0 1px 1px rgba(255,255,255,.35),0 1px 4px rgba(0,0,0,.35); color:#fff}
+.sp-badge .sp-bi{width:14px; height:14px; fill:rgba(255,255,255,.2); stroke:#fff; stroke-width:1.7; filter:drop-shadow(0 1px 1px rgba(0,0,0,.35))}
+.sp-badge.tier-staff{box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 0 0 1px color-mix(in srgb,var(--bc) 18%,transparent),0 4px 14px color-mix(in srgb,var(--bc) 24%,transparent)}
+.sp-badge:hover,.sp-badge:focus-visible{transform:translateY(-2px); box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 6px 16px color-mix(in srgb,var(--bc) 26%,transparent)}
+.sp-root[data-badge="icons"] .sp-badge i{background:radial-gradient(circle at 32% 25%,color-mix(in srgb,var(--bc) 62%,#fff 8%),color-mix(in srgb,var(--bc) 30%,#0b1020) 78%)}
+.sp-root[data-badge="icons"] .sp-badge{padding:2px}
+.sp-root[data-badge="minimal"] .sp-badge i{box-shadow:none}
