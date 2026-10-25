@@ -26,7 +26,7 @@
   var FINE = !!(window.matchMedia && matchMedia("(hover: hover) and (pointer: fine)").matches);
 
   var DEF = {
-    respectReducedMotion: false, linkColumns: "1", widgetsFirst: false, showShare: true, linkIconShape: "square", layout: "centered", cardStyle: "glass", contentWidth: 900, bannerHeight: 220, avatarShape: "circle", widgetColumns: "2", alignment: "center",
+    respectReducedMotion: false, embedTitle: "", embedDescription: "", embedColor: "#5865f2", embedImage: "avatar", embedLarge: false, linkColumns: "1", widgetsFirst: false, showShare: true, linkIconShape: "square", layout: "centered", cardStyle: "glass", contentWidth: 900, bannerHeight: 220, avatarShape: "circle", widgetColumns: "2", alignment: "center",
     spacing: "normal", cardVAlign: "top", pageColor: "#090d17", cardColor: "#0b1020", textColor: "#f5f7ff", mutedColor: "#98a6bf", borderColor: "#ffffff",
     widgetColor: "#ffffff", nameColor2: "#ffffff", glowColor: "#8b7cff", cursorColor: "#ffffff", particleColor: "#ffffff", overlay: "medium", bgDim: 55,
     bgBlur: 0, blur: 18, radius: 24, glowStrength: 0, shadow: "soft", hoverEffect: "lift", animation: "fade", borderStyle: "subtle",

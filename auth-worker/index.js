@@ -728,7 +728,7 @@ async function profileSave(env, req) {
     linkStyle: enumVal("linkStyle", ["glass", "solid", "outline", "minimal"], "glass"), badgeStyle: enumVal("badgeStyle", ["pill", "square", "minimal", "icons"], "pill"),
     fontFamily: enumVal("fontFamily", ["system", "inter", "mono", "serif", "bricolage", "instrument"], "system"), nameSize: intVal("nameSize", 24, 72, 42),
     letterSpacing: enumVal("letterSpacing", ["tight", "normal", "wide"], "normal"), bannerPosition: enumVal("bannerPosition", ["center", "top", "bottom", "left", "right"], "center"),
-    tagline: profileText(c.tagline, 160), footerText: profileText(c.footerText, 100), location: profileText(c.location, 40), pageTitle: profileText(c.pageTitle, 60),
+    tagline: profileText(c.tagline, 160), footerText: profileText(c.footerText, 100), location: profileText(c.location, 40), pageTitle: profileText(c.pageTitle, 60), embedTitle: profileText(c.embedTitle, 80), embedDescription: profileText(c.embedDescription, 200), embedColor: colorVal("embedColor", "#5865f2"), embedImage: enumVal("embedImage", ["avatar", "banner", "none"], "avatar"), embedLarge: boolVal("embedLarge", false),
     nameEffect: enumVal("nameEffect", ["none", "glow", "gradient", "shimmer", "glitch", "neon"], "none"),
     taglineTypewriter: boolVal("taglineTypewriter", false), bioTypewriter: boolVal("bioTypewriter", false),
     // --- avatar / links ---

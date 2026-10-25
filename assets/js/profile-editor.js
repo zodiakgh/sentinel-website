@@ -44,7 +44,9 @@
   }
   function put(path, v) { var ks = path.split("."), last = ks.pop(), o = state; ks.forEach(function (k) { o = o[k]; }); o[last] = v; changed(); }
 
+  var embedRefresh = null;
   function changed() {
+    if (embedRefresh) embedRefresh();
     clearTimeout(pvTimer); pvTimer = setTimeout(function () { if (view) view.update(previewProfile()); }, 90);
     var dirty = serialize() !== saved;
     if (!saving) say(dirty ? "Unsaved changes" : "All changes saved", dirty ? "dirty" : "ok");
@@ -376,6 +378,37 @@
     return sec("Tools", "Share your look with friends, or copy someone else's.", g, ta, copyLink, msg);
   }
 
+
+  /* ---------------- link preview (Discord embed) ---------------- */
+  function embedPanel() {
+    var prev = E("div", "pe-embed"), bar = E("div", "pe-embed-bar"), body = E("div", "pe-embed-body"), site = E("div", "pe-embed-site", "Sentinel"), ttl = E("div", "pe-embed-title"), dsc = E("div", "pe-embed-desc"), img = E("img", "pe-embed-img");
+    img.alt = ""; img.referrerPolicy = "no-referrer";
+    body.append(site, ttl, dsc, img); prev.append(bar, body);
+    function pick() {
+      var c = state.customization, which = c.embedImage || "avatar";
+      if (which === "none") return "";
+      var u = which === "banner" ? (state.bannerUrl || state.avatarUrl) : state.avatarUrl;
+      if (!u && account && account.discord) u = account.discord.avatarUrl || "";
+      return /^https:\/\//i.test(u || "") ? u : "/sentinel.png";
+    }
+    embedRefresh = function () {
+      var c = state.customization, name = state.displayName || state.username || "name";
+      bar.style.background = /^#[0-9a-f]{6}$/i.test(c.embedColor || "") ? c.embedColor : "#5865f2";
+      ttl.textContent = c.embedTitle || (name + " (@" + (state.username || "name") + ")");
+      dsc.textContent = c.embedDescription || state.bio || (name + " on Sentinel");
+      var u = pick(), large = !!c.embedLarge || c.embedImage === "banner";
+      img.hidden = !u; if (u) img.src = u;
+      prev.classList.toggle("large", large);
+    };
+    embedRefresh();
+    var link = E("p", "pe-hint", "Link: " + location.origin + "/u/" + (state.username || "name"));
+    return [
+      sec("Link preview", "What your link looks like when someone pastes it in Discord, X, Slack or Telegram. The picture shown by Discord is cached for a while, so changes can take some time to appear.", prev, link),
+      sec("Customize", null, tText("Title", "customization.embedTitle", { max: 80, ph: "Leave empty for your name and @username" }), tArea("Description", "customization.embedDescription", { max: 200, ph: "Leave empty to use your bio" }),
+        tColor("Side color", "customization.embedColor", "#5865f2"), tSeg("Picture", "customization.embedImage", [["avatar", "Avatar"], ["banner", "Banner"], ["none", "None"]]), tToggle("Large picture", "customization.embedLarge", "Show the picture big under the text (always on with Banner)."))
+    ];
+  }
+
   /* ---------------- panels ---------------- */
   var TABS = [
     ["templates", "Templates", templatesPanel],
@@ -438,6 +471,7 @@
           tToggle("Loop playlist", "customization.audioLoop"), tToggle("Start automatically", "customization.audioAutoplay", "Browsers only allow sound after a click, so pair this with the enter screen.")),
         sec("Streaming embed", "Optional YouTube or Spotify player under your links.", tText("YouTube / Spotify URL", "musicUrl", { url: true, max: 500, ph: "https://open.spotify.com/track/…" }))];
     }],
+    ["embed", "Share", embedPanel],
     ["tools", "Tools", function () { return [toolsSection()]; }],
     ["visibility", "Visibility", function () {
       var T = function (l, k) { return tToggle(l, "customization." + k); };
