@@ -20,6 +20,6 @@ window.SENTINEL_CONFIG = {
    * Leave empty to keep the dashboard in its "no login" state. */
   authApiUrl: "https://api.sentineldashboard.site",
 
-  /* Live status: optional HTTPS JSON endpoint, see assets/js/status.js. */
-  statusApiUrl: ""
+  /* Status page data: edit /status.json in the repository (see assets/js/status.js). */
+  statusApiUrl: "/status.json"
 };

@@ -1,0 +1,12 @@
+{
+  "_help": "Edit this file on GitHub to change what https://www.sentineldashboard.site/status shows. For each component set status to: operational | degraded | outage | maintenance. Optional per component: note (short text in English), noteFr (same in French). Optional top-level: message / messageFr (a banner, leave empty for none). Update the 'updated' date when you change something. Commit, and the page updates in about a minute.",
+  "updated": "2026-10-25T14:00:00Z",
+  "message": "",
+  "messageFr": "",
+  "components": [
+    { "id": "bot", "name": "Discord bot", "nameFr": "Bot Discord", "status": "operational", "note": "", "noteFr": "" },
+    { "id": "music", "name": "Music", "nameFr": "Musique", "status": "operational", "note": "", "noteFr": "" },
+    { "id": "dashboard", "name": "Dashboard & API", "nameFr": "Dashboard et API", "status": "operational", "note": "", "noteFr": "" },
+    { "id": "site", "name": "Website", "nameFr": "Site web", "status": "operational", "note": "", "noteFr": "" }
+  ]
+}

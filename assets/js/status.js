@@ -1,54 +1,56 @@
 /*
  * Sentinel status page.
- * No monitoring API exists yet, so this page never invents a state.
+ * Reads /status.json (a plain file in the repository) and shows exactly what it says.
+ * Edit status.json on GitHub to change the page. Nothing is invented here.
  *
- * To connect a real source, set SENTINEL_CONFIG.statusApiUrl to an HTTPS endpoint returning JSON:
- *   { "updated": "2026-01-01T12:00:00Z",
- *     "components": [ { "id": "bot", "status": "operational" | "degraded" | "outage" } ] }
- * Component ids must match those in COMPONENTS below. Anything else is shown as "unknown".
+ *   { "updated": "ISO date", "message": "", "messageFr": "",
+ *     "components": [ { "id", "name", "nameFr", "status": "operational|degraded|outage|maintenance", "note", "noteFr" } ] }
  */
 (function () {
   "use strict";
   var list = document.getElementById("status-list");
   if (!list) return;
-  var S = window.Sentinel; var CFG = (S && S.config) || {};
+  var S = window.Sentinel, CFG = (S && S.config) || {};
   var t = function (k, f) { return S ? S.t(k, f) : f; };
-  var COMPONENTS = [
-    { id: "bot", key: "status.c.bot", en: "Discord bot" },
-    { id: "music", key: "status.c.music", en: "Music playback (Lavalink node)" },
-    { id: "site", key: "status.c.site", en: "This website" }
-  ];
-  var banner = document.getElementById("status-banner");
-  var bannerText = document.getElementById("status-banner-text");
-  var updated = document.getElementById("status-updated");
-  var retry = document.getElementById("status-retry");
-  var data = null, mode = CFG.statusApiUrl ? "loading" : "none";
+  var fr = function () { return document.documentElement.lang === "fr"; };
+  var URL_ = CFG.statusApiUrl || "/status.json";
+  var overall = document.getElementById("status-overall"), overallText = document.getElementById("status-overall-text");
+  var msgBox = document.getElementById("status-message"), updated = document.getElementById("status-updated"), retry = document.getElementById("status-retry");
+  var data = null, mode = "loading";
+  var VALID = { operational: 1, degraded: 1, outage: 1, maintenance: 1 };
 
   function label(s) {
-    return ({ operational: t("status.operational", "Operational"), degraded: t("status.degraded", "Degraded"), outage: t("status.outage", "Outage") })[s] || t("status.unknown", "Not monitored");
+    return ({ operational: t("status.operational", "Operational"), degraded: t("status.degraded", "Degraded"), outage: t("status.outage", "Outage"), maintenance: t("status.maintenance", "Maintenance") })[s] || t("status.unknown", "Unknown");
   }
-  function cls(s) { return s === "operational" ? "ok" : (s === "degraded" || s === "outage") ? "bad" : "unk"; }
+  function cls(s) { return VALID[s] ? s : "unknown"; }
+  function worst(items) {
+    var rank = { operational: 0, maintenance: 1, degraded: 2, outage: 3 }, w = "operational";
+    items.forEach(function (c) { var s = VALID[c.status] ? c.status : "operational"; if (rank[s] > rank[w]) w = s; });
+    return w;
+  }
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
   function render() {
-    list.innerHTML = COMPONENTS.map(function (c) {
-      var st = "unknown";
-      if (mode === "ok" && data && Array.isArray(data.components)) {
-        var f = data.components.filter(function (x) { return x.id === c.id; })[0];
-        if (f) st = f.status;
-      }
-      return '<div class="status-row"><span><span class="dot ' + cls(st) + '" aria-hidden="true"></span>' + t(c.key, c.en) + "</span><strong>" + label(st) + "</strong></div>";
+    var comps = mode === "ok" && data && Array.isArray(data.components) ? data.components.slice(0, 20) : [];
+    list.innerHTML = comps.map(function (c) {
+      var name = (fr() && c.nameFr) || c.name || c.id || "", note = (fr() && c.noteFr) || c.note || "", st = cls(c.status);
+      return '<div class="status-row ' + st + '"><span class="st-name"><span class="dot ' + st + '" aria-hidden="true"></span><span>' + esc(name) + (note ? '<small>' + esc(note) + "</small>" : "") + '</span></span><strong class="st-label ' + st + '">' + esc(label(c.status)) + "</strong></div>";
     }).join("");
+    list.hidden = !comps.length;
     retry.hidden = mode !== "error";
-    if (mode === "none") bannerText.textContent = t("status.none", "Live status monitoring is not connected. This page does not show real-time information.");
-    else if (mode === "loading") bannerText.textContent = t("status.loading", "Loading status…");
-    else if (mode === "error") bannerText.textContent = t("status.error", "The status service could not be reached. No status is shown.");
-    else bannerText.textContent = t("status.live", "Status provided by the configured monitoring endpoint.");
-    updated.textContent = mode === "ok" && data && data.updated ? t("status.updated", "Last update") + ": " + data.updated : "";
+    var w = comps.length ? worst(comps) : "unknown";
+    ["operational", "degraded", "outage", "maintenance", "unknown"].forEach(function (k) { overall.classList.remove(k); }); overall.classList.add(mode === "ok" ? w : "unknown");
+    if (mode === "loading") overallText.textContent = t("status.loading", "Loading status…");
+    else if (mode === "error") overallText.textContent = t("status.error", "The status could not be loaded.");
+    else overallText.textContent = ({ operational: t("status.all.ok", "All systems operational"), maintenance: t("status.all.maint", "Scheduled maintenance"), degraded: t("status.all.deg", "Some systems are degraded"), outage: t("status.all.out", "Some systems are down") })[w];
+    var m = mode === "ok" && data ? ((fr() && data.messageFr) || data.message || "") : "";
+    msgBox.textContent = m; msgBox.hidden = !m;
+    var d = mode === "ok" && data && data.updated ? new Date(data.updated) : null;
+    updated.textContent = d && !isNaN(d) ? t("status.updated", "Last update") + ": " + d.toLocaleString(fr() ? "fr-FR" : "en-GB", { dateStyle: "medium", timeStyle: "short" }) : "";
   }
   function load() {
-    if (!CFG.statusApiUrl) { mode = "none"; render(); return; }
     mode = "loading"; render();
-    var ctl = new AbortController(); var to = setTimeout(function () { ctl.abort(); }, 8000);
-    fetch(CFG.statusApiUrl, { signal: ctl.signal, headers: { Accept: "application/json" } })
+    var ctl = new AbortController(), to = setTimeout(function () { ctl.abort(); }, 8000);
+    fetch(URL_ + (URL_.indexOf("?") < 0 ? "?t=" + Date.now() : ""), { signal: ctl.signal, cache: "no-store", headers: { Accept: "application/json" } })
       .then(function (r) { if (!r.ok) throw new Error("http " + r.status); return r.json(); })
       .then(function (j) { data = j; mode = "ok"; })
       .catch(function () { mode = "error"; })
@@ -56,5 +58,5 @@
   }
   retry.addEventListener("click", load);
   if (S) S.onLang(render);
-  render(); load();
+  load();
 })();

@@ -592,3 +592,21 @@ section.cta-band .btn-primary:hover{background:#f2f3f5}
 .section#contact{padding-top:0}
 @media (max-width:860px){.split,.sform-wrap{grid-template-columns:1fr}}
 .notice,.notice.warn{border-style:solid;border-top:0;border-right:0;border-bottom:0}
+
+/* ---------- Status page ---------- */
+.status-overall{display:flex;align-items:center;gap:12px;padding:18px 20px;border-radius:12px;background:var(--panel);font-weight:650;font-size:17px;border-left:4px solid var(--dim)}
+.status-overall .so-dot{width:12px;height:12px;border-radius:50%;background:var(--dim);flex:none}
+.status-overall.operational{border-color:var(--green);background:rgba(35,165,89,.12)}.status-overall.operational .so-dot{background:var(--green)}
+.status-overall.degraded{border-color:var(--yellow);background:rgba(240,178,50,.12)}.status-overall.degraded .so-dot{background:var(--yellow)}
+.status-overall.outage{border-color:var(--red);background:rgba(242,63,67,.12)}.status-overall.outage .so-dot{background:var(--red)}
+.status-overall.maintenance{border-color:var(--blurple);background:rgba(88,101,242,.14)}.status-overall.maintenance .so-dot{background:var(--blurple)}
+.status-message{margin:14px 0 0;padding:14px 18px;border-radius:10px;background:var(--panel);color:var(--fg-2)}
+.status-list{border:0;background:var(--panel);border-radius:12px;margin-top:16px;overflow:hidden}
+.status-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 20px;border-radius:0;border-bottom:1px solid var(--line-2);background:none}
+.status-row:last-child{border-bottom:0}
+.status-row .st-name{display:flex;align-items:center;gap:12px;font-weight:600}
+.status-row small{display:block;font-weight:450;color:var(--muted);font-size:13px;margin-top:2px}
+.dot{width:11px;height:11px;border:0;margin:0;flex:none;background:var(--dim)}
+.dot.operational{background:var(--green)}.dot.degraded{background:var(--yellow)}.dot.outage{background:var(--red)}.dot.maintenance{background:var(--blurple)}
+.st-label{font-size:13.5px;font-weight:650}
+.st-label.operational{color:#5fd68c}.st-label.degraded{color:var(--yellow)}.st-label.outage{color:#ff7a7d}.st-label.maintenance{color:#a5aeff}.st-label.unknown{color:var(--dim)}
