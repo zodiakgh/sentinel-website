@@ -5,7 +5,7 @@
   "messageFr": "",
   "components": [
     { "id": "bot", "name": "Discord bot", "nameFr": "Bot Discord", "status": "operational", "note": "", "noteFr": "" },
-    { "id": "music", "name": "Music", "nameFr": "Musique", "status": "maintenance", "note": "", "noteFr": "" },
+    { "id": "music", "name": "Music", "nameFr": "Musique", "status": "operational", "note": "", "noteFr": "" },
     { "id": "dashboard", "name": "Dashboard & API", "nameFr": "Dashboard et API", "status": "operational", "note": "", "noteFr": "" },
     { "id": "site", "name": "Website", "nameFr": "Site web", "status": "operational", "note": "", "noteFr": "" }
   ]
