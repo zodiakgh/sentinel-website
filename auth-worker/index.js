@@ -61,7 +61,8 @@ function allowedSiteOrigin(env, origin) {
   let configured, incoming;
   try { configured = new URL(env.SITE_ORIGIN); incoming = new URL(origin); } catch (_) { return false; }
   if (incoming.protocol !== "https:" || configured.protocol !== "https:") return false;
-  const hosts = new Set([configured.hostname, configured.hostname.startsWith("www.") ? configured.hostname.slice(4) : `www.${configured.hostname}`]);
+  const root = configured.hostname.startsWith("www.") ? configured.hostname.slice(4) : configured.hostname;
+  const hosts = new Set([root, `www.${root}`, `support.${root}`]);
   return incoming.origin === origin && hosts.has(incoming.hostname) && incoming.port === configured.port;
 }
 function cors(env, req, extra = {}) {
