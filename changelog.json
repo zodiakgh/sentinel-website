@@ -6,6 +6,7 @@
       "title": "Status page and new look",
       "titleFr": "Page de statut et nouveau design",
       "items": [
+        { "type": "fixed", "text": "We have succesfully fixed the music problem, now you can listen to the song of your choice !.", "textFr": "Nous avons reglé le problème de la musique maintenant vous pouvez ecoutez la musique de votre choix !.},
         { "type": "new", "text": "So guys we have a problem because we are trying to find a good lavalink hosting service and well it's kinda hard.", "textFr": "Nous sommes entrain de travailler sur un hebergeur de serveur lavalink gratuit mais c'est vraiment compliqué dans trouvé un fiable."},
         { "type": "new", "text": "A live status page for the bot, music, dashboard and website.", "textFr": "Une page de statut en direct pour le bot, la musique, le dashboard et le site." },
         { "type": "new", "text": "This page, where every update to Sentinel is listed.", "textFr": "Cette page, où chaque mise à jour de Sentinel est listée." },
