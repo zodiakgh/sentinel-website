@@ -1,0 +1,27 @@
+{
+  "_help": "Edit this file on GitHub to change https://www.sentineldashboard.site/changelog. Add a new entry at the TOP of 'entries'. Each entry: date (YYYY-MM-DD), title / titleFr, optional version, and items: a list of { type: new | improved | fixed, text, textFr }. Commit and the page updates in about a minute.",
+  "entries": [
+    {
+      "date": "2026-10-25",
+      "title": "Status page and new look",
+      "titleFr": "Page de statut et nouveau design",
+      "items": [
+        { "type": "new", "text": "A live status page for the bot, music, dashboard and website.", "textFr": "Une page de statut en direct pour le bot, la musique, le dashboard et le site." },
+        { "type": "new", "text": "This page, where every update to Sentinel is listed.", "textFr": "Cette page, où chaque mise à jour de Sentinel est listée." },
+        { "type": "improved", "text": "A cleaner, Discord-style design across the whole website.", "textFr": "Un design plus propre, dans le style de Discord, sur tout le site." },
+        { "type": "improved", "text": "The support page moved to support.sentineldashboard.site.", "textFr": "La page de support est maintenant sur support.sentineldashboard.site." }
+      ]
+    },
+    {
+      "date": "2026-10-24",
+      "title": "Profile update",
+      "titleFr": "Mise à jour des profils",
+      "items": [
+        { "type": "new", "text": "Badges on profiles, including seasonal event badges.", "textFr": "Des badges sur les profils, dont des badges saisonniers." },
+        { "type": "new", "text": "Link previews: your profile link now shows a card in Discord.", "textFr": "Aperçus de lien : ton lien de profil affiche une carte dans Discord." },
+        { "type": "improved", "text": "Cursor effects, particles and the music player work on phones.", "textFr": "Les effets de curseur, les particules et le lecteur de musique fonctionnent sur téléphone." },
+        { "type": "new", "text": "Usernames are 1 to 16 characters and can be changed once.", "textFr": "Les pseudos font de 1 à 16 caractères et peuvent être changés une fois." }
+      ]
+    }
+  ]
+}
