@@ -324,3 +324,18 @@ body.sp-page-body::before,body.sp-page-body::after{display:none}
 .sp-pl-sub,.sp-pl-title{white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 .sp-pl-mid{min-width:70px}
 @media (max-width:520px){.sp-pl-volbox{display:none}.sp-player .sp-pl-btn{width:34px; height:34px}.sp-player .sp-pl-btn.main{width:42px; height:42px}}
+
+/* badges v5: custom glyphs, depth, tooltip above everything */
+.sp-badges{position:relative; z-index:8}
+.sp-badge{height:32px; padding:0 13px 0 4px; background:linear-gradient(180deg,color-mix(in srgb,var(--bc) 20%,transparent),color-mix(in srgb,var(--bc) 7%,transparent)); border:1px solid color-mix(in srgb,var(--bc) 42%,transparent); box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 2px 8px rgba(0,0,0,.18); letter-spacing:.01em; transition:transform .18s cubic-bezier(.2,.8,.2,1),box-shadow .2s,border-color .2s}
+.sp-badge i{width:24px; height:24px; background:linear-gradient(145deg,color-mix(in srgb,var(--bc) 55%,#0b1020),color-mix(in srgb,var(--bc) 18%,#0b1020)); box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--bc) 45%,transparent),0 0 10px color-mix(in srgb,var(--bc) 25%,transparent); color:color-mix(in srgb,var(--bc) 35%,#fff)}
+.sp-badge .sp-bi{width:14px; height:14px; fill:color-mix(in srgb,currentColor 22%,transparent); stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round}
+.sp-badge:hover,.sp-badge:focus-visible{z-index:20; transform:translateY(-3px) scale(1.03); border-color:color-mix(in srgb,var(--bc) 70%,transparent); box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 8px 18px color-mix(in srgb,var(--bc) 28%,transparent)}
+.sp-badge.tier-staff{background:linear-gradient(180deg,color-mix(in srgb,var(--bc) 28%,transparent),color-mix(in srgb,var(--bc) 10%,transparent)); box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 0 20px color-mix(in srgb,var(--bc) 30%,transparent)}
+.sp-badge.tier-staff::before{content:""; position:absolute; inset:0; border-radius:inherit; background:linear-gradient(110deg,transparent 35%,rgba(255,255,255,.22) 50%,transparent 65%); background-size:250% 100%; animation:sp-bshine 4.5s ease-in-out infinite; pointer-events:none}
+@keyframes sp-bshine{0%,55%{background-position:150% 0}100%{background-position:-100% 0}}
+@media (prefers-reduced-motion:reduce){.sp-root[data-rm="1"] .sp-badge.tier-staff::before{animation:none}}
+.sp-root[data-badge="icons"] .sp-badge .sp-bi{width:18px; height:18px}
+.sp-root[data-badge="icons"] .sp-badge i{width:100%; height:100%; background:transparent; box-shadow:none}
+.sp-root[data-badge="minimal"] .sp-badge{background:transparent; box-shadow:none}
+.sp-badge[data-tip]:hover::after,.sp-badge[data-tip]:focus::after{z-index:50; box-shadow:0 8px 24px rgba(0,0,0,.45)}
