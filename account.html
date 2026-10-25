@@ -6,9 +6,36 @@
 <title>Account — Sentinel</title><link rel="icon" href="/sentinel.png" type="image/png">
 <link rel="preload" href="/assets/fonts/bricolage-grotesque-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/instrument-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
-<script>document.documentElement.classList.add("js")</script><link rel="stylesheet" href="/assets/css/main.css">
+<script>document.documentElement.classList.add("js")</script><link rel="stylesheet" href="/assets/css/main.css?v=10">
 <style>
-.account-shell{width:min(100% - 32px,680px);margin:64px auto 96px}.account-brand{display:flex;justify-content:center;margin-bottom:28px}.account-panel{background:rgba(13,20,36,.82);border:1px solid rgba(139,167,214,.2);border-radius:24px;padding:clamp(22px,5vw,42px);box-shadow:0 24px 90px #0005;backdrop-filter:blur(18px)}.account-tabs{display:flex;gap:8px;padding:5px;background:#080d18;border-radius:14px;margin:24px 0}.account-tabs button{flex:1;border:0;border-radius:10px;padding:12px;background:transparent;color:var(--muted,#9caac1);font:inherit;cursor:pointer}.account-tabs button[aria-selected=true]{background:linear-gradient(120deg,#17344b,#242347);color:#fff}.account-form{display:grid;gap:14px}.account-form label{display:grid;gap:7px;font-size:14px;color:#c9d5e8}.account-form input{width:100%;box-sizing:border-box;padding:13px 14px;border:1px solid #2a3850;border-radius:12px;background:#080e1a;color:#f6f8ff;font:inherit;outline:none}.account-form input:focus{border-color:#6ed9f6;box-shadow:0 0 0 3px #6ed9f61c}.account-form .btn{width:100%;justify-content:center;margin-top:6px}.account-message{margin:14px 0;padding:12px 14px;border-radius:12px;background:#15253a;color:#dcecff;font-size:14px}.account-message.error{background:#381b2a;color:#ffdce5}.account-message:empty{display:none}.account-muted{color:#a7b4ca;font-size:14px;line-height:1.65}.account-settings{display:grid;gap:16px;margin-top:24px}.account-setting{padding:18px;border:1px solid #26354c;border-radius:16px;background:#0a1120}.account-setting h3{margin:0 0 6px}.account-setting p{margin:0 0 14px;color:#a7b4ca;font-size:14px}.account-row{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}.account-hide{display:none!important}.account-divider{height:1px;background:#26354c;margin:22px 0}.account-topline{display:flex;align-items:center;justify-content:space-between;gap:16px}.account-topline h1{margin:0}.account-kicker{color:#82dff5;text-transform:uppercase;font-size:12px;font-weight:700;letter-spacing:.15em}.account-small{font-size:12px;color:#8fa0ba}
+.account-shell{width:min(100% - 32px,520px);margin:56px auto 96px}
+.account-brand{display:flex;justify-content:center;margin-bottom:28px}
+.account-panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:clamp(22px,5vw,36px)}
+.account-panel h1{font-size:clamp(28px,5vw,36px);line-height:1.1;letter-spacing:-.03em}
+.account-tabs{display:flex;gap:4px;padding:4px;background:var(--bg);border:1px solid var(--line);border-radius:12px;margin:22px 0}
+.account-tabs button{flex:1;border:0;border-radius:9px;padding:10px;background:transparent;color:var(--muted);font:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:background .2s,color .2s}
+.account-tabs button:hover{color:var(--fg)}
+.account-tabs button[aria-selected=true]{background:var(--fg);color:var(--on-fg)}
+.account-form{display:grid;gap:14px}
+.account-form label{display:grid;gap:7px;font-size:13.5px;font-weight:550;color:var(--fg-2)}
+.account-form input{width:100%;box-sizing:border-box;padding:12px 14px;border:1px solid var(--line-3);border-radius:10px;background:var(--bg);color:var(--fg);font:inherit;outline:none;transition:border-color .2s}
+.account-form input:focus{border-color:var(--fg)}
+.account-form .btn{width:100%;justify-content:center;margin-top:6px}
+.account-message{margin:14px 0;padding:12px 14px;border-radius:10px;background:var(--panel-2);border:1px solid var(--line);color:var(--fg);font-size:14px}
+.account-message.error{background:#1a0e0e;border-color:#4a1f1f;color:#ffb4b4}
+.account-message:empty{display:none}
+.account-muted{color:var(--muted);font-size:14px;line-height:1.65}
+.account-settings{display:grid;gap:14px;margin-top:22px}
+.account-setting{padding:18px;border:1px solid var(--line);border-radius:14px;background:var(--bg)}
+.account-setting h3{margin:0 0 6px;font-size:17px}
+.account-setting p{margin:0 0 14px;color:var(--muted);font-size:14px}
+.account-row{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.account-hide{display:none!important}
+.account-divider{height:1px;background:var(--line);margin:22px 0}
+.account-topline{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.account-topline h1{margin:0}
+.account-kicker{color:var(--dim);text-transform:uppercase;font-size:11.5px;font-weight:650;letter-spacing:.14em;margin-bottom:10px}
+.account-small{font-size:12px;color:var(--dim)}
 </style>
 </head>
 <body>
