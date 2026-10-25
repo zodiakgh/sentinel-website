@@ -211,7 +211,7 @@ async function accountUnlinkDiscord(env, req) {
   const s = await session(env, req); if (!s || !s.data.accountEmail) return json(env, req, { error: "unauthenticated" }, 401);
   let b; try { b = await readBody(req); } catch (_) { return json(env, req, { error: "bad_request" }, 400); }
   const email = s.data.accountEmail, key = await accountKey(email), a = JSON.parse(await env.SESSIONS.get(key) || "null");
-  if (!a || !safeEqual(a.passwordHash || "", await passwordHash(String(b.password || ""), a.salt))) return json(env, req, { error: "invalid_credentials" }, 401);
+  if (!a) return json(env, req, { error: "unauthenticated" }, 401);
   if (a.discord && a.discord.id) await env.SESSIONS.delete(`d:${a.discord.id}`);
   a.discord = null; await env.SESSIONS.put(key, JSON.stringify(a));
   return json(env, req, { ok: true });
