@@ -330,6 +330,7 @@ window.SENTINEL_FR = {
  "home.lead": "Sentinel est un bot Discord tout-en-un conçu pour aider les communautés à gérer la modération, la sécurité, l’automatisation, le support et l’engagement grâce à un ensemble d’outils unifié.",
  "home.add": "Ajouter à Discord",
  "home.explore": "Explorer les commandes",
+ "home.vote": "Voter pour Sentinel",
  "home.nolink": "Le lien d’invitation public n’est pas encore publié ; « Ajouter à Discord » ouvre le guide d’invitation.",
  "w.cap": "Illustration de ce que font les modules de Sentinel. Ce ne sont pas des événements réels.",
  "home.s1": "commandes définies dans le code source",

@@ -626,3 +626,5 @@ section.cta-band .btn-primary:hover{background:#f2f3f5}
 .cl-tag.fixed{background:rgba(240,178,50,.18);color:#f5c862}
 .cl-text{color:var(--fg-2);min-width:0;overflow-wrap:anywhere}
 @media (max-width:520px){.cl-item{flex-direction:column;gap:6px;align-items:flex-start}}
+
+.btn-vote{gap:8px}.btn-vote svg{flex:none;color:#ff3366}
