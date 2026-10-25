@@ -55,6 +55,7 @@ window.SENTINEL_FR = {
  "nav.commands": "Commandes",
  "nav.docs": "Documentation",
  "nav.dashboard": "Tableau de bord",
+ "nav.profile": "Profil",
  "nav.support": "Support",
  "nav.menu": "Menu",
  "nav.add": "Ajouter à Discord",
