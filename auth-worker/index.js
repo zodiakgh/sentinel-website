@@ -331,11 +331,29 @@ async function accountUnlinkSteam(env, req) {
   a.steam = null; await env.SESSIONS.put(key, JSON.stringify(a));
   return json(env, req, { ok: true });
 }
-// Public stats, cached for an hour. Needs the STEAM_API_KEY secret; game details only exist if the Steam profile shows them publicly.
+// Public stats, cached for an hour. Uses STEAM_API_KEY when set, otherwise the public community XML (no key needed); game details only exist if the Steam profile shows them publicly.
 async function steamData(env, id) {
-  if (!env.STEAM_API_KEY || !/^\d{17}$/.test(String(id || ""))) return null;
+  if (!/^\d{17}$/.test(String(id || ""))) return null;
   const ck = `sd:${id}`, hit = await env.SESSIONS.get(ck);
   if (hit) { try { return JSON.parse(hit); } catch (_) { /* refetch */ } }
+  if (!env.STEAM_API_KEY) {
+    // No API key (Steam refuses keys to limited accounts): read the public community XML instead.
+    const xml = async (path) => { const r = await fetch(`https://steamcommunity.com/profiles/${id}${path}`, { headers: { "User-Agent": "SentinelProfile/1.0 (+https://sentineldashboard.site)" }, cf: { cacheTtl: 600 } }); if (!r.ok) throw new Error("steam " + r.status); return r.text(); };
+    const tag = (x, t) => { const m = new RegExp(`<${t}>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?</${t}>`).exec(x); return m ? m[1].trim() : ""; };
+    const num = (v) => Number(String(v || "0").replace(/,/g, "")) || 0;
+    const [prof, gl] = await Promise.all([xml("/?xml=1"), xml("/games?tab=all&xml=1").catch(() => "")]);
+    if (!/<profile>/.test(prof) || !tag(prof, "steamID")) return null;
+    const state = tag(prof, "onlineState"), games = [];
+    const re = /<game>([\s\S]*?)<\/game>/g; let m;
+    while ((m = re.exec(gl)) && games.length < 3000) games.push({ id: num(tag(m[1], "appID")), name: profileText(tag(m[1], "name"), 60), total: num(tag(m[1], "hoursOnRecord")), recent: num(tag(m[1], "hoursLast2Weeks")) });
+    const priv = !games.length;
+    const out = { name: profileText(tag(prof, "steamID"), 40), avatar: safeHttpUrl(tag(prof, "avatarFull"), 300, true), url: `https://steamcommunity.com/profiles/${id}`, online: state === "online" || state === "in-game", playing: state === "in-game" ? profileText(tag(prof, "stateMessage").replace(/<[^>]*>/g, "").replace(/^In-Game\s*/i, ""), 60) : "",
+      private: priv, gameCount: games.length, totalHours: Math.round(games.reduce((t, g) => t + g.total, 0) * 10) / 10,
+      top: games.filter(g => g.total > 0).sort((a, b) => b.total - a.total).slice(0, 5).map(g => ({ id: g.id, name: g.name, hours: g.total })),
+      recent: games.filter(g => g.recent > 0).sort((a, b) => b.recent - a.recent).slice(0, 3).map(g => ({ id: g.id, name: g.name, hours: g.recent })) };
+    await env.SESSIONS.put(ck, JSON.stringify(out), { expirationTtl: 3600 });
+    return out;
+  }
   const k = encodeURIComponent(env.STEAM_API_KEY), get = async (path) => { const r = await fetch(`https://api.steampowered.com${path}&key=${k}&format=json`); if (!r.ok) throw new Error("steam " + r.status); return r.json(); };
   const [sum, owned, recent] = await Promise.all([
     get(`/ISteamUser/GetPlayerSummaries/v2/?steamids=${id}`),
