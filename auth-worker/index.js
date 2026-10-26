@@ -394,19 +394,19 @@ async function steamData(env, id) {
 /* ---------- Lyrics lookup (LRCLIB, free, no key). Signed-in users only, rate limited. ---------- */
 async function lyricsSearch(env, req) {
   const s = await session(env, req); if (!s || !s.data.accountEmail) return json(env, req, { error: "unauthenticated" }, 401);
-  const u = new URL(req.url), title = profileText(u.searchParams.get("title"), 100), artist = profileText(u.searchParams.get("artist"), 100);
+  const u = new URL(req.url), title = profileText(u.searchParams.get("title"), 100), artist = profileText(u.searchParams.get("artist"), 100), dur = Math.round(Number(u.searchParams.get("duration")) || 0);
   if (title.length < 1) return json(env, req, { error: "missing_title", message: "Enter the song title first." }, 400);
   const rk = `rl:lyr:${await digest(s.data.accountEmail)}`, n = Number(await env.SESSIONS.get(rk) || "0");
   if (n >= 40) return json(env, req, { error: "rate_limited", message: "Too many lookups, try again in a while." }, 429);
   await env.SESSIONS.put(rk, String(n + 1), { expirationTtl: 3600 });
   const H = { "User-Agent": "SentinelProfile/1.0 (https://sentineldashboard.site)" }, cf = { cacheTtl: 86400, cacheEverything: true };
-  const pick = (x) => x && (x.syncedLyrics || x.plainLyrics) ? { synced: String(x.syncedLyrics || ""), plain: String(x.plainLyrics || ""), title: profileText(x.trackName, 100), artist: profileText(x.artistName, 100) } : null;
+  const pick = (x) => x && (x.syncedLyrics || x.plainLyrics) ? { synced: String(x.syncedLyrics || ""), plain: String(x.plainLyrics || ""), title: profileText(x.trackName, 100), artist: profileText(x.artistName, 100), duration: Math.round(Number(x.duration) || 0) } : null;
   try {
     let hit = null;
-    if (artist) { const r = await fetch(`https://lrclib.net/api/get?${new URLSearchParams({ track_name: title, artist_name: artist })}`, { headers: H, cf }); if (r.ok) hit = pick(await r.json()); }
+    if (artist) { const r = await fetch(`https://lrclib.net/api/get?${new URLSearchParams(dur ? { track_name: title, artist_name: artist, duration: String(dur) } : { track_name: title, artist_name: artist })}`, { headers: H, cf }); if (r.ok) hit = pick(await r.json()); }
     if (!hit) {
       const r = await fetch(`https://lrclib.net/api/search?${new URLSearchParams(artist ? { track_name: title, artist_name: artist } : { q: title })}`, { headers: H, cf });
-      if (r.ok) { const list = await r.json(); if (Array.isArray(list)) hit = pick(list.find(x => x && x.syncedLyrics) || list.find(x => x && x.plainLyrics)); }
+      if (r.ok) { const list = await r.json(); if (Array.isArray(list)) { const byDur = (a, bb) => Math.abs((a.duration || 0) - dur) - Math.abs((bb.duration || 0) - dur), syn = list.filter(x => x && x.syncedLyrics); if (dur) syn.sort(byDur); hit = pick(syn[0] || list.find(x => x && x.plainLyrics)); if (hit && syn[0]) hit.duration = Math.round(syn[0].duration || 0); } }
     }
     if (!hit) return json(env, req, { error: "not_found", message: "No lyrics found. Check the title and artist, or paste them yourself." }, 404);
     return json(env, req, { ok: true, ...hit, lyrics: (hit.synced || hit.plain).slice(0, 6000), isSynced: !!hit.synced });
@@ -820,12 +820,26 @@ async function adminLookup(env, req) {
   return json(env, req, { username, manual: g.manual, earned: g.earned });
 }
 
+async function friendCard(env, slug) {
+  if (!profileSlugOK(slug)) return null;
+  const raw = await env.SESSIONS.get(`p:${slug}`); if (!raw) return null;
+  const f = JSON.parse(raw), araw = await env.SESSIONS.get(`a:${f.ownerHash}`), acc = araw ? JSON.parse(araw) : null;
+  return { username: f.username, displayName: f.displayName || f.username, avatarUrl: f.avatarUrl || (acc && acc.discord ? cdn("avatars", acc.discord.id, acc.discord.avatar) || "" : "") };
+}
+async function resolveFriends(env, slugs) {
+  const out = []; for (const sl of (Array.isArray(slugs) ? slugs : []).slice(0, 8)) { const c = await friendCard(env, sl).catch(() => null); if (c) out.push(c); } return out;
+}
+async function profileLookup(env, req) {
+  const u = profileText(new URL(req.url).searchParams.get("u"), 24).toLowerCase().replace(/^@/, "");
+  const c = await friendCard(env, u); if (!c) return json(env, req, { error: "not_found", message: "No profile with that username." }, 404);
+  return json(env, req, { ok: true, ...c });
+}
 function profilePublicShape(p, views, account, badges) {
   return {
     username: p.username, displayName: p.displayName, bio: p.bio, avatarUrl: p.avatarUrl || (account && account.discord ? cdn("avatars", account.discord.id, account.discord.avatar) || "" : ""),
     bannerUrl: p.bannerUrl, backgroundUrl: p.backgroundUrl, background: p.background, accentColor: p.accentColor,
     status: p.status, statusEmoji: p.statusEmoji, links: p.links || [], widgets: p.widgets || [], musicUrl: p.musicUrl,
-    backgroundVideoUrl: p.backgroundVideoUrl || "", audioAssets: p.audioAssets || [], audioMeta: p.audioMeta || [], mediaAssets: p.mediaAssets || [],
+    backgroundVideoUrl: p.backgroundVideoUrl || "", audioAssets: p.audioAssets || [], audioMeta: p.audioMeta || [], sections: p.sections || [], friends: p.friends || [], mediaAssets: p.mediaAssets || [],
     badges: badges || [], views: Number(views || 0), customization: p.customization || {}, createdAt: p.createdAt, updatedAt: p.updatedAt
   };
 }
@@ -843,6 +857,7 @@ async function profileMe(env, req) {
   if (!raw) { await env.SESSIONS.delete(`pa:${ownerHash}`); return json(env, req, { profile: null, hiddenBadges: [], ...extra }); }
   const p = JSON.parse(raw);
   const mine = profilePublicShape(p, await env.SESSIONS.get(`pv:${slug}`), account, await badgesFor(env, p, account));
+  mine.friendsData = await resolveFriends(env, p.friends);
   if (account && account.steam && account.steam.id) mine.steam = await steamData(env, account.steam.id).catch(() => null);
   return json(env, req, { profile: mine, steamLinked: !!(account && account.steam), hiddenBadges: p.hiddenBadges || [], nameChanges: Number(p.nameChanges) || 0, canRename: (Number(p.nameChanges) || 0) < 1 || ownerHash === OWNER_HASH, ...extra, url: `${env.SITE_ORIGIN}/u/${slug}` });
 }
@@ -924,7 +939,8 @@ async function profileSave(env, req) {
     animation: enumVal("animation", ["none", "fade", "rise", "zoom", "blur"], "fade"), borderStyle: enumVal("borderStyle", ["none", "subtle", "accent"], "subtle"),
     // --- visibility ---
     showBio: boolVal("showBio"), showStatus: boolVal("showStatus"), showBadges: boolVal("showBadges"), showLinks: boolVal("showLinks"),
-    showLyrics: boolVal("showLyrics", true), lyricsPlace: enumVal("lyricsPlace", ["below", "bottom", "center"], "below"), lyricsStyle: enumVal("lyricsStyle", ["lines", "scroll"], "lines"), lyricsFont: enumVal("lyricsFont", ["inherit", "system", "inter", "mono", "serif", "bricolage", "instrument"], "inherit"), lyricsSize: intVal("lyricsSize", 12, 48, 18), lyricsColor: colorVal("lyricsColor", ""), lyricsAlign: enumVal("lyricsAlign", ["left", "center", "right"], "center"), lyricsGlow: boolVal("lyricsGlow", false),
+    showPage2: boolVal("showPage2", true), page2Hint: boolVal("page2Hint", true), friendsTitle: profileText(c.friendsTitle, 30) || "Best friends", friendsStyle: enumVal("friendsStyle", ["cards", "avatars"], "cards"),
+    showLyrics: boolVal("showLyrics", true), lyricsPlace: enumVal("lyricsPlace", ["below", "bottom", "center", "page"], "below"), lyricsStyle: enumVal("lyricsStyle", ["lines", "scroll"], "lines"), lyricsFont: enumVal("lyricsFont", ["inherit", "system", "inter", "mono", "serif", "bricolage", "instrument"], "inherit"), lyricsSize: intVal("lyricsSize", 12, 48, 18), lyricsColor: colorVal("lyricsColor", ""), lyricsAlign: enumVal("lyricsAlign", ["left", "center", "right"], "center"), lyricsGlow: boolVal("lyricsGlow", false),
     showSteam: boolVal("showSteam", false), steamGames: enumVal("steamGames", ["top", "recent", "none"], "top"), showWidgets: boolVal("showWidgets"), showMusic: boolVal("showMusic"), showViews: boolVal("showViews"), showBranding: boolVal("showBranding"),
     showAvatar: boolVal("showAvatar"), showHandle: boolVal("showHandle"), showBanner: boolVal("showBanner"), showFooter: boolVal("showFooter"),
     showLocation: boolVal("showLocation"), showJoined: boolVal("showJoined", false),
@@ -970,14 +986,20 @@ async function profileSave(env, req) {
   const backgroundVideoCandidate = safeHttpUrl(b.backgroundVideoUrl, 700, true);
   const backgroundVideoUrl = backgroundVideoCandidate && ownedUrls.has(backgroundVideoCandidate) && ownedAssets.some(a => a.url === backgroundVideoCandidate && a.kind === "video") ? backgroundVideoCandidate : "";
   const audioAssets = Array.isArray(b.audioAssets) ? b.audioAssets.filter(url => typeof url === "string" && ownedUrls.has(url) && ownedAssets.some(a => a.url === url && a.kind === "audio")).slice(0, 3) : (old.audioAssets || []);
-  const audioMeta = Array.isArray(b.audioMeta) ? b.audioMeta.slice(0, 3).map(m => ({ title: profileText(m && m.title, 60), artist: profileText(m && m.artist, 60), cover: safeHttpUrl(m && m.cover, 700, true) || "", lyrics: String((m && m.lyrics) || "").replace(/\r/g, "").replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "").slice(0, 6000) })) : (old.audioMeta || []);
+  const audioMeta = Array.isArray(b.audioMeta) ? b.audioMeta.slice(0, 3).map(m => ({ title: profileText(m && m.title, 60), artist: profileText(m && m.artist, 60), cover: safeHttpUrl(m && m.cover, 700, true) || "", offset: Math.max(-30, Math.min(30, Math.round((Number(m && m.offset) || 0) * 10) / 10)), lyrics: String((m && m.lyrics) || "").replace(/\r/g, "").replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "").slice(0, 6000) })) : (old.audioMeta || []);
+  const sectionsIn = Array.isArray(b.sections) ? b.sections : null;
+  const sections = sectionsIn ? sectionsIn.slice(0, 6).map(sc => ({
+    title: profileText(sc && sc.title, 40), kind: ["cards", "list", "text"].includes(sc && sc.kind) ? sc.kind : "cards", text: String((sc && sc.text) || "").replace(/\r/g, "").replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "").slice(0, 800),
+    items: (Array.isArray(sc && sc.items) ? sc.items : []).slice(0, 12).map(it => ({ title: profileText(it && it.title, 60), desc: profileText(it && it.desc, 140), url: safeHttpUrl(it && it.url, 500, true), img: safeHttpUrl(it && it.img, 700, true) })).filter(it => it.title || it.img)
+  })).filter(sc => sc.title || sc.text || sc.items.length) : (old.sections || []);
+  const friends = Array.isArray(b.friends) ? [...new Set(b.friends.map(x => profileText(x, 24).toLowerCase().replace(/^@/, "")).filter(x => profileSlugOK(x) && x !== username))].slice(0, 8) : (old.friends || []);
   const profile = {
     username, ownerHash, displayName: profileText(b.displayName, 40) || username,
     bio: profileText(b.bio, 220), avatarUrl: safeHttpUrl(b.avatarUrl, 500, true),
     bannerUrl: safeHttpUrl(b.bannerUrl, 500, true), backgroundUrl: safeHttpUrl(b.backgroundUrl, 500, true),
     background: safeProfileBackground(b.background), accentColor: /^#[0-9a-f]{6}$/i.test(String(b.accentColor || "")) ? b.accentColor : "#8b7cff",
     status: profileText(b.status, 80), statusEmoji: profileText(b.statusEmoji, 8), links, widgets,
-    musicUrl: safeMusicUrl(b.musicUrl), backgroundVideoUrl, audioAssets, audioMeta, mediaAssets, customization, hiddenBadges, nameChanges: nameChanges + (renaming ? 1 : 0), createdAt: old.createdAt || Date.now(), updatedAt: Date.now()
+    musicUrl: safeMusicUrl(b.musicUrl), backgroundVideoUrl, audioAssets, audioMeta, sections, friends, mediaAssets, customization, hiddenBadges, nameChanges: nameChanges + (renaming ? 1 : 0), createdAt: old.createdAt || Date.now(), updatedAt: Date.now()
   };
   await env.SESSIONS.put(`p:${username}`, JSON.stringify(profile));
   await env.SESSIONS.put(ownerIndex, username);
@@ -1002,6 +1024,7 @@ async function publicProfile(env, req, username) {
   }
   const accountRaw = await env.SESSIONS.get(`a:${profile.ownerHash}`), account = accountRaw ? JSON.parse(accountRaw) : null;
   const shape = profilePublicShape(profile, await env.SESSIONS.get(`pv:${username}`), account, await badgesFor(env, profile, account));
+  shape.friendsData = await resolveFriends(env, profile.friends);
   if (profile.customization && profile.customization.showSteam && account && account.steam && account.steam.id) shape.steam = await steamData(env, account.steam.id).catch(() => null);
   return json(env, req, { profile: shape }, 200, { "Cache-Control": "no-store" });
 }
@@ -1164,6 +1187,7 @@ export default {
       return linkDiscord(env);
     }
     if (req.method === "GET" && pathname === "/lyrics/search") return lyricsSearch(env, req);
+    if (req.method === "GET" && pathname === "/profiles/lookup") return profileLookup(env, req);
     if (req.method === "GET" && pathname === "/auth/steam") return steamStart(env, req);
     if (req.method === "GET" && pathname === "/auth/steam/callback") return steamCallback(env, req);
     if (req.method === "POST" && pathname === "/account/steam/unlink") return accountUnlinkSteam(env, req);

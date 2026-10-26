@@ -21,10 +21,10 @@
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
 
   /* ---------------- state ---------------- */
-  var KEYS = ["username", "displayName", "bio", "status", "statusEmoji", "accentColor", "avatarUrl", "bannerUrl", "backgroundUrl", "background", "musicUrl", "backgroundVideoUrl", "audioAssets", "audioMeta", "links", "widgets", "customization", "hiddenBadges"];
+  var KEYS = ["username", "displayName", "bio", "status", "statusEmoji", "accentColor", "avatarUrl", "bannerUrl", "backgroundUrl", "background", "musicUrl", "backgroundVideoUrl", "audioAssets", "audioMeta", "sections", "friends", "links", "widgets", "customization", "hiddenBadges"];
   function serialize() { var o = {}; KEYS.forEach(function (k) { o[k] = state[k]; }); return JSON.stringify(o); }
   function fromProfile(p, acc) {
-    var base = { username: "", displayName: "", bio: "", status: "", statusEmoji: "✨", accentColor: "#8b7cff", avatarUrl: "", bannerUrl: "", backgroundUrl: "", background: "linear-gradient(135deg, #0b1020, #29204d)", musicUrl: "", backgroundVideoUrl: "", audioAssets: [], audioMeta: [], links: [], widgets: [], customization: {} };
+    var base = { username: "", displayName: "", bio: "", status: "", statusEmoji: "✨", accentColor: "#8b7cff", avatarUrl: "", bannerUrl: "", backgroundUrl: "", background: "linear-gradient(135deg, #0b1020, #29204d)", musicUrl: "", backgroundVideoUrl: "", audioAssets: [], audioMeta: [], sections: [], friends: [], links: [], widgets: [], customization: {} };
     if (!p) {
       var local = (acc.email || "member").split("@")[0].toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 24);
       base.username = local.length >= 3 ? local : "member" + local; base.displayName = (acc.discord && acc.discord.name) || (acc.email || "").split("@")[0];
@@ -51,7 +51,7 @@
     var dirty = serialize() !== saved;
     if (!saving) say(dirty ? "Unsaved changes" : "All changes saved", dirty ? "dirty" : "ok");
   }
-  var steamInfo = null, steamLinked = false;
+  var steamInfo = null, steamLinked = false, friendCache = {};
   function previewProfile() {
     var hid = state.hiddenBadges || [], badges = [];
     if (badgeData.all.length) badges = badgeData.all.filter(function (b) { return hid.indexOf(b.id) < 0; });
@@ -59,7 +59,7 @@
       if (account && account.verified) badges.push({ id: "verified", label: "Verified", icon: "✅", color: "#3ba55d", tier: "core" });
       if (account && account.discord) badges.push({ id: "discord", label: "Discord linked", icon: "🔗", color: "#5865f2", tier: "core" });
     }
-    var p = clone(state); p.badges = badges; p.views = serverProfile ? serverProfile.views || 0 : 0; p.createdAt = serverProfile ? serverProfile.createdAt : Date.now();
+    var p = clone(state); p.badges = badges; p.friendsData = (state.friends || []).map(function (s) { return friendCache[s]; }).filter(Boolean); p.views = serverProfile ? serverProfile.views || 0 : 0; p.createdAt = serverProfile ? serverProfile.createdAt : Date.now();
     if (state.customization && state.customization.showSteam && steamInfo) p.steam = steamInfo;
     if (!p.avatarUrl && account && account.discord) p.avatarUrl = account.discord.avatarUrl || "";
     return p;
@@ -295,6 +295,71 @@
   }
 
   /* ---------------- audio tracks ---------------- */
+  function audioDuration(url) {
+    return new Promise(function (res) {
+      try { var a = new Audio(); a.preload = "metadata"; var done = function (v) { a.removeAttribute("src"); res(v); }; a.addEventListener("loadedmetadata", function () { done(isFinite(a.duration) ? a.duration : 0); }); a.addEventListener("error", function () { done(0); }); setTimeout(function () { done(0); }, 5000); a.src = url; } catch (e) { res(0); }
+    });
+  }
+  function sectionsEditor() {
+    var box = E("div"); box.style.cssText = "display:flex;flex-direction:column;gap:12px";
+    function field2(label, key, obj, o) { o = o || {}; var i = E(o.area ? "textarea" : "input"); if (!o.area) i.type = o.url ? "url" : "text"; i.maxLength = o.max || 80; i.placeholder = o.ph || ""; i.value = obj[key] || ""; if (o.area) { i.rows = 3; i.style.cssText = "width:100%;font-family:inherit"; } if (o.url) { i.inputMode = "url"; i.autocapitalize = "off"; } i.addEventListener("input", function () { obj[key] = i.value; changed(); }); return field(label, i); }
+    function redraw() {
+      while (box.firstChild) box.removeChild(box.firstChild);
+      state.sections = Array.isArray(state.sections) ? state.sections : [];
+      state.sections.forEach(function (sc, si) {
+        sc.items = Array.isArray(sc.items) ? sc.items : [];
+        var it = E("div", "pe-item"), head = E("div", "pe-item-head"); head.append(E("strong", "", (si + 1) + ". " + (sc.title || "Section")),
+          btn("↑", function () { if (si > 0) { state.sections.splice(si - 1, 0, state.sections.splice(si, 1)[0]); redraw(); changed(); } }),
+          btn("✕", function () { state.sections.splice(si, 1); redraw(); changed(); }, "bad")); it.appendChild(head);
+        it.appendChild(field2("Title", "title", sc, { max: 40, ph: "My projects, Favorite games…" }));
+        var kind = E("select"); [["cards", "Cards (with images)"], ["list", "List"], ["text", "Text only"]].forEach(function (o) { var op = E("option", "", o[1]); op.value = o[0]; kind.appendChild(op); }); kind.value = sc.kind || "cards";
+        kind.addEventListener("change", function () { sc.kind = kind.value; redraw(); changed(); }); it.appendChild(field("Layout", kind));
+        if (sc.kind === "text") it.appendChild(field2("Text", "text", sc, { area: true, max: 800, ph: "Write anything…" }));
+        else {
+          sc.items.forEach(function (x, xi) {
+            var row = E("div", "pe-item"); row.style.background = "rgba(255,255,255,.03)";
+            var h2 = E("div", "pe-item-head"); h2.append(E("strong", "", x.title || "Item " + (xi + 1)), btn("✕", function () { sc.items.splice(xi, 1); redraw(); changed(); }, "bad")); row.appendChild(h2);
+            row.append(field2("Title", "title", x, { max: 60 }), field2("Description", "desc", x, { max: 140 }), field2("Link (optional)", "url", x, { url: true, max: 500, ph: "https://…" }), field2("Image URL (optional)", "img", x, { url: true, max: 700, ph: "https://…" }));
+            var pr = E("div", "pe-row"); pr.append(btn("Pick image from library", function () { openLibrary("image", function (a) { x.img = a.url; redraw(); changed(); }); })); row.appendChild(pr); it.appendChild(row);
+          });
+          if (sc.items.length < 12) { var ar = E("div", "pe-row"); ar.append(btn("Add item", function () { sc.items.push({ title: "", desc: "", url: "", img: "" }); redraw(); changed(); })); it.appendChild(ar); }
+        }
+        box.appendChild(it);
+      });
+      if (state.sections.length < 6) { var r = E("div", "pe-row"); r.append(btn("Add section", function () { state.sections.push({ title: "", kind: "cards", text: "", items: [] }); redraw(); changed(); })); box.appendChild(r); }
+    }
+    redraw(); return box;
+  }
+  function friendsEditor() {
+    var box = E("div"); box.style.cssText = "display:flex;flex-direction:column;gap:10px"; var msg = E("span", "pe-hint", "");
+    function redraw() {
+      while (box.firstChild) box.removeChild(box.firstChild);
+      state.friends = Array.isArray(state.friends) ? state.friends : [];
+      state.friends.forEach(function (slug, i) {
+        var f = friendCache[slug], it = E("div", "pe-item"), head = E("div", "pe-item-head");
+        head.append(E("strong", "", f ? (f.displayName || f.username) + "  @" + slug : "@" + slug + " (not found yet)"), btn("✕", function () { state.friends.splice(i, 1); redraw(); changed(); }, "bad")); it.appendChild(head); box.appendChild(it);
+      });
+      if (!state.friends.length) box.appendChild(E("p", "pe-hint", "No friends added yet."));
+      if (state.friends.length < 8) {
+        var inp = E("input"); inp.type = "text"; inp.maxLength = 24; inp.placeholder = "friend's username"; inp.autocapitalize = "off"; inp.autocomplete = "off";
+        var row = E("div", "pe-row"); row.append(inp, btn("Add friend", function () {
+          var name = String(inp.value || "").trim().toLowerCase().replace(/^@/, ""); if (!name) return;
+          if (state.friends.indexOf(name) >= 0) { msg.textContent = "Already added."; return; }
+          msg.textContent = "Looking up…";
+          api("/profiles/lookup?u=" + encodeURIComponent(name)).then(function (j) { friendCache[j.username] = j; state.friends.push(j.username); redraw(); changed(); })
+            .catch(function (e) { msg.textContent = e.message || "Could not find that profile."; });
+        })); box.append(row, msg);
+      }
+    }
+    redraw(); return box;
+  }
+  function page2Panel() {
+    var T = function (l, k, h) { return tToggle(l, "customization." + k, h); };
+    return [sec("Second page", "Visitors scroll down past your card to reach this page: sections, best friends and (optionally) lyrics.", T("Show second page", "showPage2"), T("Show scroll arrow", "page2Hint")),
+      sec("Sections", "Projects, favorite games, anything. Up to 6 sections, 12 items each.", sectionsEditor()),
+      sec("Best friends", "Enter a friend's Sentinel username: their profile picture and name are filled in automatically.", friendsEditor(), tText("Title", "customization.friendsTitle", { max: 30, ph: "Best friends" }), tSeg("Style", "customization.friendsStyle", [["cards", "Cards"], ["avatars", "Avatars only"]]))];
+  }
+
   function tracksSection() {
     var box = E("div"); box.style.cssText = "display:flex;flex-direction:column;gap:10px";
     function nameOf(u) { var a = assets.filter(function (x) { return x.url === u; })[0]; return a ? a.name : u; }
@@ -315,14 +380,21 @@
         it.appendChild(pick);
         var ta = E("textarea"); ta.rows = 5; ta.maxLength = 6000; ta.placeholder = "Lyrics. Plain text, or synced lines like [00:12.50] first line"; ta.value = m.lyrics || ""; ta.style.cssText = "width:100%;min-height:90px;font-family:inherit";
         ta.addEventListener("input", function () { m.lyrics = ta.value; changed(); });
+        var offOut = E("output"), off = E("input"); off.type = "range"; off.min = -15; off.max = 15; off.step = 0.1; off.value = Number(m.offset) || 0;
+        var showOff = function () { var v = Number(off.value) || 0; offOut.textContent = (v > 0 ? "+" : "") + v.toFixed(1) + " s"; }; showOff();
+        off.addEventListener("input", function () { m.offset = Math.round(Number(off.value) * 10) / 10; showOff(); changed(); });
+        var offBox = E("div", "pe-f"), offLab = E("div", "pe-lab"); offLab.append(E("span", "", "Lyrics timing"), offOut);
+        var nudge = function (d) { return btn(d > 0 ? "+0.1" : "−0.1", function () { var v = Math.max(-15, Math.min(15, Math.round(((Number(off.value) || 0) + d) * 10) / 10)); off.value = v; m.offset = v; showOff(); changed(); }); };
+        var offRow = E("div", "pe-row"); offRow.append(nudge(-0.1), nudge(0.1));
+        offBox.append(offLab, off, offRow, E("span", "pe-hint", "Lyrics late? Move left (negative). Lyrics early? Move right. Preview above updates while the song plays."));
         var lmsg = E("span", "pe-hint", m.lyrics ? "" : "Fill title and artist, then find lyrics automatically or paste your own."), lrow = E("div", "pe-row");
         lrow.append(btn("Find lyrics automatically", function () {
           if (!String(m.title || "").trim()) { lmsg.textContent = "Enter the title first."; return; }
           lmsg.textContent = "Searching…";
-          api("/lyrics/search?" + new URLSearchParams({ title: m.title || "", artist: m.artist || "" }).toString()).then(function (j) { m.lyrics = j.lyrics || ""; ta.value = m.lyrics; changed(); lmsg.textContent = (j.isSynced ? "Synced lyrics found" : "Lyrics found") + " for “" + (j.title || m.title) + "”" + (j.artist ? " by " + j.artist : "") + ". You can edit them."; })
+          audioDuration(u).then(function (dur) { return api("/lyrics/search?" + new URLSearchParams({ title: m.title || "", artist: m.artist || "", duration: dur ? String(Math.round(dur)) : "" }).toString()); }).then(function (j) { m.lyrics = j.lyrics || ""; ta.value = m.lyrics; changed(); lmsg.textContent = (j.isSynced ? "Synced lyrics found" : "Lyrics found") + " for “" + (j.title || m.title) + "”" + (j.artist ? " by " + j.artist : "") + ". If the timing is off, use Lyrics timing below."; })
             .catch(function (e) { lmsg.textContent = e.message || "Lookup failed."; });
         }), m.lyrics ? btn("Clear", function () { m.lyrics = ""; ta.value = ""; changed(); lmsg.textContent = ""; }, "bad") : E("span"));
-        it.append(field("Lyrics", ta), lrow, lmsg); box.appendChild(it);
+        it.append(field("Lyrics", ta), lrow, lmsg, offBox); box.appendChild(it);
       });
       if (!state.audioAssets.length) box.appendChild(E("p", "pe-hint", "No tracks selected."));
     }
@@ -491,11 +563,12 @@
         sec("Player", null, tSeg("Player style", "customization.playerStyle", [["card", "In card"], ["bar", "Floating bar"], ["minimal", "Mini button"], ["hidden", "Hidden"]]), tRange("Volume", "customization.audioVolume", 0, 100, 1, "%"),
           tToggle("Loop playlist", "customization.audioLoop"), tToggle("Start automatically", "customization.audioAutoplay", "Browsers only allow sound after a click, so pair this with the enter screen.")),
         sec("Lyrics display", "Lyrics are added per track above. Synced lyrics follow the music line by line.", tToggle("Show lyrics", "customization.showLyrics"),
-          tSeg("Position", "customization.lyricsPlace", [["below", "Under player"], ["bottom", "Screen bottom"], ["center", "Screen center"]]), tSeg("Style", "customization.lyricsStyle", [["lines", "Current line"], ["scroll", "Full scroll"]]),
+          tSeg("Position", "customization.lyricsPlace", [["below", "Under player"], ["bottom", "Screen bottom"], ["center", "Screen center"], ["page", "Page 2"]]), tSeg("Style", "customization.lyricsStyle", [["lines", "Current line"], ["scroll", "Full scroll"]]),
           tSelect("Font", "customization.lyricsFont", [["inherit", "Same as page"], ["system", "System"], ["inter", "Inter"], ["mono", "Monospace"], ["serif", "Serif"], ["bricolage", "Bricolage"], ["instrument", "Instrument"]]),
           tRange("Size", "customization.lyricsSize", 12, 48, 1, "px"), tColor("Color", "customization.lyricsColor", "#ffffff"), tSeg("Alignment", "customization.lyricsAlign", [["left", "Left"], ["center", "Center"], ["right", "Right"]]), tToggle("Glow on current line", "customization.lyricsGlow")),
         sec("Streaming embed", "Optional YouTube or Spotify player under your links.", tText("YouTube / Spotify URL", "musicUrl", { url: true, max: 500, ph: "https://open.spotify.com/track/…" }))];
     }],
+    ["page2", "Page 2", page2Panel],
     ["embed", "Share", embedPanel],
     ["tools", "Tools", function () { return [toolsSection()]; }],
     ["visibility", "Visibility", function () {
@@ -565,7 +638,7 @@
     try {
       account = await api("/account/me");
       if (!account.verified) { msg.textContent = "Verify your email before publishing a profile."; msg.className = "pe-status error"; return; }
-      var data = await api("/profiles/me"); steamInfo = data.profile && data.profile.steam ? data.profile.steam : null; steamLinked = !!data.steamLinked; serverProfile = data.profile ? Object.assign({}, data.profile, { nameChanges: data.nameChanges, canRename: data.canRename }) : null; badgeData = { all: data.allBadges || [], catalog: data.catalog || [], isOwner: !!data.isOwner };
+      var data = await api("/profiles/me"); steamInfo = data.profile && data.profile.steam ? data.profile.steam : null; friendCache = {}; ((data.profile && data.profile.friendsData) || []).forEach(function (f) { friendCache[f.username] = f; }); steamLinked = !!data.steamLinked; serverProfile = data.profile ? Object.assign({}, data.profile, { nameChanges: data.nameChanges, canRename: data.canRename }) : null; badgeData = { all: data.allBadges || [], catalog: data.catalog || [], isOwner: !!data.isOwner };
       try { var m = await api("/profiles/assets"); assets = m.assets || []; counts = m.counts || {}; } catch (_) { }
       state = fromProfile(data.profile, account); if (data.profile) state.hiddenBadges = Array.isArray(data.hiddenBadges) ? data.hiddenBadges.slice() : []; saved = data.profile ? serialize() : ""; savedState = clone(state);
       if (data.profile) { var l = $("open-profile"); l.href = "/u/" + data.profile.username; l.hidden = false; }
