@@ -30,7 +30,7 @@
     spacing: "normal", cardVAlign: "top", pageColor: "#090d17", cardColor: "#0b1020", textColor: "#f5f7ff", mutedColor: "#98a6bf", borderColor: "#ffffff",
     widgetColor: "#ffffff", nameColor2: "#ffffff", glowColor: "#8b7cff", cursorColor: "#ffffff", particleColor: "#ffffff", overlay: "medium", bgDim: 55,
     bgBlur: 0, blur: 18, radius: 24, glowStrength: 0, shadow: "soft", hoverEffect: "lift", animation: "fade", borderStyle: "subtle",
-    showBio: true, showStatus: true, showBadges: true, showLinks: true, showWidgets: true, showMusic: true, showViews: true, showSteam: false, steamGames: "top", showBranding: true,
+    showBio: true, showStatus: true, showBadges: true, showLinks: true, showWidgets: true, showMusic: true, showViews: true, showSteam: false, steamGames: "top", showLyrics: true, lyricsPlace: "below", lyricsStyle: "lines", lyricsFont: "inherit", lyricsSize: 18, lyricsColor: "", lyricsAlign: "center", lyricsGlow: false, showBranding: true,
     showAvatar: true, showHandle: true, showBanner: true, showFooter: true, showLocation: true, showJoined: false,
     linkStyle: "glass", badgeStyle: "pill", fontFamily: "system", nameSize: 42, letterSpacing: "normal", bannerPosition: "center", tagline: "",
     footerText: "", location: "", pageTitle: "", nameEffect: "none", taglineTypewriter: false, bioTypewriter: false, avatarSize: 112, widgetGap: 12,
@@ -166,6 +166,43 @@
     }
     return box;
   }
+  function parseLrc(text) {
+    var lines = [], synced = 0;
+    String(text || "").split(/\r?\n/).forEach(function (raw) {
+      var re = /\[(\d{1,3}):(\d{2})(?:[.:](\d{1,3}))?\]/g, stamps = [], m, last = 0;
+      while ((m = re.exec(raw))) { stamps.push(Number(m[1]) * 60 + Number(m[2]) + (m[3] ? Number("0." + m[3]) : 0)); last = re.lastIndex; }
+      var txt = raw.slice(last).trim();
+      if (stamps.length) { synced++; stamps.forEach(function (t) { lines.push({ t: t, x: txt }); }); }
+      else if (/^\[[a-z]+:/i.test(raw.trim())) { /* tag line */ }
+      else if (raw.trim()) lines.push({ t: -1, x: raw.trim() });
+    });
+    if (synced >= 2) return { synced: true, lines: lines.filter(function (l) { return l.t >= 0; }).sort(function (a, b) { return a.t - b.t; }) };
+    return { synced: false, lines: lines.map(function (l) { return { t: -1, x: l.x }; }) };
+  }
+  Player.prototype.hasLyrics = function () { return (this.meta || []).some(function (m) { return m && String(m.lyrics || "").trim(); }); };
+  Player.prototype.lyricsUI = function (c) {
+    var self = this, box = el("div", "sp-lyrics place-" + (c.lyricsPlace || "below") + " st-" + (c.lyricsStyle || "lines") + (c.lyricsGlow ? " glow" : "")), key = "", parsed = { synced: false, lines: [] }, els = [], cur = -2, list = null, ctxA = null, mainL = null, ctxB = null;
+    box.style.setProperty("--ly-font", c.lyricsFont && c.lyricsFont !== "inherit" ? (FONTS[c.lyricsFont] || "inherit") : "inherit");
+    box.style.setProperty("--ly-size", num(c.lyricsSize, 12, 48, 18) + "px"); box.style.setProperty("--ly-align", ({ left: "left", right: "right" })[c.lyricsAlign] || "center");
+    if (/^#[0-9a-f]{6}$/i.test(String(c.lyricsColor || ""))) box.style.setProperty("--ly-color", c.lyricsColor);
+    function build(text) {
+      clear(box); els = []; cur = -2; list = null; parsed = parseLrc(text); box.classList.toggle("empty", !parsed.lines.length); box.classList.toggle("plain", !parsed.synced);
+      if (!parsed.lines.length) return;
+      if (c.lyricsStyle === "scroll" || !parsed.synced) { list = el("div", "sp-ly-list"); parsed.lines.forEach(function (l) { var d = el("div", "sp-ly-line", l.x || "\u266a"); list.appendChild(d); els.push(d); }); box.appendChild(list); }
+      else { ctxA = el("div", "sp-ly-ctx"); mainL = el("div", "sp-ly-cur"); ctxB = el("div", "sp-ly-ctx"); box.append(ctxA, mainL, ctxB); }
+    }
+    function tick() {
+      var m = (self.meta && self.meta[self.index]) || {}, text = String(m.lyrics || ""), k = self.index + "|" + text;
+      if (k !== key) { key = k; build(text); }
+      if (!parsed.synced || !parsed.lines.length) return;
+      var t = self.audio.currentTime + 0.12, i = -1; for (var n = 0; n < parsed.lines.length; n++) { if (parsed.lines[n].t <= t) i = n; else break; }
+      if (i === cur) return; cur = i;
+      if (list) { els.forEach(function (d, j) { d.classList.toggle("on", j === i); d.classList.toggle("past", j < i); }); if (i >= 0) { var d = els[i]; list.scrollTop = d.offsetTop - list.clientHeight / 2 + d.offsetHeight / 2; } }
+      else { var L = parsed.lines; ctxA.textContent = i > 0 ? L[i - 1].x : ""; mainL.textContent = i >= 0 ? (L[i].x || "\u266a") : ""; ctxB.textContent = i + 1 < L.length ? L[i + 1].x : ""; }
+    }
+    this.uis.push(tick); tick(); return box;
+  };
+
   function fmt(t) { if (!isFinite(t)) return "0:00"; t = Math.floor(t); return Math.floor(t / 60) + ":" + String(t % 60).padStart(2, "0"); }
 
   function Player() {
@@ -550,6 +587,11 @@
         if (c.playerStyle === "card") { var pc = el("div", "sp-card-player"); pc.appendChild(S.player.ui("card")); body.appendChild(pc); }
         else { var fl = el("div", "sp-player-float " + c.playerStyle); fl.appendChild(S.player.ui(c.playerStyle === "minimal" ? "minimal" : "bar")); S.host.appendChild(fl); S.floatPlayer = fl; }
       }
+      S.lyricsEl = null;
+      if (tracks.length && c.showMusic !== false && c.showLyrics !== false && S.player.hasLyrics()) {
+        var lyr = S.player.lyricsUI(c);
+        if (c.lyricsPlace === "bottom" || c.lyricsPlace === "center") { S.host.appendChild(lyr); S.lyricsEl = lyr; } else body.appendChild(lyr);
+      }
       if (c.showFooter !== false) {
         var ft = el("div", "sp-foot");
         if (c.showViews !== false && p.views !== undefined && p.views !== null) { var v = el("span", "sp-meta-item"); v.append(metaIcon("eye"), document.createTextNode(Number(p.views || 0).toLocaleString() + " views")); ft.appendChild(v); }
@@ -591,6 +633,7 @@
     function update(profile2) {
       var p = S.p = normalize(profile2);
       if (S.floatPlayer) { S.floatPlayer.remove(); S.floatPlayer = null; }
+      if (S.lyricsEl) { S.lyricsEl.remove(); S.lyricsEl = null; }
       theme(p); background(p); build(p); splash(p);
       startParticles(S, p.customization); startPointerFx(S, p.customization); armAutoplay(p);
       if (!opts.preview) {

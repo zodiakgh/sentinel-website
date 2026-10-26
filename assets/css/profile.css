@@ -371,3 +371,20 @@ body.sp-page-body::before,body.sp-page-body::after{display:none}
 .sp-st-ph{width:80px; height:30px; flex:none; border-radius:6px; overflow:hidden; background:linear-gradient(135deg,rgba(102,192,244,.22),rgba(255,255,255,.05))}
 .sp-st-ph img{width:100%; height:100%; object-fit:cover; display:block}
 .sp-st-game>img{display:none}
+
+/* lyrics */
+.sp-lyrics{width:100%; margin-top:14px; font-family:var(--ly-font,inherit); font-size:var(--ly-size,18px); color:var(--ly-color,inherit); text-align:var(--ly-align,center); line-height:1.35}
+.sp-lyrics.empty{display:none}
+.sp-lyrics.place-bottom,.sp-lyrics.place-center{position:absolute; left:50%; transform:translateX(-50%); width:min(760px,calc(100% - 32px)); margin:0; z-index:9; pointer-events:none; text-shadow:0 2px 14px rgba(0,0,0,.75)}
+.sp-lyrics.place-bottom{bottom:84px}
+.sp-lyrics.place-center{top:50%; transform:translate(-50%,-50%)}
+.sp-lyrics.plain.place-bottom .sp-ly-list,.sp-lyrics.plain.place-center .sp-ly-list{pointer-events:auto}
+.sp-ly-cur{font-weight:760; min-height:1.35em; transition:opacity .2s}
+.sp-ly-ctx{font-size:.72em; opacity:.45; min-height:1.35em; white-space:pre-wrap}
+.sp-ly-list{max-height:calc(var(--ly-size,18px) * 1.35 * 6); overflow-y:auto; scroll-behavior:smooth; padding:calc(var(--ly-size,18px) * 1.35 * 2) 0; -webkit-mask-image:linear-gradient(transparent,#000 22%,#000 78%,transparent); mask-image:linear-gradient(transparent,#000 22%,#000 78%,transparent); scrollbar-width:none}
+.sp-ly-list::-webkit-scrollbar{display:none}
+.sp-ly-line{padding:3px 0; opacity:.42; transition:opacity .25s,transform .25s,font-weight .25s}
+.sp-ly-line.on{opacity:1; font-weight:760}
+.sp-lyrics.plain .sp-ly-line{opacity:.92}
+.sp-lyrics.plain .sp-ly-list{padding:0; -webkit-mask-image:none; mask-image:none; max-height:calc(var(--ly-size,18px) * 1.35 * 9)}
+.sp-lyrics.glow .sp-ly-cur,.sp-lyrics.glow .sp-ly-line.on{text-shadow:0 0 16px var(--accent),0 0 32px color-mix(in srgb,var(--accent) 60%,transparent)}

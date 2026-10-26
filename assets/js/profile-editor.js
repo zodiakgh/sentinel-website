@@ -312,7 +312,17 @@
         var cov = inp("Cover image URL", "cover", "https://…", true);
         it.append(inp("Title", "title", "Song title"), inp("Artist", "artist", "Artist name"), cov);
         var pick = E("div", "pe-row"); pick.append(btn("Pick cover from library", function () { openLibrary("image", function (a) { m.cover = a.url; redraw(); changed(); }); }), m.cover ? btn("Remove cover", function () { m.cover = ""; redraw(); changed(); }, "bad") : E("span"));
-        it.appendChild(pick); box.appendChild(it);
+        it.appendChild(pick);
+        var ta = E("textarea"); ta.rows = 5; ta.maxLength = 6000; ta.placeholder = "Lyrics. Plain text, or synced lines like [00:12.50] first line"; ta.value = m.lyrics || ""; ta.style.cssText = "width:100%;min-height:90px;font-family:inherit";
+        ta.addEventListener("input", function () { m.lyrics = ta.value; changed(); });
+        var lmsg = E("span", "pe-hint", m.lyrics ? "" : "Fill title and artist, then find lyrics automatically or paste your own."), lrow = E("div", "pe-row");
+        lrow.append(btn("Find lyrics automatically", function () {
+          if (!String(m.title || "").trim()) { lmsg.textContent = "Enter the title first."; return; }
+          lmsg.textContent = "Searching…";
+          api("/lyrics/search?" + new URLSearchParams({ title: m.title || "", artist: m.artist || "" }).toString()).then(function (j) { m.lyrics = j.lyrics || ""; ta.value = m.lyrics; changed(); lmsg.textContent = (j.isSynced ? "Synced lyrics found" : "Lyrics found") + " for “" + (j.title || m.title) + "”" + (j.artist ? " by " + j.artist : "") + ". You can edit them."; })
+            .catch(function (e) { lmsg.textContent = e.message || "Lookup failed."; });
+        }), m.lyrics ? btn("Clear", function () { m.lyrics = ""; ta.value = ""; changed(); lmsg.textContent = ""; }, "bad") : E("span"));
+        it.append(field("Lyrics", ta), lrow, lmsg); box.appendChild(it);
       });
       if (!state.audioAssets.length) box.appendChild(E("p", "pe-hint", "No tracks selected."));
     }
@@ -480,6 +490,10 @@
       return [tracksSection(),
         sec("Player", null, tSeg("Player style", "customization.playerStyle", [["card", "In card"], ["bar", "Floating bar"], ["minimal", "Mini button"], ["hidden", "Hidden"]]), tRange("Volume", "customization.audioVolume", 0, 100, 1, "%"),
           tToggle("Loop playlist", "customization.audioLoop"), tToggle("Start automatically", "customization.audioAutoplay", "Browsers only allow sound after a click, so pair this with the enter screen.")),
+        sec("Lyrics display", "Lyrics are added per track above. Synced lyrics follow the music line by line.", tToggle("Show lyrics", "customization.showLyrics"),
+          tSeg("Position", "customization.lyricsPlace", [["below", "Under player"], ["bottom", "Screen bottom"], ["center", "Screen center"]]), tSeg("Style", "customization.lyricsStyle", [["lines", "Current line"], ["scroll", "Full scroll"]]),
+          tSelect("Font", "customization.lyricsFont", [["inherit", "Same as page"], ["system", "System"], ["inter", "Inter"], ["mono", "Monospace"], ["serif", "Serif"], ["bricolage", "Bricolage"], ["instrument", "Instrument"]]),
+          tRange("Size", "customization.lyricsSize", 12, 48, 1, "px"), tColor("Color", "customization.lyricsColor", "#ffffff"), tSeg("Alignment", "customization.lyricsAlign", [["left", "Left"], ["center", "Center"], ["right", "Right"]]), tToggle("Glow on current line", "customization.lyricsGlow")),
         sec("Streaming embed", "Optional YouTube or Spotify player under your links.", tText("YouTube / Spotify URL", "musicUrl", { url: true, max: 500, ph: "https://open.spotify.com/track/…" }))];
     }],
     ["embed", "Share", embedPanel],

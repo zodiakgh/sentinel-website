@@ -390,6 +390,28 @@ async function steamData(env, id) {
   await env.SESSIONS.put(ck, JSON.stringify(out), { expirationTtl: 3600 });
   return out;
 }
+
+/* ---------- Lyrics lookup (LRCLIB, free, no key). Signed-in users only, rate limited. ---------- */
+async function lyricsSearch(env, req) {
+  const s = await session(env, req); if (!s || !s.data.accountEmail) return json(env, req, { error: "unauthenticated" }, 401);
+  const u = new URL(req.url), title = profileText(u.searchParams.get("title"), 100), artist = profileText(u.searchParams.get("artist"), 100);
+  if (title.length < 1) return json(env, req, { error: "missing_title", message: "Enter the song title first." }, 400);
+  const rk = `rl:lyr:${await digest(s.data.accountEmail)}`, n = Number(await env.SESSIONS.get(rk) || "0");
+  if (n >= 40) return json(env, req, { error: "rate_limited", message: "Too many lookups, try again in a while." }, 429);
+  await env.SESSIONS.put(rk, String(n + 1), { expirationTtl: 3600 });
+  const H = { "User-Agent": "SentinelProfile/1.0 (https://sentineldashboard.site)" }, cf = { cacheTtl: 86400, cacheEverything: true };
+  const pick = (x) => x && (x.syncedLyrics || x.plainLyrics) ? { synced: String(x.syncedLyrics || ""), plain: String(x.plainLyrics || ""), title: profileText(x.trackName, 100), artist: profileText(x.artistName, 100) } : null;
+  try {
+    let hit = null;
+    if (artist) { const r = await fetch(`https://lrclib.net/api/get?${new URLSearchParams({ track_name: title, artist_name: artist })}`, { headers: H, cf }); if (r.ok) hit = pick(await r.json()); }
+    if (!hit) {
+      const r = await fetch(`https://lrclib.net/api/search?${new URLSearchParams(artist ? { track_name: title, artist_name: artist } : { q: title })}`, { headers: H, cf });
+      if (r.ok) { const list = await r.json(); if (Array.isArray(list)) hit = pick(list.find(x => x && x.syncedLyrics) || list.find(x => x && x.plainLyrics)); }
+    }
+    if (!hit) return json(env, req, { error: "not_found", message: "No lyrics found. Check the title and artist, or paste them yourself." }, 404);
+    return json(env, req, { ok: true, ...hit, lyrics: (hit.synced || hit.plain).slice(0, 6000), isSynced: !!hit.synced });
+  } catch (_) { return json(env, req, { error: "lookup_failed", message: "The lyrics service is unavailable right now." }, 502); }
+}
 async function accountChangePassword(env, req) {
   if (!originOK(env, req)) return json(env, req, { error: "forbidden" }, 403);
   const s = await session(env, req); if (!s || !s.data.accountEmail) return json(env, req, { error: "unauthenticated" }, 401);
@@ -902,6 +924,7 @@ async function profileSave(env, req) {
     animation: enumVal("animation", ["none", "fade", "rise", "zoom", "blur"], "fade"), borderStyle: enumVal("borderStyle", ["none", "subtle", "accent"], "subtle"),
     // --- visibility ---
     showBio: boolVal("showBio"), showStatus: boolVal("showStatus"), showBadges: boolVal("showBadges"), showLinks: boolVal("showLinks"),
+    showLyrics: boolVal("showLyrics", true), lyricsPlace: enumVal("lyricsPlace", ["below", "bottom", "center"], "below"), lyricsStyle: enumVal("lyricsStyle", ["lines", "scroll"], "lines"), lyricsFont: enumVal("lyricsFont", ["inherit", "system", "inter", "mono", "serif", "bricolage", "instrument"], "inherit"), lyricsSize: intVal("lyricsSize", 12, 48, 18), lyricsColor: colorVal("lyricsColor", ""), lyricsAlign: enumVal("lyricsAlign", ["left", "center", "right"], "center"), lyricsGlow: boolVal("lyricsGlow", false),
     showSteam: boolVal("showSteam", false), steamGames: enumVal("steamGames", ["top", "recent", "none"], "top"), showWidgets: boolVal("showWidgets"), showMusic: boolVal("showMusic"), showViews: boolVal("showViews"), showBranding: boolVal("showBranding"),
     showAvatar: boolVal("showAvatar"), showHandle: boolVal("showHandle"), showBanner: boolVal("showBanner"), showFooter: boolVal("showFooter"),
     showLocation: boolVal("showLocation"), showJoined: boolVal("showJoined", false),
@@ -947,7 +970,7 @@ async function profileSave(env, req) {
   const backgroundVideoCandidate = safeHttpUrl(b.backgroundVideoUrl, 700, true);
   const backgroundVideoUrl = backgroundVideoCandidate && ownedUrls.has(backgroundVideoCandidate) && ownedAssets.some(a => a.url === backgroundVideoCandidate && a.kind === "video") ? backgroundVideoCandidate : "";
   const audioAssets = Array.isArray(b.audioAssets) ? b.audioAssets.filter(url => typeof url === "string" && ownedUrls.has(url) && ownedAssets.some(a => a.url === url && a.kind === "audio")).slice(0, 3) : (old.audioAssets || []);
-  const audioMeta = Array.isArray(b.audioMeta) ? b.audioMeta.slice(0, 3).map(m => ({ title: profileText(m && m.title, 60), artist: profileText(m && m.artist, 60), cover: safeHttpUrl(m && m.cover, 700, true) || "" })) : (old.audioMeta || []);
+  const audioMeta = Array.isArray(b.audioMeta) ? b.audioMeta.slice(0, 3).map(m => ({ title: profileText(m && m.title, 60), artist: profileText(m && m.artist, 60), cover: safeHttpUrl(m && m.cover, 700, true) || "", lyrics: String((m && m.lyrics) || "").replace(/\r/g, "").replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "").slice(0, 6000) })) : (old.audioMeta || []);
   const profile = {
     username, ownerHash, displayName: profileText(b.displayName, 40) || username,
     bio: profileText(b.bio, 220), avatarUrl: safeHttpUrl(b.avatarUrl, 500, true),
@@ -1140,6 +1163,7 @@ export default {
       const s = await session(env, req); if (!s || !s.data.accountEmail) return new Response(null, { status: 302, headers: { Location: `${env.SITE_ORIGIN}/account?link=login_required`, "Cache-Control": "no-store" } });
       return linkDiscord(env);
     }
+    if (req.method === "GET" && pathname === "/lyrics/search") return lyricsSearch(env, req);
     if (req.method === "GET" && pathname === "/auth/steam") return steamStart(env, req);
     if (req.method === "GET" && pathname === "/auth/steam/callback") return steamCallback(env, req);
     if (req.method === "POST" && pathname === "/account/steam/unlink") return accountUnlinkSteam(env, req);
