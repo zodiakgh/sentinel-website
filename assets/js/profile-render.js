@@ -146,7 +146,7 @@
     if (url) { nm.href = url; nm.target = "_blank"; nm.rel = "noopener noreferrer nofollow"; }
     who.appendChild(nm); var st = el("div", "sp-st-state" + (d.playing ? " playing" : d.online ? " online" : ""), d.playing ? "Playing " + d.playing : d.online ? "Online" : "Offline"); who.appendChild(st);
     head.appendChild(who); head.appendChild(el("span", "sp-st-tag", "Steam")); box.appendChild(head);
-    if (d["private"]) { box.appendChild(el("p", "sp-st-note", "Game details are private on this Steam profile." + (d.diag ? " (" + String(d.diag).slice(0, 40) + ")" : ""))); return box; }
+    if (d["private"]) { box.appendChild(el("p", "sp-st-note", "Game details are private on this Steam profile." + (d.diag ? " (" + String(d.diag).slice(0, 90) + ")" : ""))); return box; }
     var stats = el("div", "sp-st-stats");
     [[String(d.gameCount || 0), "Games"], [String(d.totalHours || 0) + " h", "Played"]].forEach(function (x) { var b = el("div", "sp-st-stat"); b.appendChild(el("b", "", x[0])); b.appendChild(el("span", "", x[1])); stats.appendChild(b); });
     box.appendChild(stats);

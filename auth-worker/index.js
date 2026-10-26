@@ -348,19 +348,17 @@ async function steamData(env, id) {
     const state = tag(prof, "onlineState"), games = [];
     const re = /<game>([\s\S]*?)<\/game>/g; let m;
     while ((m = re.exec(gl)) && games.length < 3000) games.push({ id: num(tag(m[1], "appID")), name: profileText(tag(m[1], "name"), 60), total: num(tag(m[1], "hoursOnRecord")), recent: num(tag(m[1], "hoursLast2Weeks")) });
-    let diag = "xml:" + gl.length;
-    if (!games.length && glHtml) {   // fallback: the games page embeds the list as JSON
-      const dec = glHtml.replace(/&quot;/g, '"').replace(/&amp;/g, "&"), idx = dec.indexOf('"rgGames"');
-      diag += " html:" + glHtml.length + (idx < 0 ? " nogames" : "");
-      if (idx >= 0) {
-        const start = dec.indexOf("[", idx); let depth = 0, end = -1;
-        for (let i = start; i >= 0 && i < dec.length; i++) { const ch = dec[i]; if (ch === "[") depth++; else if (ch === "]" && --depth === 0) { end = i; break; } }
-        try {
-          for (const g of JSON.parse(dec.slice(start, end + 1)).slice(0, 3000)) {
-            const total = g.hours_forever !== undefined ? num(g.hours_forever) : Math.round(num(g.playtime_forever) / 6) / 10, rec = g.hours !== undefined ? num(g.hours) : Math.round(num(g.playtime_2weeks) / 6) / 10;
-            games.push({ id: num(g.appid), name: profileText(g.name, 60), total, recent: rec });
-          }
-        } catch (_) { diag += " badjson"; }
+    let diag = "x" + gl.length + " h" + glHtml.length;
+    if (!games.length) {   // fallback: the games page embeds the list as JSON inside data-* attributes
+      const page = glHtml || gl, hasApp = (o, d = 0) => { if (!o || typeof o !== "object" || d > 5) return null; if (Array.isArray(o)) { if (o.length && o[0] && typeof o[0] === "object" && o[0].appid !== undefined) return o; for (const x of o.slice(0, 5)) { const r = hasApp(x, d + 1); if (r) return r; } return null; } for (const k of Object.keys(o)) { const r = hasApp(o[k], d + 1); if (r) return r; } return null; };
+      const dec = (v) => v.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+      const attrs = []; let am; const are = /\b(data-[a-z0-9-]+)="([^"]{40,})"/g; let found = null;
+      while ((am = are.exec(page)) && !found) { attrs.push(am[1].replace("data-", "").slice(0, 14)); try { found = hasApp(JSON.parse(dec(am[2]))); } catch (_) { /* not json */ } }
+      if (!found) { const idx = page.indexOf("rgGames"); if (idx >= 0) { const d2 = dec(page.slice(idx - 5, idx + 400000)), st = d2.indexOf("["); let depth = 0, end = -1; for (let i = st; i >= 0 && i < d2.length; i++) { if (d2[i] === "[") depth++; else if (d2[i] === "]" && --depth === 0) { end = i; break; } } try { found = JSON.parse(d2.slice(st, end + 1)); } catch (_) { /* ignore */ } } }
+      diag += " attrs:" + (attrs.slice(0, 4).join(",") || "none") + (/profile_private_info/.test(page) ? " P" : "") + (/playtime_forever|hours_forever/.test(page) ? " H" : "") + (/appid/.test(page) ? " A" : "");
+      if (found) for (const g of found.slice(0, 3000)) {
+        const total = g.hours_forever !== undefined ? num(g.hours_forever) : Math.round(num(g.playtime_forever) / 6) / 10, rec = g.hours !== undefined ? num(g.hours) : Math.round(num(g.playtime_2weeks) / 6) / 10;
+        games.push({ id: num(g.appid), name: profileText(g.name, 60), total, recent: rec });
       }
     }
     const priv = !games.length;
