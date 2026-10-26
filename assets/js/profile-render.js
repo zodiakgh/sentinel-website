@@ -199,7 +199,7 @@
       var t = self.audio.currentTime - (Number(m.offset) || 0) + 0.05, i = -1; for (var n = 0; n < parsed.lines.length; n++) { if (parsed.lines[n].t <= t) i = n; else break; }
       if (i === cur) return; cur = i;
       if (list) { els.forEach(function (d, j) { d.classList.toggle("on", j === i); d.classList.toggle("past", j < i); }); if (i >= 0) { var d = els[i]; list.scrollTop = d.offsetTop - list.clientHeight / 2 + d.offsetHeight / 2; } }
-      else { var L = parsed.lines; ctxA.textContent = i > 0 ? L[i - 1].x : ""; mainL.textContent = i >= 0 ? (L[i].x || "\u266a") : ""; ctxB.textContent = i + 1 < L.length ? L[i + 1].x : ""; }
+      else { var L = parsed.lines; mainL.classList.toggle("dim", i < 0); if (i < 0) { ctxA.textContent = ""; mainL.textContent = L[0].x || "\u266a"; ctxB.textContent = L[1] ? L[1].x : ""; } else { ctxA.textContent = i > 0 ? L[i - 1].x : ""; mainL.textContent = L[i].x || "\u266a"; ctxB.textContent = i + 1 < L.length ? L[i + 1].x : ""; } }
     }
     var raf = 0;
     function loop() { raf = 0; if (!box.isConnected) return; tick(); if (!self.audio.paused) raf = requestAnimationFrame(loop); }

@@ -419,3 +419,5 @@ a.sp-fr-item:hover{transform:translateY(-2px); border-color:color-mix(in srgb,va
 .sp-fr-tx{display:flex; flex-direction:column; min-width:0; line-height:1.2}.sp-fr-tx b{font-size:13.5px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}.sp-fr-tx small{font-size:11.5px; color:var(--muted)}
 .sp-fr.avatars .sp-fr-item{padding:0; background:none; border:none}.sp-fr.avatars .sp-fr-av{width:52px; height:52px; border:2px solid color-mix(in srgb,var(--accent) 50%,transparent)}
 .sp-page2 .sp-lyrics{margin:0}
+.sp-ly-cur.dim{opacity:.6}
+.sp-ly-ctx{opacity:.6}
