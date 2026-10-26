@@ -343,17 +343,32 @@ async function steamData(env, id) {
     const xml = async (path) => { const r = await fetch(`https://steamcommunity.com/profiles/${id}${path}`, { headers: { "User-Agent": "SentinelProfile/1.0 (+https://sentineldashboard.site)" }, cf: { cacheTtl: 600 } }); if (!r.ok) throw new Error("steam " + r.status); return r.text(); };
     const tag = (x, t) => { const m = new RegExp(`<${t}>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?</${t}>`).exec(x); return m ? m[1].trim() : ""; };
     const num = (v) => Number(String(v || "0").replace(/,/g, "")) || 0;
-    const [prof, gl] = await Promise.all([xml("/?xml=1"), xml("/games?tab=all&xml=1").catch(() => "")]);
+    const [prof, gl, glHtml] = await Promise.all([xml("/?xml=1"), xml("/games?tab=all&xml=1").catch(() => ""), xml("/games/?tab=all").catch(() => "")]);
     if (!/<profile>/.test(prof) || !tag(prof, "steamID")) return null;
     const state = tag(prof, "onlineState"), games = [];
     const re = /<game>([\s\S]*?)<\/game>/g; let m;
     while ((m = re.exec(gl)) && games.length < 3000) games.push({ id: num(tag(m[1], "appID")), name: profileText(tag(m[1], "name"), 60), total: num(tag(m[1], "hoursOnRecord")), recent: num(tag(m[1], "hoursLast2Weeks")) });
+    let diag = "xml:" + gl.length;
+    if (!games.length && glHtml) {   // fallback: the games page embeds the list as JSON
+      const dec = glHtml.replace(/&quot;/g, '"').replace(/&amp;/g, "&"), idx = dec.indexOf('"rgGames"');
+      diag += " html:" + glHtml.length + (idx < 0 ? " nogames" : "");
+      if (idx >= 0) {
+        const start = dec.indexOf("[", idx); let depth = 0, end = -1;
+        for (let i = start; i >= 0 && i < dec.length; i++) { const ch = dec[i]; if (ch === "[") depth++; else if (ch === "]" && --depth === 0) { end = i; break; } }
+        try {
+          for (const g of JSON.parse(dec.slice(start, end + 1)).slice(0, 3000)) {
+            const total = g.hours_forever !== undefined ? num(g.hours_forever) : Math.round(num(g.playtime_forever) / 6) / 10, rec = g.hours !== undefined ? num(g.hours) : Math.round(num(g.playtime_2weeks) / 6) / 10;
+            games.push({ id: num(g.appid), name: profileText(g.name, 60), total, recent: rec });
+          }
+        } catch (_) { diag += " badjson"; }
+      }
+    }
     const priv = !games.length;
     const out = { name: profileText(tag(prof, "steamID"), 40), avatar: safeHttpUrl(tag(prof, "avatarFull"), 300, true), url: `https://steamcommunity.com/profiles/${id}`, online: state === "online" || state === "in-game", playing: state === "in-game" ? profileText(tag(prof, "stateMessage").replace(/<[^>]*>/g, "").replace(/^In-Game\s*/i, ""), 60) : "",
-      private: priv, gameCount: games.length, totalHours: Math.round(games.reduce((t, g) => t + g.total, 0) * 10) / 10,
+      private: priv, diag: priv ? diag : undefined, gameCount: games.length, totalHours: Math.round(games.reduce((t, g) => t + g.total, 0) * 10) / 10,
       top: games.filter(g => g.total > 0).sort((a, b) => b.total - a.total).slice(0, 5).map(g => ({ id: g.id, name: g.name, hours: g.total })),
       recent: games.filter(g => g.recent > 0).sort((a, b) => b.recent - a.recent).slice(0, 3).map(g => ({ id: g.id, name: g.name, hours: g.recent })) };
-    await env.SESSIONS.put(ck, JSON.stringify(out), { expirationTtl: 3600 });
+    await env.SESSIONS.put(ck, JSON.stringify(out), { expirationTtl: priv ? 120 : 3600 });
     return out;
   }
   const k = encodeURIComponent(env.STEAM_API_KEY), get = async (path) => { const r = await fetch(`https://api.steampowered.com${path}&key=${k}&format=json`); if (!r.ok) throw new Error("steam " + r.status); return r.json(); };
