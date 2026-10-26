@@ -205,7 +205,7 @@ async function accountMe(env, req) {
   if (!s.data.accountEmail) return json(env, req, { error: "not_email_account" }, 400);
   const raw = await env.SESSIONS.get(await accountKey(s.data.accountEmail)); if (!raw) return json(env, req, { error: "account_not_found" }, 404);
   const a = JSON.parse(raw);
-  return json(env, req, { email: a.email, verified: !!a.verified, created: a.created, discord: a.discord ? { id: a.discord.id, username: a.discord.username, name: a.discord.name, avatarUrl: cdn("avatars", a.discord.id, a.discord.avatar) } : null, google: a.google ? { email: a.google.email } : null, hasPassword: !!a.passwordHash });
+  return json(env, req, { email: a.email, verified: !!a.verified, created: a.created, discord: a.discord ? { id: a.discord.id, username: a.discord.username, name: a.discord.name, avatarUrl: cdn("avatars", a.discord.id, a.discord.avatar) } : null, google: a.google ? { email: a.google.email } : null, steam: a.steam ? { id: a.steam.id, name: await steamData(env, a.steam.id).then(d => d && d.name).catch(() => null) } : null, hasPassword: !!a.passwordHash });
 }
 async function accountUnlinkDiscord(env, req) {
   if (!originOK(env, req)) return json(env, req, { error: "forbidden" }, 403);
@@ -284,6 +284,72 @@ async function accountUnlinkGoogle(env, req) {
   if (a.google && a.google.sub) await env.SESSIONS.delete(`g:${a.google.sub}`);
   a.google = null; await env.SESSIONS.put(key, JSON.stringify(a));
   return json(env, req, { ok: true });
+}
+
+/* ---------- Steam link (OpenID 2.0, no secret) + public stats (Web API key) ---------- */
+const STEAM_OPENID = "https://steamcommunity.com/openid/login";
+const steamRedirect = (env, q, headers = []) => {
+  const h = new Headers({ Location: `${env.SITE_ORIGIN}/account?steam=${q}`, "Cache-Control": "no-store" });
+  headers.forEach(([k, v]) => h.append(k, v));
+  return new Response(null, { status: 302, headers: h });
+};
+async function steamStart(env, req) {
+  const s = await session(env, req); if (!s || !s.data.accountEmail) return steamRedirect(env, "login_required");
+  const state = "sl-" + rand(16), sig = await sign(env.STATE_SECRET, state), ret = `${env.API_ORIGIN}/auth/steam/callback?state=${state}`, url = new URL(STEAM_OPENID);
+  url.search = new URLSearchParams({ "openid.ns": "http://specs.openid.net/auth/2.0", "openid.mode": "checkid_setup", "openid.return_to": ret, "openid.realm": env.API_ORIGIN,
+    "openid.identity": "http://specs.openid.net/auth/2.0/identifier_select", "openid.claimed_id": "http://specs.openid.net/auth/2.0/identifier_select" });
+  return new Response(null, { status: 302, headers: { Location: url.toString(), "Cache-Control": "no-store", "Set-Cookie": cookie("sentinel_sstate", `${state}.${sig}`, { maxAge: STATE_TTL, path: "/auth" }) } });
+}
+async function steamCallback(env, req) {
+  const url = new URL(req.url), clear = ["Set-Cookie", cookie("sentinel_sstate", "", { maxAge: 0, path: "/auth" })], fail = (q) => steamRedirect(env, q, [clear]);
+  const state = url.searchParams.get("state") || "", [cState, cSig] = (cookies(req).sentinel_sstate || "").split(".");
+  if (!state || !cState || !safeEqual(state, cState) || !safeEqual(cSig || "", await sign(env.STATE_SECRET, cState))) return fail("error");
+  if (url.searchParams.get("openid.mode") !== "id_res") return fail("cancelled");
+  if (url.searchParams.get("openid.return_to") !== `${env.API_ORIGIN}/auth/steam/callback?state=${state}`) return fail("error");
+  const m = /^https:\/\/steamcommunity\.com\/openid\/id\/(\d{17})$/.exec(url.searchParams.get("openid.claimed_id") || ""); if (!m) return fail("error");
+  const s = await session(env, req); if (!s || !s.data.accountEmail) return fail("login_required");
+  try {
+    const p = new URLSearchParams(); for (const [k, v] of url.searchParams) if (k.startsWith("openid.")) p.set(k, v);
+    p.set("openid.mode", "check_authentication");
+    const vr = await fetch(STEAM_OPENID, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: p });
+    if (!vr.ok || !/is_valid\s*:\s*true/.test(await vr.text())) return fail("error");
+    const id = m[1], email = s.data.accountEmail, mapKey = `st:${id}`, owner = await env.SESSIONS.get(mapKey);
+    if (owner && owner !== email) return fail("already_used");
+    const aKey = await accountKey(email), a = JSON.parse(await env.SESSIONS.get(aKey) || "null"); if (!a) return fail("error");
+    if (a.steam && a.steam.id && a.steam.id !== id) await env.SESSIONS.delete(`st:${a.steam.id}`);
+    a.steam = { id, linkedAt: Date.now() };
+    await env.SESSIONS.put(aKey, JSON.stringify(a)); await env.SESSIONS.put(mapKey, email);
+    return fail("linked");
+  } catch (_) { return fail("error"); }
+}
+async function accountUnlinkSteam(env, req) {
+  if (!originOK(env, req)) return json(env, req, { error: "forbidden" }, 403);
+  const s = await session(env, req); if (!s || !s.data.accountEmail) return json(env, req, { error: "unauthenticated" }, 401);
+  const key = await accountKey(s.data.accountEmail), a = JSON.parse(await env.SESSIONS.get(key) || "null");
+  if (!a) return json(env, req, { error: "unauthenticated" }, 401);
+  if (a.steam && a.steam.id) { await env.SESSIONS.delete(`st:${a.steam.id}`); await env.SESSIONS.delete(`sd:${a.steam.id}`); }
+  a.steam = null; await env.SESSIONS.put(key, JSON.stringify(a));
+  return json(env, req, { ok: true });
+}
+// Public stats, cached for an hour. Needs the STEAM_API_KEY secret; game details only exist if the Steam profile shows them publicly.
+async function steamData(env, id) {
+  if (!env.STEAM_API_KEY || !/^\d{17}$/.test(String(id || ""))) return null;
+  const ck = `sd:${id}`, hit = await env.SESSIONS.get(ck);
+  if (hit) { try { return JSON.parse(hit); } catch (_) { /* refetch */ } }
+  const k = encodeURIComponent(env.STEAM_API_KEY), get = async (path) => { const r = await fetch(`https://api.steampowered.com${path}&key=${k}&format=json`); if (!r.ok) throw new Error("steam " + r.status); return r.json(); };
+  const [sum, owned, recent] = await Promise.all([
+    get(`/ISteamUser/GetPlayerSummaries/v2/?steamids=${id}`),
+    get(`/IPlayerService/GetOwnedGames/v1/?steamid=${id}&include_appinfo=1&include_played_free_games=1`).catch(() => null),
+    get(`/IPlayerService/GetRecentlyPlayedGames/v1/?steamid=${id}&count=3`).catch(() => null)]);
+  const pl = sum && sum.response && sum.response.players && sum.response.players[0]; if (!pl) return null;
+  const games = owned && owned.response && Array.isArray(owned.response.games) ? owned.response.games : null, hrs = (m) => Math.round(Number(m || 0) / 6) / 10;
+  const row = (g, f) => ({ id: Number(g.appid) || 0, name: profileText(g.name, 60), hours: hrs(g[f]) });
+  const out = { name: profileText(pl.personaname, 40), avatar: safeHttpUrl(pl.avatarfull, 300, true), url: `https://steamcommunity.com/profiles/${id}`, online: Number(pl.personastate) > 0, playing: profileText(pl.gameextrainfo, 60),
+    private: !games, gameCount: games ? games.length : 0, totalHours: games ? hrs(games.reduce((t, g) => t + (g.playtime_forever || 0), 0)) : 0,
+    top: games ? games.filter(g => g.playtime_forever > 0).sort((a, b) => b.playtime_forever - a.playtime_forever).slice(0, 5).map(g => row(g, "playtime_forever")) : [],
+    recent: recent && recent.response && Array.isArray(recent.response.games) ? recent.response.games.slice(0, 3).map(g => row(g, "playtime_2weeks")) : [] };
+  await env.SESSIONS.put(ck, JSON.stringify(out), { expirationTtl: 3600 });
+  return out;
 }
 async function accountChangePassword(env, req) {
   if (!originOK(env, req)) return json(env, req, { error: "forbidden" }, 403);
@@ -623,6 +689,8 @@ const BADGES = {
   founding:      { label: "Founding Member",  icon: "🌟", color: "#fde047", tier: "member", kind: "auto",   desc: "Joined Sentinel in its first months.",      how: "Create your account before December 2026." },
   verified:      { label: "Verified",         icon: "✅", color: "#4ade80", tier: "member", kind: "auto",   desc: "Has a verified email address.",             how: "Verify your email address." },
   discord:       { label: "Discord Linked",   icon: "🔗", color: "#818cf8", tier: "member", kind: "auto",   desc: "Linked a Discord account.",                 how: "Link Discord in your account page." },
+  google:        { label: "Google Linked",    icon: "G", color: "#60a5fa", tier: "member", kind: "auto",   desc: "Linked a Google account.",                  how: "Link Google in your account page." },
+  steam:         { label: "Steam Linked",     icon: "🎮", color: "#66c0f4", tier: "member", kind: "auto",   desc: "Linked a Steam account.",                   how: "Link Steam in your account page." },
   halloween2026: { label: "Halloween 2026",   icon: "🎃", color: "#fb923c", tier: "event",  kind: "event",  desc: "Joined the Halloween 2026 event.",          how: "Save your profile between Oct 15 and Nov 1, 2026.", from: D("2026-10-15"), to: D("2026-11-02") },
   christmas2026: { label: "Christmas 2026",   icon: "🎄", color: "#4ade80", tier: "event",  kind: "event",  desc: "Celebrated Christmas 2026 on Sentinel.",    how: "Save your profile between Dec 1 and Dec 26, 2026.", from: D("2026-12-01"), to: D("2026-12-27") },
   newyear2027:   { label: "New Year 2027",    icon: "🎆", color: "#facc15", tier: "event",  kind: "event",  desc: "Started 2027 on Sentinel.",                 how: "Save your profile between Dec 27, 2026 and Jan 7, 2027.", from: D("2026-12-27"), to: D("2027-01-08") },
@@ -631,7 +699,7 @@ const BADGES = {
   spring2027:    { label: "Spring 2027",      icon: "🌸", color: "#f9a8d4", tier: "event",  kind: "event",  desc: "Was here in spring 2027.",                  how: "Save your profile between Mar 20 and Jun 20, 2027.", from: D("2027-03-20"), to: D("2027-06-21") },
   summer2027:    { label: "Summer 2027",      icon: "☀️", color: "#fcd34d", tier: "event",  kind: "event",  desc: "Was here in summer 2027.",                  how: "Save your profile between Jun 21 and Sep 21, 2027.", from: D("2027-06-21"), to: D("2027-09-22") }
 };
-const BADGE_ORDER = ["owner", "coowner", "admin", "moderator", "developer", "support", "partner", "creator", "premium", "supporter", "bughunter", "beta", "founding", "verified", "discord", "halloween2026", "christmas2026", "newyear2027", "autumn2026", "winter2027", "spring2027", "summer2027"];
+const BADGE_ORDER = ["owner", "coowner", "admin", "moderator", "developer", "support", "partner", "creator", "premium", "supporter", "bughunter", "beta", "founding", "verified", "discord", "google", "steam", "halloween2026", "christmas2026", "newyear2027", "autumn2026", "winter2027", "spring2027", "summer2027"];
 async function badgeGrants(env, ownerHash) {
   const raw = await env.SESSIONS.get(`bg:${ownerHash}`);
   try { const g = raw ? JSON.parse(raw) : {}; return { manual: Array.isArray(g.manual) ? g.manual.filter(id => BADGES[id]) : [], earned: Array.isArray(g.earned) ? g.earned.filter(id => BADGES[id]) : [] }; }
@@ -647,6 +715,8 @@ async function earnedBadgeIds(env, ownerHash, account) {
   if (ownerHash === OWNER_HASH && ok) ids.add("owner");
   if (ok) ids.add("verified");
   if (account && account.discord && account.discord.id) ids.add("discord");
+  if (account && account.google && account.google.sub) ids.add("google");
+  if (account && account.steam && account.steam.id) ids.add("steam");
   const created = Number(account && account.created);
   if (ok && Number.isFinite(created) && created > 0 && created < D("2026-12-01")) ids.add("founding");
   return BADGE_ORDER.filter(id => ids.has(id));
@@ -706,11 +776,14 @@ async function profileMe(env, req) {
   const earned = await earnedBadgeIds(env, ownerHash, account);
   const extra = { allBadges: earned.map(badgeShape), catalog: badgeCatalog(earned), isOwner: ownerHash === OWNER_HASH && !!(account && account.verified) };
   const slug = await env.SESSIONS.get(`pa:${ownerHash}`);
+  extra.steamLinked = !!(account && account.steam);
   if (!slug) return json(env, req, { profile: null, hiddenBadges: [], ...extra });
   const raw = await env.SESSIONS.get(`p:${slug}`);
   if (!raw) { await env.SESSIONS.delete(`pa:${ownerHash}`); return json(env, req, { profile: null, hiddenBadges: [], ...extra }); }
   const p = JSON.parse(raw);
-  return json(env, req, { profile: profilePublicShape(p, await env.SESSIONS.get(`pv:${slug}`), account, await badgesFor(env, p, account)), hiddenBadges: p.hiddenBadges || [], nameChanges: Number(p.nameChanges) || 0, canRename: (Number(p.nameChanges) || 0) < 1 || ownerHash === OWNER_HASH, ...extra, url: `${env.SITE_ORIGIN}/u/${slug}` });
+  const mine = profilePublicShape(p, await env.SESSIONS.get(`pv:${slug}`), account, await badgesFor(env, p, account));
+  if (account && account.steam && account.steam.id) mine.steam = await steamData(env, account.steam.id).catch(() => null);
+  return json(env, req, { profile: mine, steamLinked: !!(account && account.steam), hiddenBadges: p.hiddenBadges || [], nameChanges: Number(p.nameChanges) || 0, canRename: (Number(p.nameChanges) || 0) < 1 || ownerHash === OWNER_HASH, ...extra, url: `${env.SITE_ORIGIN}/u/${slug}` });
 }
 async function profileSave(env, req) {
   if (!originOK(env, req)) return json(env, req, { error: "forbidden" }, 403);
@@ -790,7 +863,7 @@ async function profileSave(env, req) {
     animation: enumVal("animation", ["none", "fade", "rise", "zoom", "blur"], "fade"), borderStyle: enumVal("borderStyle", ["none", "subtle", "accent"], "subtle"),
     // --- visibility ---
     showBio: boolVal("showBio"), showStatus: boolVal("showStatus"), showBadges: boolVal("showBadges"), showLinks: boolVal("showLinks"),
-    showWidgets: boolVal("showWidgets"), showMusic: boolVal("showMusic"), showViews: boolVal("showViews"), showBranding: boolVal("showBranding"),
+    showSteam: boolVal("showSteam", false), steamGames: enumVal("steamGames", ["top", "recent", "none"], "top"), showWidgets: boolVal("showWidgets"), showMusic: boolVal("showMusic"), showViews: boolVal("showViews"), showBranding: boolVal("showBranding"),
     showAvatar: boolVal("showAvatar"), showHandle: boolVal("showHandle"), showBanner: boolVal("showBanner"), showFooter: boolVal("showFooter"),
     showLocation: boolVal("showLocation"), showJoined: boolVal("showJoined", false),
     // --- text ---
@@ -866,7 +939,9 @@ async function publicProfile(env, req, username) {
     await env.SESSIONS.put(`pv:${username}`, String(views));
   }
   const accountRaw = await env.SESSIONS.get(`a:${profile.ownerHash}`), account = accountRaw ? JSON.parse(accountRaw) : null;
-  return json(env, req, { profile: profilePublicShape(profile, await env.SESSIONS.get(`pv:${username}`), account, await badgesFor(env, profile, account)) }, 200, { "Cache-Control": "no-store" });
+  const shape = profilePublicShape(profile, await env.SESSIONS.get(`pv:${username}`), account, await badgesFor(env, profile, account));
+  if (profile.customization && profile.customization.showSteam && account && account.steam && account.steam.id) shape.steam = await steamData(env, account.steam.id).catch(() => null);
+  return json(env, req, { profile: shape }, 200, { "Cache-Control": "no-store" });
 }
 
 
@@ -1013,6 +1088,9 @@ export default {
       const s = await session(env, req); if (!s || !s.data.accountEmail) return new Response(null, { status: 302, headers: { Location: `${env.SITE_ORIGIN}/account?link=login_required`, "Cache-Control": "no-store" } });
       return linkDiscord(env);
     }
+    if (req.method === "GET" && pathname === "/auth/steam") return steamStart(env, req);
+    if (req.method === "GET" && pathname === "/auth/steam/callback") return steamCallback(env, req);
+    if (req.method === "POST" && pathname === "/account/steam/unlink") return accountUnlinkSteam(env, req);
     if (req.method === "GET" && pathname === "/auth/google") return googleStart(env, req);
     if (req.method === "GET" && pathname === "/auth/google/callback") return googleCallback(env, req);
     if (req.method === "POST" && pathname === "/account/google/unlink") return accountUnlinkGoogle(env, req);

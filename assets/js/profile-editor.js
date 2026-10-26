@@ -51,6 +51,7 @@
     var dirty = serialize() !== saved;
     if (!saving) say(dirty ? "Unsaved changes" : "All changes saved", dirty ? "dirty" : "ok");
   }
+  var steamInfo = null, steamLinked = false;
   function previewProfile() {
     var hid = state.hiddenBadges || [], badges = [];
     if (badgeData.all.length) badges = badgeData.all.filter(function (b) { return hid.indexOf(b.id) < 0; });
@@ -59,6 +60,7 @@
       if (account && account.discord) badges.push({ id: "discord", label: "Discord linked", icon: "🔗", color: "#5865f2", tier: "core" });
     }
     var p = clone(state); p.badges = badges; p.views = serverProfile ? serverProfile.views || 0 : 0; p.createdAt = serverProfile ? serverProfile.createdAt : Date.now();
+    if (state.customization && state.customization.showSteam && steamInfo) p.steam = steamInfo;
     if (!p.avatarUrl && account && account.discord) p.avatarUrl = account.discord.avatarUrl || "";
     return p;
   }
@@ -485,6 +487,7 @@
     ["visibility", "Visibility", function () {
       var T = function (l, k) { return tToggle(l, "customization." + k); };
       return [sec("Show on your page", null, T("Avatar", "showAvatar"), T("Username (@handle)", "showHandle"), T("Banner", "showBanner"), T("Badges", "showBadges"), T("Bio", "showBio"), T("Status", "showStatus"), T("Location", "showLocation"), T("Join date", "showJoined"), T("Links", "showLinks"), T("Widgets", "showWidgets"), T("Music", "showMusic")),
+        sec("Steam", steamLinked ? "Shows your Steam profile and playtime. Needs “Game details” set to Public in your Steam privacy settings." : "Link your Steam account on the account page first.", T("Show Steam card", "showSteam"), tSeg("Games shown", "customization.steamGames", [["top", "Most played"], ["recent", "Recent"], ["none", "None"]])),
         sec("Footer & browser tab", null, T("Share button", "showShare"), T("Footer", "showFooter"), T("View counter", "showViews"), T("“Made with Sentinel”", "showBranding"), tText("Footer text", "customization.footerText", { max: 100 }), tText("Browser tab title", "customization.pageTitle", { max: 60, ph: "Zodiak (@zodiak)" }))];
     }]
   ];
@@ -548,7 +551,7 @@
     try {
       account = await api("/account/me");
       if (!account.verified) { msg.textContent = "Verify your email before publishing a profile."; msg.className = "pe-status error"; return; }
-      var data = await api("/profiles/me"); serverProfile = data.profile ? Object.assign({}, data.profile, { nameChanges: data.nameChanges, canRename: data.canRename }) : null; badgeData = { all: data.allBadges || [], catalog: data.catalog || [], isOwner: !!data.isOwner };
+      var data = await api("/profiles/me"); steamInfo = data.profile && data.profile.steam ? data.profile.steam : null; steamLinked = !!data.steamLinked; serverProfile = data.profile ? Object.assign({}, data.profile, { nameChanges: data.nameChanges, canRename: data.canRename }) : null; badgeData = { all: data.allBadges || [], catalog: data.catalog || [], isOwner: !!data.isOwner };
       try { var m = await api("/profiles/assets"); assets = m.assets || []; counts = m.counts || {}; } catch (_) { }
       state = fromProfile(data.profile, account); saved = data.profile ? serialize() : ""; savedState = clone(state);
       if (data.profile) { var l = $("open-profile"); l.href = "/u/" + data.profile.username; l.hidden = false; }
