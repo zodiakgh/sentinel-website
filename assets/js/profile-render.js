@@ -155,7 +155,11 @@
       var ul = el("div", "sp-st-list");
       list.forEach(function (g) {
         var id = Number(g.id) || 0, row = el("div", "sp-st-game");
-        if (id) { var gi = document.createElement("img"); gi.src = "https://cdn.cloudflare.steamstatic.com/steam/apps/" + id + "/capsule_231x87.jpg"; gi.alt = ""; gi.loading = "lazy"; gi.onerror = function () { gi.style.visibility = "hidden"; }; row.appendChild(gi); }
+        var base = "https://cdn.cloudflare.steamstatic.com/steam/apps/" + id + "/", srcs = [];
+        if (httpUrl(g.img)) srcs.push(httpUrl(g.img));
+        if (id) srcs.push(base + "capsule_231x87.jpg", base + "header.jpg", base + "capsule_184x69.jpg", base + "library_header.jpg");
+        var ph = el("span", "sp-st-ph"); row.appendChild(ph);
+        if (srcs.length) { var gi = document.createElement("img"), si = 0; gi.alt = ""; gi.loading = "lazy"; gi.onerror = function () { si++; if (si < srcs.length) gi.src = srcs[si]; else gi.style.display = "none"; }; gi.src = srcs[0]; ph.appendChild(gi); }
         row.appendChild(el("span", "sp-st-gname", String(g.name || ""))); row.appendChild(el("span", "sp-st-hours", String(g.hours || 0) + " h" + (c.steamGames === "recent" ? " · 2 wks" : ""))); ul.appendChild(row);
       });
       box.appendChild(ul);
