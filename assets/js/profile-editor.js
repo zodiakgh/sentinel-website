@@ -553,7 +553,7 @@
       if (!account.verified) { msg.textContent = "Verify your email before publishing a profile."; msg.className = "pe-status error"; return; }
       var data = await api("/profiles/me"); steamInfo = data.profile && data.profile.steam ? data.profile.steam : null; steamLinked = !!data.steamLinked; serverProfile = data.profile ? Object.assign({}, data.profile, { nameChanges: data.nameChanges, canRename: data.canRename }) : null; badgeData = { all: data.allBadges || [], catalog: data.catalog || [], isOwner: !!data.isOwner };
       try { var m = await api("/profiles/assets"); assets = m.assets || []; counts = m.counts || {}; } catch (_) { }
-      state = fromProfile(data.profile, account); saved = data.profile ? serialize() : ""; savedState = clone(state);
+      state = fromProfile(data.profile, account); if (data.profile) state.hiddenBadges = Array.isArray(data.hiddenBadges) ? data.hiddenBadges.slice() : []; saved = data.profile ? serialize() : ""; savedState = clone(state);
       if (data.profile) { var l = $("open-profile"); l.href = "/u/" + data.profile.username; l.hidden = false; }
       msg.classList.add("pe-hide"); $("app").classList.remove("pe-hide"); $("bar").classList.remove("pe-hide");
       activeTab = data.profile ? "profile" : "templates"; buildPanels();
