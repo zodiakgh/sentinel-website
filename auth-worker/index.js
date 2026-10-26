@@ -303,24 +303,26 @@ async function steamStart(env, req) {
 async function steamCallback(env, req) {
   const url = new URL(req.url), clear = ["Set-Cookie", cookie("sentinel_sstate", "", { maxAge: 0, path: "/auth" })], fail = (q) => steamRedirect(env, q, [clear]);
   const state = url.searchParams.get("state") || "", [cState, cSig] = (cookies(req).sentinel_sstate || "").split(".");
-  if (!state || !cState || !safeEqual(state, cState) || !safeEqual(cSig || "", await sign(env.STATE_SECRET, cState))) return fail("error");
+  if (!state || !cState || !safeEqual(state, cState) || !safeEqual(cSig || "", await sign(env.STATE_SECRET, cState))) return fail("error_state");
   if (url.searchParams.get("openid.mode") !== "id_res") return fail("cancelled");
-  if (url.searchParams.get("openid.return_to") !== `${env.API_ORIGIN}/auth/steam/callback?state=${state}`) return fail("error");
-  const m = /^https:\/\/steamcommunity\.com\/openid\/id\/(\d{17})$/.exec(url.searchParams.get("openid.claimed_id") || ""); if (!m) return fail("error");
+  if (url.searchParams.get("openid.return_to") !== `${env.API_ORIGIN}/auth/steam/callback?state=${state}`) return fail("error_return");
+  const m = /^https:\/\/steamcommunity\.com\/openid\/id\/(\d{17})$/.exec(url.searchParams.get("openid.claimed_id") || ""); if (!m) return fail("error_claim");
   const s = await session(env, req); if (!s || !s.data.accountEmail) return fail("login_required");
   try {
     const p = new URLSearchParams(); for (const [k, v] of url.searchParams) if (k.startsWith("openid.")) p.set(k, v);
     p.set("openid.mode", "check_authentication");
     const vr = await fetch(STEAM_OPENID, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: p });
-    if (!vr.ok || !/is_valid\s*:\s*true/.test(await vr.text())) return fail("error");
+    const vt = await vr.text();
+    if (!vr.ok) return fail("error_verify_" + vr.status);
+    if (!/is_valid\s*:\s*true/.test(vt)) return fail("error_invalid");
     const id = m[1], email = s.data.accountEmail, mapKey = `st:${id}`, owner = await env.SESSIONS.get(mapKey);
     if (owner && owner !== email) return fail("already_used");
-    const aKey = await accountKey(email), a = JSON.parse(await env.SESSIONS.get(aKey) || "null"); if (!a) return fail("error");
+    const aKey = await accountKey(email), a = JSON.parse(await env.SESSIONS.get(aKey) || "null"); if (!a) return fail("error_account");
     if (a.steam && a.steam.id && a.steam.id !== id) await env.SESSIONS.delete(`st:${a.steam.id}`);
     a.steam = { id, linkedAt: Date.now() };
     await env.SESSIONS.put(aKey, JSON.stringify(a)); await env.SESSIONS.put(mapKey, email);
     return fail("linked");
-  } catch (_) { return fail("error"); }
+  } catch (e) { return fail("error_exc"); }
 }
 async function accountUnlinkSteam(env, req) {
   if (!originOK(env, req)) return json(env, req, { error: "forbidden" }, 403);
