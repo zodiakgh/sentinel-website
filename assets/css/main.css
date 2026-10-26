@@ -629,3 +629,25 @@ section.cta-band .btn-primary:hover{background:#f2f3f5}
 
 .btn-vote{gap:8px}.btn-vote svg{flex:none;color:#ff3366}
 .btn-vote img{width:20px;height:20px;border-radius:5px;flex:none;display:block}
+
+/* server dashboard (manage) */
+.mg-sec{background:var(--panel); border-radius:12px; padding:20px; margin-bottom:16px; display:flex; flex-direction:column; gap:14px}
+.mg-sec h2{font-size:18px; margin:0}
+.mg-hint{margin:0; font-size:13px; color:var(--muted)}
+.mg-f{display:flex; flex-direction:column; gap:6px}.mg-f label{font-size:13px; font-weight:600; color:var(--fg-2)}
+.mg-f input[type=text],.mg-f select,.mg-f textarea,.mg-type input,.mg-type select{width:100%; background:var(--bg); color:var(--fg); border:1px solid var(--line-3); border-radius:8px; padding:10px 12px; font:inherit; font-size:14px}
+.mg-f input[type=color]{width:56px; height:38px; padding:2px; background:var(--bg); border:1px solid var(--line-3); border-radius:8px}
+.mg-f textarea{resize:vertical}
+.mg-tg{display:flex; align-items:center; gap:10px; flex-wrap:wrap; cursor:pointer}.mg-tg input{width:18px; height:18px; accent-color:var(--blurple)}.mg-tg small{flex-basis:100%; color:var(--muted); font-size:12.5px; padding-left:28px}
+.mg-roles{display:flex; flex-wrap:wrap; gap:8px}
+.mg-chip{display:inline-flex; align-items:center; gap:8px; padding:6px 12px; border-radius:99px; background:var(--bg); border:1px solid var(--line-3); font-size:13.5px; cursor:pointer}.mg-chip input{accent-color:var(--blurple)}.mg-chip span{color:var(--rc,var(--fg))}
+.mg-types{display:flex; flex-direction:column; gap:10px}
+.mg-type{display:grid; grid-template-columns:64px 1fr 1.4fr auto; gap:8px; align-items:center}
+@media (max-width:640px){.mg-type{grid-template-columns:64px 1fr}.mg-type input:nth-of-type(3),.mg-type button{grid-column:1/-1}}
+.mg-bar{display:flex; flex-wrap:wrap; gap:10px; margin:6px 0 12px}
+.mg-msg{min-height:22px; font-size:14px}.mg-msg.ok{color:var(--green)}.mg-msg.err{color:var(--red)}
+.mg-embed{background:var(--bg); border-left:4px solid var(--blurple); border-radius:6px; padding:12px 14px; display:flex; flex-direction:column; gap:6px; max-width:480px}
+.mg-embed b{font-size:15px}.mg-embed p{margin:0; font-size:14px; color:var(--fg-2); white-space:pre-wrap}.mg-embed small{color:var(--muted)}
+.mg-btns{display:flex; flex-wrap:wrap; gap:8px; margin-top:6px}
+.mg-btn{padding:6px 14px; border-radius:6px; font-size:13.5px; font-weight:600; color:#fff; background:var(--blurple)}
+.mg-btn.secondary{background:#4e5058}.mg-btn.success{background:#248046}.mg-btn.danger{background:#da373c}

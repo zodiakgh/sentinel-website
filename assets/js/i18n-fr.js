@@ -493,6 +493,7 @@ window.SENTINEL_FR = {
  "dash.owner": "Propriétaire",
  "dash.add": "Ajouter Sentinel ↗",
  "dash.how": "Comment configurer",
+ "dash.manage": "Gérer",
  "dash.n.cancelled": "Connexion annulée. Vous n’êtes pas connecté.",
  "dash.n.error": "La connexion a échoué. Veuillez réessayer.",
  "meta.d.d": "Sentinel n’a pas encore de tableau de bord web. Découvrez comment configurer un serveur dans Discord et ce qu’exigerait un tableau de bord sécurisé.",

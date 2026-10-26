@@ -412,6 +412,88 @@ async function lyricsSearch(env, req) {
     return json(env, req, { ok: true, ...hit, lyrics: (hit.synced || hit.plain).slice(0, 6000), isSynced: !!hit.synced });
   } catch (_) { return json(env, req, { error: "lookup_failed", message: "The lyrics service is unavailable right now." }, 502); }
 }
+
+/* ================= SERVER DASHBOARD: TICKETS =================
+ * Config lives in KV (tk:<guildId>). The site edits it; the bot reads it with the shared key (GET /bot/guilds/<id>/tickets).
+ * Only people who manage the server (Manage Server / Administrator, as recorded at Discord login) can read or change it. */
+async function dashGuild(env, req, gid) {
+  const bad = (status, error, message) => ({ err: json(env, req, { error, message }, status) });
+  if (!SNOWFLAKE.test(gid)) return bad(400, "bad_request");
+  const s = await session(env, req); if (!s) return bad(401, "unauthenticated", "Sign in first.");
+  let guilds = [];
+  if (s.data.accountEmail) {
+    const a = JSON.parse(await env.SESSIONS.get(await accountKey(s.data.accountEmail)) || "null");
+    if (!a || !a.discord) return bad(403, "link_discord", "Link your Discord account on the account page first.");
+    if (Date.now() - Number(a.discord.linkedAt || 0) > 30 * 86400000) return bad(403, "relink_discord", "Re-link Discord on the account page to refresh your server permissions.");
+    guilds = Array.isArray(a.discord.guilds) ? a.discord.guilds : [];
+  } else guilds = Array.isArray(s.data.guilds) ? s.data.guilds : [];
+  const g = guilds.find((x) => x.id === gid); if (!g) return bad(403, "forbidden", "You don't manage this server.");
+  if (!env.BOT_TOKEN) return { err: json(env, req, { error: "misconfigured", missing: ["BOT_TOKEN"] }, 500) };
+  return { s, g };
+}
+const TICKET_DEFAULT = () => ({ enabled: false, panelChannelId: "", categoryId: "", logChannelId: "", supportRoleIds: [], maxOpen: 1, namePattern: "ticket-{number}", claim: true, transcript: true, confirmClose: true,
+  panel: { title: "Support tickets", description: "Need help? Press a button below to open a private ticket with the team.", color: "#5865f2", footer: "", buttonStyle: "primary" },
+  welcome: "Hello {user}, thanks for opening a **{type}** ticket. Describe your issue and a member of the team will answer soon.",
+  types: [{ id: "support", label: "Support", emoji: "🎫", description: "General help" }], panelMessageId: "" });
+function ticketConfig(b, old) {
+  const snow = (v) => SNOWFLAKE.test(String(v || "")) ? String(v) : "", d = TICKET_DEFAULT(), p = (b && b.panel) || {};
+  const types = (Array.isArray(b && b.types) ? b.types : d.types).slice(0, 5).map((t) => ({ id: String((t && t.id) || "").toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 20), label: profileText(t && t.label, 40), emoji: profileText(t && t.emoji, 8).replace(/[A-Za-z0-9<>:\s]/g, ""), description: profileText(t && t.description, 100) }))
+    .filter((t) => t.id && t.label);
+  const seen = new Set(); const uniq = types.filter((t) => !seen.has(t.id) && seen.add(t.id));
+  return {
+    enabled: !!(b && b.enabled), panelChannelId: snow(b && b.panelChannelId), categoryId: snow(b && b.categoryId), logChannelId: snow(b && b.logChannelId),
+    supportRoleIds: [...new Set((Array.isArray(b && b.supportRoleIds) ? b.supportRoleIds : []).map(snow).filter(Boolean))].slice(0, 5),
+    maxOpen: Math.max(1, Math.min(10, Math.round(Number(b && b.maxOpen) || 1))),
+    namePattern: ["ticket-{number}", "ticket-{user}", "{type}-{number}"].includes(b && b.namePattern) ? b.namePattern : "ticket-{number}",
+    claim: !!(b && b.claim), transcript: !!(b && b.transcript), confirmClose: !!(b && b.confirmClose),
+    panel: { title: profileText(p.title, 80) || d.panel.title, description: String(p.description || "").replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "").slice(0, 1000) || d.panel.description,
+      color: /^#[0-9a-f]{6}$/i.test(String(p.color || "")) ? String(p.color) : d.panel.color, footer: profileText(p.footer, 80), buttonStyle: ["primary", "secondary", "success", "danger"].includes(p.buttonStyle) ? p.buttonStyle : "primary" },
+    welcome: String((b && b.welcome) || "").replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "").slice(0, 1000) || d.welcome,
+    types: uniq.length ? uniq : d.types, panelMessageId: old && old.panelMessageId ? old.panelMessageId : "", panelPostedIn: old && old.panelPostedIn ? old.panelPostedIn : "", updated: Date.now()
+  };
+}
+async function dashGuildGet(env, req, gid) {
+  const a = await dashGuild(env, req, gid); if (a.err) return a.err;
+  const [ch, ro, gi] = await Promise.all([botCall(env, "GET", `/guilds/${gid}/channels`), botCall(env, "GET", `/guilds/${gid}/roles`), botCall(env, "GET", `/guilds/${gid}`)]);
+  if (gi.status === 404 || gi.status === 403 || ch.status === 403 || ch.status === 404) return json(env, req, { error: "bot_missing", message: "Sentinel isn't in this server yet." }, 404);
+  if (!ch.ok || !ro.ok) return json(env, req, { error: "discord_error", message: "Discord didn't answer. Try again in a moment." }, 502);
+  const channels = (await ch.json()).filter((c) => [0, 4].includes(c.type)).sort((x, y) => x.position - y.position).map((c) => ({ id: c.id, name: String(c.name || "").slice(0, 100), type: c.type === 4 ? "category" : "text", parent: c.parent_id || null }));
+  const roles = (await ro.json()).filter((r) => r.id !== gid && !r.managed).sort((x, y) => y.position - x.position).map((r) => ({ id: r.id, name: String(r.name || "").slice(0, 100), color: r.color ? "#" + r.color.toString(16).padStart(6, "0") : "" }));
+  const raw = await env.SESSIONS.get(`tk:${gid}`), tickets = raw ? JSON.parse(raw) : TICKET_DEFAULT(), gj = await gi.json();
+  return json(env, req, { guild: { id: gid, name: a.g.name || gj.name, iconUrl: cdn("icons", gid, a.g.icon || gj.icon) }, channels, roles, tickets }, 200, { "Cache-Control": "no-store" });
+}
+async function dashTicketsSave(env, req, gid) {
+  if (!originOK(env, req)) return json(env, req, { error: "forbidden" }, 403);
+  const a = await dashGuild(env, req, gid); if (a.err) return a.err;
+  let b; try { b = await readBody(req); } catch (_) { return json(env, req, { error: "bad_request" }, 400); }
+  const raw = await env.SESSIONS.get(`tk:${gid}`), old = raw ? JSON.parse(raw) : null, cfg = ticketConfig(b, old);
+  if (cfg.enabled && (!cfg.panelChannelId || !cfg.categoryId)) return json(env, req, { error: "incomplete", message: "Choose the panel channel and the category for new tickets before enabling." }, 400);
+  await env.SESSIONS.put(`tk:${gid}`, JSON.stringify(cfg));
+  return json(env, req, { ok: true, tickets: cfg });
+}
+async function dashTicketsPanel(env, req, gid) {
+  if (!originOK(env, req)) return json(env, req, { error: "forbidden" }, 403);
+  const a = await dashGuild(env, req, gid); if (a.err) return a.err;
+  const raw = await env.SESSIONS.get(`tk:${gid}`); if (!raw) return json(env, req, { error: "not_saved", message: "Save your settings first." }, 400);
+  const cfg = JSON.parse(raw); if (!cfg.panelChannelId) return json(env, req, { error: "incomplete", message: "Choose the panel channel first." }, 400);
+  const styles = { primary: 1, secondary: 2, success: 3, danger: 4 };
+  const payload = { embeds: [{ title: cfg.panel.title, description: cfg.panel.description, color: parseInt(cfg.panel.color.slice(1), 16), ...(cfg.panel.footer ? { footer: { text: cfg.panel.footer } } : {}) }],
+    components: [{ type: 1, components: cfg.types.map((t) => ({ type: 2, style: styles[cfg.panel.buttonStyle] || 1, label: t.label, custom_id: `sentinel:ticket:open:${t.id}`, ...(t.emoji ? { emoji: { name: t.emoji } } : {}) })) }], allowed_mentions: { parse: [] } };
+  let r = null, edited = false;
+  if (cfg.panelMessageId && cfg.panelChannelId === cfg.panelPostedIn) { r = await botCall(env, "PATCH", `/channels/${cfg.panelChannelId}/messages/${cfg.panelMessageId}`, payload, `Ticket panel updated from dashboard by ${a.s.data.accountEmail ? "account" : a.s.data.user.id}`); edited = r.ok; }
+  if (!r || !r.ok) r = await botCall(env, "POST", `/channels/${cfg.panelChannelId}/messages`, payload, "Ticket panel posted from dashboard");
+  if (!r.ok) return json(env, req, { error: "discord_forbidden", message: r.status === 403 || r.status === 404 ? "Sentinel can't post in that channel. Give it View Channel, Send Messages and Embed Links there." : "Discord refused the message." }, 400);
+  const m = await r.json(); cfg.panelMessageId = m.id; cfg.panelPostedIn = cfg.panelChannelId; await env.SESSIONS.put(`tk:${gid}`, JSON.stringify(cfg));
+  return json(env, req, { ok: true, edited, messageId: m.id });
+}
+async function botTicketsGet(env, req, gid) {
+  if (!env.BOT_API_KEY) return json(env, req, { error: "misconfigured", missing: ["BOT_API_KEY"] }, 500);
+  const given = req.headers.get("X-Sentinel-Key") || "";
+  if (!safeEqual(await sign(env.STATE_SECRET, given), await sign(env.STATE_SECRET, env.BOT_API_KEY))) return json(env, req, { error: "forbidden" }, 403);
+  if (!SNOWFLAKE.test(gid)) return json(env, req, { error: "bad_request" }, 400);
+  const raw = await env.SESSIONS.get(`tk:${gid}`); if (!raw) return json(env, req, { enabled: false });
+  const c = JSON.parse(raw); delete c.panelMessageId; delete c.panelPostedIn; return json(env, req, c, 200, { "Cache-Control": "no-store" });
+}
 async function accountChangePassword(env, req) {
   if (!originOK(env, req)) return json(env, req, { error: "forbidden" }, 403);
   const s = await session(env, req); if (!s || !s.data.accountEmail) return json(env, req, { error: "unauthenticated" }, 401);
@@ -1186,6 +1268,9 @@ export default {
       const s = await session(env, req); if (!s || !s.data.accountEmail) return new Response(null, { status: 302, headers: { Location: `${env.SITE_ORIGIN}/account?link=login_required`, "Cache-Control": "no-store" } });
       return linkDiscord(env);
     }
+    { const dm = pathname.match(/^\/dash\/guild\/(\d{15,25})(\/tickets(?:\/panel)?)?$/);
+      if (dm) { if (req.method === "GET" && !dm[2]) return dashGuildGet(env, req, dm[1]); if (req.method === "POST" && dm[2] === "/tickets") return dashTicketsSave(env, req, dm[1]); if (req.method === "POST" && dm[2] === "/tickets/panel") return dashTicketsPanel(env, req, dm[1]); }
+      const bm = pathname.match(/^\/bot\/guilds\/(\d{15,25})\/tickets$/); if (bm && req.method === "GET") return botTicketsGet(env, req, bm[1]); }
     if (req.method === "GET" && pathname === "/lyrics/search") return lyricsSearch(env, req);
     if (req.method === "GET" && pathname === "/profiles/lookup") return profileLookup(env, req);
     if (req.method === "GET" && pathname === "/auth/steam") return steamStart(env, req);

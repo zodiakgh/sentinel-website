@@ -2,6 +2,15 @@
   "_help": "Edit this file on GitHub to change https://www.sentineldashboard.site/changelog. Add a new entry at the TOP of 'entries'. Each entry: date (YYYY-MM-DD), title / titleFr, optional version, and items: a list of { type: new | improved | fixed, text, textFr }. Commit and the page updates in about a minute.",
   "entries": [
     {
+      "date": "2026-10-27",
+      "title": "Server dashboard: tickets",
+      "titleFr": "Dashboard serveur : tickets",
+      "items": [
+        { "type": "new", "text": "Manage your server's ticket system from the dashboard: panel, categories, support roles, logs and transcripts.", "textFr": "Gérez le système de tickets de votre serveur depuis le dashboard : panneau, catégories, rôles du support, logs et transcriptions." },
+        { "type": "new", "text": "Profiles: second page with sections, best friends, lyrics with timing adjustment, Steam card, Google sign-in.", "textFr": "Profils : seconde page avec sections, meilleurs amis, paroles avec réglage du timing, carte Steam, connexion Google." }
+      ]
+    },
+    {
       "date": "2026-10-25",
       "title": "Status page and new look",
       "titleFr": "Page de statut et nouveau design",
