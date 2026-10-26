@@ -148,8 +148,8 @@
     head.appendChild(who); head.appendChild(el("span", "sp-st-tag", "Steam")); box.appendChild(head);
     if (d["private"]) { box.appendChild(el("p", "sp-st-note", "Game details are private on this Steam profile." + (d.diag ? " (" + String(d.diag).slice(0, 90) + ")" : ""))); return box; }
     var stats = el("div", "sp-st-stats");
-    [[String(d.gameCount || 0), "Games"], [String(d.totalHours || 0) + " h", "Played"]].forEach(function (x) { var b = el("div", "sp-st-stat"); b.appendChild(el("b", "", x[0])); b.appendChild(el("span", "", x[1])); stats.appendChild(b); });
-    box.appendChild(stats);
+    (d.partial ? [] : [[String(d.gameCount || 0), "Games"], [String(d.totalHours || 0) + " h", "Played"]]).forEach(function (x) { var b = el("div", "sp-st-stat"); b.appendChild(el("b", "", x[0])); b.appendChild(el("span", "", x[1])); stats.appendChild(b); });
+    if (stats.firstChild) box.appendChild(stats);
     var list = c.steamGames === "recent" ? d.recent : c.steamGames === "none" ? [] : d.top; list = Array.isArray(list) ? list.slice(0, 5) : [];
     if (list.length) {
       var ul = el("div", "sp-st-list");

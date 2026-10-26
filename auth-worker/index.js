@@ -361,9 +361,15 @@ async function steamData(env, id) {
         games.push({ id: num(g.appid), name: profileText(g.name, 60), total, recent: rec });
       }
     }
+    let partial = false;
+    if (!games.length) {   // last resort: "most played games" block of the public profile XML (top few only, no totals)
+      const mre = /<mostPlayedGame>([\s\S]*?)<\/mostPlayedGame>/g; let mm;
+      while ((mm = mre.exec(prof)) && games.length < 10) { const link = tag(mm[1], "gameLink"), idm = /\/app\/(\d+)/.exec(link); games.push({ id: idm ? Number(idm[1]) : 0, name: profileText(tag(mm[1], "gameName"), 60), total: num(tag(mm[1], "hoursOnRecord")), recent: num(tag(mm[1], "hoursPlayed")) }); }
+      if (games.length) partial = true; else diag += " mp:0";
+    }
     const priv = !games.length;
     const out = { name: profileText(tag(prof, "steamID"), 40), avatar: safeHttpUrl(tag(prof, "avatarFull"), 300, true), url: `https://steamcommunity.com/profiles/${id}`, online: state === "online" || state === "in-game", playing: state === "in-game" ? profileText(tag(prof, "stateMessage").replace(/<[^>]*>/g, "").replace(/^In-Game\s*/i, ""), 60) : "",
-      private: priv, diag: priv ? diag : undefined, gameCount: games.length, totalHours: Math.round(games.reduce((t, g) => t + g.total, 0) * 10) / 10,
+      private: priv, partial: partial || undefined, diag: priv ? diag : undefined, gameCount: games.length, totalHours: Math.round(games.reduce((t, g) => t + g.total, 0) * 10) / 10,
       top: games.filter(g => g.total > 0).sort((a, b) => b.total - a.total).slice(0, 5).map(g => ({ id: g.id, name: g.name, hours: g.total })),
       recent: games.filter(g => g.recent > 0).sort((a, b) => b.recent - a.recent).slice(0, 3).map(g => ({ id: g.id, name: g.name, hours: g.recent })) };
     await env.SESSIONS.put(ck, JSON.stringify(out), { expirationTtl: priv ? 120 : 3600 });
