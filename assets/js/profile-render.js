@@ -210,8 +210,9 @@
     play.addEventListener("click", function () { self.toggle(); });
     prev.addEventListener("click", function () { self.prev(); }); next.addEventListener("click", function () { self.next(false); });
     var seeking = false, lastVol = a.volume || .6;
-    seek.addEventListener("input", function () { seeking = true; if (a.duration) a.currentTime = a.duration * seek.value / 1000; seek.style.setProperty("--p", (seek.value / 10) + "%"); });
-    seek.addEventListener("change", function () { seeking = false; });
+    seek.addEventListener("input", function () { seeking = true; seek.style.setProperty("--p", (seek.value / 10) + "%"); if (a.duration) t1.textContent = fmt(a.duration * seek.value / 1000); });
+    function commit() { if (a.duration && isFinite(a.duration)) a.currentTime = a.duration * seek.value / 1000; seeking = false; }
+    seek.addEventListener("change", commit);
     vol.addEventListener("input", function () { a.volume = vol.value / 100; if (a.volume > 0) lastVol = a.volume; });
     mute.addEventListener("click", function () { if (a.volume > 0) { lastVol = a.volume; a.volume = 0; } else a.volume = lastVol || .6; });
     function sync() {

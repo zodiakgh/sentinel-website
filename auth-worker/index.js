@@ -1047,9 +1047,22 @@ async function profileAssetPublic(env, req, id) {
   const metaRaw = await env.SESSIONS.get(`paasset:${id}`);
   const meta = metaRaw ? JSON.parse(metaRaw) : null;
   if (!meta) return new Response("Not found", { status: 404 });
-  const object = await env.PROFILE_ASSETS.get(meta.key || `profile-assets/${meta.ownerHash}/${id}`);
+  const objKey = meta.key || `profile-assets/${meta.ownerHash}/${id}`;
+  // Byte-range support: audio/video seeking (dragging the player bar) needs 206 responses, otherwise browsers restart the file.
+  let range = null; const rm = /^bytes=(\d*)-(\d*)$/.exec(req.headers.get("Range") || "");
+  if (rm && (rm[1] || rm[2])) range = rm[1] === "" ? { suffix: Number(rm[2]) } : rm[2] === "" ? { offset: Number(rm[1]) } : { offset: Number(rm[1]), length: Number(rm[2]) - Number(rm[1]) + 1 };
+  if (range && range.length !== undefined && range.length <= 0) range = null;
+  let object;
+  try { object = await env.PROFILE_ASSETS.get(objKey, range ? { range } : undefined); }
+  catch (_) { return new Response("Range not satisfiable", { status: 416, headers: { "Content-Range": "bytes */*" } }); }
   if (!object) return new Response("Not found", { status: 404 });
   const headers = new Headers({ "Content-Type": object.httpMetadata?.contentType || meta.mime || "application/octet-stream", "Cache-Control": "public, max-age=86400", "X-Content-Type-Options": "nosniff", "Access-Control-Allow-Origin": (allowedSiteOrigin(env, req.headers.get("Origin")) ? req.headers.get("Origin") : env.SITE_ORIGIN), "Cross-Origin-Resource-Policy": "cross-origin" });
+  headers.set("Accept-Ranges", "bytes");
+  if (range && object.range && object.size) {
+    const off = object.range.offset ?? (object.size - (object.range.length ?? 0)), len = object.range.length ?? (object.size - off);
+    headers.set("Content-Range", `bytes ${off}-${off + len - 1}/${object.size}`); headers.set("Content-Length", String(len));
+    return new Response(req.method === "HEAD" ? null : object.body, { status: 206, headers });
+  }
   if (object.size) headers.set("Content-Length", String(object.size));
   return new Response(req.method === "HEAD" ? null : object.body, { headers });
 }
