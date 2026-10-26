@@ -22,6 +22,7 @@
  *   secrets: DISCORD_CLIENT_SECRET, STATE_SECRET, BOT_TOKEN (optional for login,
  *            required for verification), BOT_API_KEY (verification), TURNSTILE_SECRET (optional captcha)
  *   vars:    TURNSTILE_SITE_KEY (optional, public)
+ *   Google sign-in (optional): var GOOGLE_CLIENT_ID, secret GOOGLE_CLIENT_SECRET; redirect URI = <API_ORIGIN>/auth/google/callback
  *   KV:      SESSIONS
  */
 
@@ -204,7 +205,7 @@ async function accountMe(env, req) {
   if (!s.data.accountEmail) return json(env, req, { error: "not_email_account" }, 400);
   const raw = await env.SESSIONS.get(await accountKey(s.data.accountEmail)); if (!raw) return json(env, req, { error: "account_not_found" }, 404);
   const a = JSON.parse(raw);
-  return json(env, req, { email: a.email, verified: !!a.verified, created: a.created, discord: a.discord ? { id: a.discord.id, username: a.discord.username, name: a.discord.name, avatarUrl: cdn("avatars", a.discord.id, a.discord.avatar) } : null });
+  return json(env, req, { email: a.email, verified: !!a.verified, created: a.created, discord: a.discord ? { id: a.discord.id, username: a.discord.username, name: a.discord.name, avatarUrl: cdn("avatars", a.discord.id, a.discord.avatar) } : null, google: a.google ? { email: a.google.email } : null, hasPassword: !!a.passwordHash });
 }
 async function accountUnlinkDiscord(env, req) {
   if (!originOK(env, req)) return json(env, req, { error: "forbidden" }, 403);
@@ -216,12 +217,80 @@ async function accountUnlinkDiscord(env, req) {
   a.discord = null; await env.SESSIONS.put(key, JSON.stringify(a));
   return json(env, req, { ok: true });
 }
+
+/* ---------- Google sign-in / link ---------- */
+const googleRedirect = (env, q, headers = []) => {
+  const h = new Headers({ Location: `${env.SITE_ORIGIN}/account?google=${q}`, "Cache-Control": "no-store" });
+  headers.forEach(([k, v]) => h.append(k, v));
+  return new Response(null, { status: 302, headers: h });
+};
+async function googleStart(env, req) {
+  const missing = ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET"].filter((k) => !env[k]);
+  if (missing.length) return googleRedirect(env, "misconfigured");
+  const link = new URL(req.url).searchParams.get("link") === "1";
+  if (link) { const s = await session(env, req); if (!s || !s.data.accountEmail) return googleRedirect(env, "login_required"); }
+  const state = (link ? "gl-" : "gi-") + rand(16), sig = await sign(env.STATE_SECRET, state), url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+  url.search = new URLSearchParams({ client_id: env.GOOGLE_CLIENT_ID, response_type: "code", scope: "openid email", redirect_uri: `${env.API_ORIGIN}/auth/google/callback`, state, prompt: "select_account" });
+  return new Response(null, { status: 302, headers: { Location: url.toString(), "Cache-Control": "no-store", "Set-Cookie": cookie("sentinel_gstate", `${state}.${sig}`, { maxAge: STATE_TTL, path: "/auth" }) } });
+}
+async function googleCallback(env, req) {
+  const url = new URL(req.url), clear = ["Set-Cookie", cookie("sentinel_gstate", "", { maxAge: 0, path: "/auth" })], fail = (q) => googleRedirect(env, q, [clear]);
+  if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) return fail("misconfigured");
+  if (url.searchParams.get("error")) return fail("cancelled");
+  const code = url.searchParams.get("code"), state = url.searchParams.get("state"), [cState, cSig] = (cookies(req).sentinel_gstate || "").split(".");
+  if (!code || !state || !cState || !safeEqual(state, cState) || !safeEqual(cSig || "", await sign(env.STATE_SECRET, cState))) return fail("error");
+  try {
+    const tr = await fetch("https://oauth2.googleapis.com/token", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ code, client_id: env.GOOGLE_CLIENT_ID, client_secret: env.GOOGLE_CLIENT_SECRET, redirect_uri: `${env.API_ORIGIN}/auth/google/callback`, grant_type: "authorization_code" }) });
+    if (!tr.ok) return fail("error");
+    const t = await tr.json(), seg = String(t.id_token || "").split(".")[1];
+    if (!seg) return fail("error");
+    const b64 = seg.replace(/-/g, "+").replace(/_/g, "/"), pl = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(b64 + "=".repeat((4 - b64.length % 4) % 4)), (c) => c.charCodeAt(0))));
+    // the token came straight from Google's token endpoint over TLS; we still check the claims
+    if (pl.aud !== env.GOOGLE_CLIENT_ID || !["https://accounts.google.com", "accounts.google.com"].includes(pl.iss) || !(pl.exp * 1000 > Date.now()) || !pl.sub || !pl.email || pl.email_verified !== true) return fail("error");
+    const sub = String(pl.sub), gmail = String(pl.email).trim().toLowerCase(), gKey = `g:${sub}`;
+    if (!EMAIL_RE.test(gmail)) return fail("error");
+    if (state.startsWith("gl-")) {
+      const s = await session(env, req); if (!s || !s.data.accountEmail) return fail("login_required");
+      const email = s.data.accountEmail, owner = await env.SESSIONS.get(gKey);
+      if (owner && owner !== email) return fail("already_used");
+      const aKey = await accountKey(email), a = JSON.parse(await env.SESSIONS.get(aKey) || "null"); if (!a) return fail("error");
+      if (a.google && a.google.sub && a.google.sub !== sub) await env.SESSIONS.delete(`g:${a.google.sub}`);
+      a.google = { sub, email: gmail, linkedAt: Date.now() };
+      await env.SESSIONS.put(aKey, JSON.stringify(a)); await env.SESSIONS.put(gKey, email);
+      return fail("linked");
+    }
+    let email = await env.SESSIONS.get(gKey), a = null, aKey = "";
+    if (email) { aKey = await accountKey(email); a = JSON.parse(await env.SESSIONS.get(aKey) || "null"); }
+    if (!a) {
+      email = gmail; aKey = await accountKey(email); const raw = await env.SESSIONS.get(aKey);
+      if (raw) {
+        a = JSON.parse(raw);
+        if (!a.verified) { a.verified = true; delete a.passwordHash; delete a.salt; }   // an unverified signup must not keep a password someone else chose
+      } else a = { email, salt: "", passwordHash: "", verified: true, created: Date.now(), discord: null };
+      a.google = { sub, email: gmail, linkedAt: Date.now() };
+      await env.SESSIONS.put(aKey, JSON.stringify(a)); await env.SESSIONS.put(gKey, email);
+    }
+    const sid = rand(32); await env.SESSIONS.put(`s:${sid}`, JSON.stringify({ accountEmail: email, created: Date.now() }), { expirationTtl: SESSION_TTL });
+    return googleRedirect(env, "ok", [clear, ["Set-Cookie", cookie("sentinel_session", sid, { maxAge: SESSION_TTL })]]);
+  } catch (_) { return fail("error"); }
+}
+async function accountUnlinkGoogle(env, req) {
+  if (!originOK(env, req)) return json(env, req, { error: "forbidden" }, 403);
+  const s = await session(env, req); if (!s || !s.data.accountEmail) return json(env, req, { error: "unauthenticated" }, 401);
+  const key = await accountKey(s.data.accountEmail), a = JSON.parse(await env.SESSIONS.get(key) || "null");
+  if (!a) return json(env, req, { error: "unauthenticated" }, 401);
+  if (!a.passwordHash && !(a.discord && a.discord.id)) return json(env, req, { error: "last_login_method", message: "Set a password first, otherwise you could not sign in anymore." }, 400);
+  if (a.google && a.google.sub) await env.SESSIONS.delete(`g:${a.google.sub}`);
+  a.google = null; await env.SESSIONS.put(key, JSON.stringify(a));
+  return json(env, req, { ok: true });
+}
 async function accountChangePassword(env, req) {
   if (!originOK(env, req)) return json(env, req, { error: "forbidden" }, 403);
   const s = await session(env, req); if (!s || !s.data.accountEmail) return json(env, req, { error: "unauthenticated" }, 401);
   let b; try { b = await readBody(req); } catch (_) { return json(env, req, { error: "bad_request" }, 400); }
   const email = s.data.accountEmail, key = await accountKey(email), a = JSON.parse(await env.SESSIONS.get(key) || "null");
-  if (!a || !safeEqual(a.passwordHash, await passwordHash(String(b.currentPassword || ""), a.salt))) return json(env, req, { error: "invalid_credentials" }, 401);
+  if (!a || (a.passwordHash && !safeEqual(a.passwordHash, await passwordHash(String(b.currentPassword || ""), a.salt)))) return json(env, req, { error: "invalid_credentials" }, 401);
   const next = String(b.newPassword || ""); if (next.length < 10 || next.length > 128) return json(env, req, { error: "weak_password" }, 400);
   a.salt = rand(16); a.passwordHash = await passwordHash(next, a.salt); await env.SESSIONS.put(key, JSON.stringify(a));
   return json(env, req, { ok: true });
@@ -944,6 +1013,9 @@ export default {
       const s = await session(env, req); if (!s || !s.data.accountEmail) return new Response(null, { status: 302, headers: { Location: `${env.SITE_ORIGIN}/account?link=login_required`, "Cache-Control": "no-store" } });
       return linkDiscord(env);
     }
+    if (req.method === "GET" && pathname === "/auth/google") return googleStart(env, req);
+    if (req.method === "GET" && pathname === "/auth/google/callback") return googleCallback(env, req);
+    if (req.method === "POST" && pathname === "/account/google/unlink") return accountUnlinkGoogle(env, req);
     if (req.method === "GET" && pathname === "/auth/callback") return callback(env, req);
     if (req.method === "GET" && pathname === "/api/me") return me(env, req);
     if (req.method === "POST" && pathname === "/account/register") return accountRegister(env, req);
