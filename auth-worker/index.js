@@ -444,10 +444,10 @@ async function dashGuildGet(env, req, gid) {
   const a = await dashGuild(env, req, gid); if (a.err) return a.err;
   const [ch, ro, gi] = await Promise.all([botCall(env, "GET", `/guilds/${gid}/channels`), botCall(env, "GET", `/guilds/${gid}/roles`), botCall(env, "GET", `/guilds/${gid}`)]);
   if (gi.status === 404 || gi.status === 403 || ch.status === 403 || ch.status === 404) return json(env, req, { error: "bot_missing", message: "Sentinel isn't in this server yet." }, 404);
-  if (!ch.ok || !ro.ok) return json(env, req, { error: "discord_error", message: "Discord didn't answer. Try again in a moment." }, 502);
-  const channels = (await ch.json()).filter((c) => [0, 4].includes(c.type)).sort((x, y) => x.position - y.position).map((c) => ({ id: c.id, name: String(c.name || "").slice(0, 100), type: c.type === 4 ? "category" : "text", parent: c.parent_id || null }));
-  const roles = (await ro.json()).filter((r) => r.id !== gid && !r.managed).sort((x, y) => y.position - x.position).map((r) => ({ id: r.id, name: String(r.name || "").slice(0, 100), color: r.color ? "#" + r.color.toString(16).padStart(6, "0") : "" }));
-  const [sn, q, rs] = await Promise.all([env.SESSIONS.get(`tks:${gid}`), env.SESSIONS.get(`tkq:${gid}`), env.SESSIONS.get(`tkr:${gid}`)]), gj = await gi.json();
+  const chj = ch.ok ? await ch.json() : [], roj = ro.ok ? await ro.json() : [];
+  const channels = chj.filter((c) => [0, 4].includes(c.type)).sort((x, y) => x.position - y.position).map((c) => ({ id: c.id, name: String(c.name || "").slice(0, 100), type: c.type === 4 ? "category" : "text", parent: c.parent_id || null }));
+  const roles = roj.filter((r) => r.id !== gid && !r.managed).sort((x, y) => y.position - x.position).map((r) => ({ id: r.id, name: String(r.name || "").slice(0, 100), color: r.color ? "#" + r.color.toString(16).padStart(6, "0") : "" }));
+  const [sn, q, rs] = await Promise.all([env.SESSIONS.get(`tks:${gid}`), env.SESSIONS.get(`tkq:${gid}`), env.SESSIONS.get(`tkr:${gid}`)]), gj = gi.ok ? await gi.json() : {};
   return json(env, req, { guild: { id: gid, name: a.g.name || gj.name, iconUrl: cdn("icons", gid, a.g.icon || gj.icon) }, channels, roles,
     snapshot: sn ? JSON.parse(sn) : null, queue: q ? JSON.parse(q) : [], results: rs ? JSON.parse(rs) : [] }, 200, { "Cache-Control": "no-store" });
 }
