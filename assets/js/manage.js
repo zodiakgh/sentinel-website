@@ -12,6 +12,8 @@
     return fetch(API + path, { method: body ? "POST" : "GET", credentials: "include", headers: body ? { "Content-Type": "application/json", Accept: "application/json" } : { Accept: "application/json" }, body: body ? JSON.stringify(body) : undefined })
       .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) { var e = new Error(j.message || j.error || "Request failed"); e.code = j.error; e.status = r.status; throw e; } return j; }); });
   }
+  var MAINTENANCE = true; /* passe à false pour réactiver la gestion des tickets */
+  if (MAINTENANCE) { lead.textContent = ""; title.textContent = "Ticket management"; return show("Ticket management is under maintenance. It will be back soon.", ["Back to the dashboard", "/dashboard"]); }
   if (!API) { lead.textContent = ""; return show("The dashboard service is not configured yet."); }
   if (!/^\d{15,25}$/.test(gid)) { lead.textContent = ""; return show("No server selected.", ["Choose one in the dashboard", "/dashboard"]); }
   var lastMsg = "", data, snap, tab = "settings", dirty = {}, msg, editing = null;
