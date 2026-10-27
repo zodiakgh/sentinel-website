@@ -83,6 +83,7 @@ class TicketDashboard(commands.Cog):
             log.warning("SENTINEL_API_URL / SENTINEL_BOT_KEY not set: ticket dashboard bridge disabled")
             return
         self.http = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=20), headers={"X-Sentinel-Key": KEY})
+        log.info("Ticket dashboard bridge started (%s)", API)
         self.pull.start()
         self.push.start()
 
@@ -152,6 +153,8 @@ class TicketDashboard(commands.Cog):
             return
         async with self.http.post(f"{API}/bot/guilds/{guild.id}/tickets/snapshot", json=snap) as r:  # type: ignore[union-attr]
             if r.status == 200:
+                if guild.id not in self._hash:
+                    log.info("Ticket snapshot sent for %s", guild.id)
                 self._hash[guild.id] = (digest, loop_time)
             else:
                 log.warning("Snapshot rejected for %s: HTTP %s", guild.id, r.status)
@@ -159,6 +162,7 @@ class TicketDashboard(commands.Cog):
     @tasks.loop(seconds=60)
     async def push(self) -> None:
         if not self.core:
+            log.warning("Ticket cog not found (is bot.cogs.ticket loaded?)")
             return
         for guild in list(self.bot.guilds):
             try:
