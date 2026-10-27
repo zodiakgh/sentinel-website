@@ -658,3 +658,12 @@ section.cta-band .btn-primary:hover{background:#f2f3f5}
 /* Small heart sits to the left of the original Sentinel mark */
 .brand-heart{display:block;width:28px;height:28px;object-fit:contain;flex:0 0 28px}
 .mg-emoji{font-size:20px;text-align:center}.mg-type b{overflow:hidden;text-overflow:ellipsis}
+.bd-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:10px 18px}
+.bd-cat{background:var(--bg); border-radius:10px; padding:12px; display:flex; flex-direction:column; gap:8px}
+.bd-row{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+.bd-in{background:var(--panel); color:var(--fg); border:1px solid var(--line-3); border-radius:8px; padding:6px 10px; min-width:0; flex:1 1 160px}
+.bd-catname{font-weight:700}
+.bd-ch select{width:auto; flex:0 0 auto; background:var(--panel); color:var(--fg); border:1px solid var(--line-3); border-radius:8px; padding:6px}
+.bd-mini{padding:2px 8px; min-width:30px}
+.bd-col{width:26px; height:26px; padding:0; border:0; background:none}
+.bd-tree{display:flex; flex-direction:column; gap:12px}

@@ -433,7 +433,7 @@ async function dashGuild(env, req, gid) {
 }
 /* Bridge to the bot's own ticket system. The bot pushes a snapshot (settings schema + values, types, panels);
  * the site queues changes (tkq:<gid>); the bot polls /bot/tickets/pending, applies them with its own validation and acks. */
-const TK_OPS = new Set(["settings", "type_create", "type_update", "type_delete", "panel_create", "panel_update", "panel_delete", "panel_publish"]);
+const TK_OPS = new Set(["settings", "type_create", "type_update", "type_delete", "panel_create", "panel_update", "panel_delete", "panel_publish", "server_build"]);
 async function botKeyOK(env, req) {
   if (!env.BOT_API_KEY) return json(env, req, { error: "misconfigured", missing: ["BOT_API_KEY"] }, 500);
   const given = req.headers.get("X-Sentinel-Key") || "";
@@ -456,8 +456,9 @@ async function dashTicketsOp(env, req, gid) {
   const a = await dashGuild(env, req, gid); if (a.err) return a.err;
   let b; try { b = await readBody(req); } catch (_) { return json(env, req, { error: "bad_request" }, 400 ); }
   if (!b || !TK_OPS.has(b.op) || typeof b.data !== "object" || b.data === null || Array.isArray(b.data)) return json(env, req, { error: "bad_request" }, 400);
-  if (JSON.stringify(b.data).length > 30000) return json(env, req, { error: "too_large", message: "That change is too large." }, 413);
+  if (JSON.stringify(b.data).length > (b.op === "server_build" ? 60000 : 30000)) return json(env, req, { error: "too_large", message: "That change is too large." }, 413);
   const raw = await env.SESSIONS.get(`tkq:${gid}`), q = raw ? JSON.parse(raw) : [];
+  if (b.op === "server_build" && q.some((i) => i.op === "server_build")) return json(env, req, { error: "busy", message: "A server build is already waiting for the bot." }, 429);
   if (q.length >= 30) return json(env, req, { error: "busy", message: "Too many changes are waiting for the bot. Make sure it's online, then try again." }, 429);
   const item = { id: crypto.randomUUID().replace(/-/g, "").slice(0, 12), ts: Date.now(), op: b.op, data: b.data, by: a.s.data.accountEmail ? "account" : String((a.s.data.user && a.s.data.user.id) || "") };
   q.push(item); await env.SESSIONS.put(`tkq:${gid}`, JSON.stringify(q), { expirationTtl: 86400 });
@@ -474,7 +475,7 @@ async function botTicketsAck(env, req) {
   const bad = await botKeyOK(env, req); if (bad) return bad;
   let b; try { b = await readBody(req); } catch (_) { return json(env, req, { error: "bad_request" }, 400); }
   const gid = String((b && b.gid) || ""); if (!SNOWFLAKE.test(gid) || !Array.isArray(b.results)) return json(env, req, { error: "bad_request" }, 400);
-  const res = b.results.slice(0, 30).map((x) => ({ id: String(x.id || "").slice(0, 16), ok: !!x.ok, error: String(x.error || "").slice(0, 300), ts: Date.now() }));
+  const res = b.results.slice(0, 30).map((x) => ({ id: String(x.id || "").slice(0, 16), ok: !!x.ok, error: String(x.error || "").slice(0, 300), info: String(x.info || "").slice(0, 300), ts: Date.now() }));
   const done = new Set(res.map((x) => x.id)), raw = await env.SESSIONS.get(`tkq:${gid}`), q = (raw ? JSON.parse(raw) : []).filter((i) => !done.has(i.id));
   if (q.length) await env.SESSIONS.put(`tkq:${gid}`, JSON.stringify(q), { expirationTtl: 86400 }); else {
     await env.SESSIONS.delete(`tkq:${gid}`); const ir = await env.SESSIONS.get("tkqidx"); if (ir) await env.SESSIONS.put("tkqidx", JSON.stringify(JSON.parse(ir).filter((g) => g !== gid)));

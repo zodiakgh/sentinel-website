@@ -18,6 +18,8 @@ import hashlib
 import json
 import logging
 import os
+import re
+import time
 from typing import Any
 
 import aiohttp
@@ -70,6 +72,167 @@ def _txt(v: Any, n: int) -> str:
     if len(t) > n:
         raise TicketError("err.setting_text_long", max=n)
     return t
+
+
+# --------------------------------------------------------------------------- #
+# Server builder (no AI): applies a plan prepared on the website
+# --------------------------------------------------------------------------- #
+_BASE = dict(view_channel=True, send_messages=True, read_message_history=True, embed_links=True, attach_files=True,
+             add_reactions=True, use_external_emojis=True, connect=True, speak=True, use_voice_activation=True, stream=True,
+             change_nickname=True, create_public_threads=True, send_messages_in_threads=True, use_application_commands=True)
+_STAFF = dict(kick_members=True, ban_members=True, manage_messages=True, moderate_members=True, mute_members=True,
+              deafen_members=True, move_members=True, manage_nicknames=True, view_audit_log=True, manage_threads=True)
+ROLE_PRESETS: dict[str, dict[str, bool]] = {
+    "admin": {**_BASE, **_STAFF, "manage_guild": True, "manage_roles": True, "manage_channels": True, "mention_everyone": True,
+              "manage_webhooks": True, "manage_expressions": True, "priority_speaker": True},
+    "mod": {**_BASE, **_STAFF, "priority_speaker": True},
+    "helper": {**_BASE, "manage_messages": True, "manage_threads": True},
+    "vip": {**_BASE, "priority_speaker": True},
+    "member": dict(_BASE),
+    "bots": {**_BASE, "manage_messages": True},
+    "muted": {},
+}
+STAFF_KEYS = ("admin", "mod")
+CHANNEL_TYPES = ("text", "voice", "announcement", "forum", "stage")
+_HEX = re.compile(r"^#[0-9a-fA-F]{6}$")
+
+
+def _clean_name(name: Any, kind: str) -> str:
+    text = re.sub(r"[\x00-\x1f\x7f]", "", str(name or "")).strip()
+    if kind in ("text", "announcement", "forum"):
+        text = re.sub(r"\s+", "-", text.lower())
+        text = re.sub(r"[^\w\-─-╿・\U0001F000-\U0001FAFF☀-➿️‍]", "", text)
+        text = re.sub(r"-{2,}", "-", text)
+    return text[:100]
+
+
+def validate_plan(plan: Any) -> dict[str, Any]:
+    if not isinstance(plan, dict):
+        raise ValueError("invalid plan")
+    roles, seen = [], set()
+    for r in (plan.get("roles") or [])[:25]:
+        key = str(r.get("key"))
+        if key not in ROLE_PRESETS or key in seen:
+            raise ValueError(f"bad role '{key}'")
+        seen.add(key)
+        name = _clean_name(r.get("name"), "role")
+        if not name:
+            raise ValueError("a role has no name")
+        color = str(r.get("color") or "")
+        roles.append({"key": key, "name": name, "color": color if _HEX.match(color) else "", "hoist": bool(r.get("hoist")), "mentionable": bool(r.get("mentionable"))})
+    cats, total = [], 0
+    for c in (plan.get("categories") or [])[:20]:
+        name = _clean_name(c.get("name"), "category")
+        if not name:
+            raise ValueError("a category has no name")
+        access = c.get("access") if c.get("access") in ("public", "staff") else "public"
+        keys = [k for k in (c.get("roles") or list(STAFF_KEYS)) if k in ROLE_PRESETS][:6]
+        chans = []
+        for ch in (c.get("channels") or [])[:30]:
+            kind = ch.get("type") if ch.get("type") in CHANNEL_TYPES else "text"
+            cname = _clean_name(ch.get("name"), kind)
+            if not cname:
+                raise ValueError("a channel has no name")
+            chans.append({"name": cname, "type": kind, "topic": str(ch.get("topic") or "")[:1024], "readonly": bool(ch.get("readonly")),
+                          "slowmode": max(0, min(21600, int(ch.get("slowmode") or 0)))})
+        total += len(chans)
+        cats.append({"name": name, "access": access, "open": bool(c.get("open")), "roles": keys, "channels": chans})
+    if total > 120:
+        raise ValueError("too many channels (max 120)")
+    if not roles and not cats:
+        raise ValueError("the plan is empty")
+    return {"roles": roles, "categories": cats, "gate": bool(plan.get("gate"))}
+
+
+async def build_server(guild: discord.Guild, raw_plan: Any) -> str:
+    plan = validate_plan(raw_plan)
+    me = guild.me
+    perms = me.guild_permissions
+    if not (perms.manage_channels and perms.manage_roles):
+        raise ValueError("Sentinel needs the Manage Channels and Manage Roles permissions.")
+    if len(guild.roles) + len(plan["roles"]) > 250 or len(guild.channels) + len(plan["categories"]) + sum(len(c["channels"]) for c in plan["categories"]) > 500:
+        raise ValueError("This server would exceed Discord's role/channel limits.")
+    made_roles = made_cats = made_chans = 0
+    roles: dict[str, discord.Role] = {}
+    reason = "Sentinel server builder (dashboard)"
+    for r in plan["roles"]:
+        existing = discord.utils.get(guild.roles, name=r["name"])
+        if existing and not existing.managed:
+            roles[r["key"]] = existing
+            continue
+        roles[r["key"]] = await guild.create_role(
+            name=r["name"], permissions=discord.Permissions(**ROLE_PRESETS[r["key"]]) if ROLE_PRESETS[r["key"]] else discord.Permissions.none(),
+            colour=discord.Colour(int(r["color"][1:], 16)) if r["color"] else discord.Colour.default(),
+            hoist=r["hoist"], mentionable=r["mentionable"], reason=reason)
+        made_roles += 1
+        await asyncio.sleep(0.3)
+    try:  # keep the hierarchy sensible: admin above mod above the rest, all under Sentinel's top role
+        order = [roles[k] for k in ("admin", "mod", "helper", "vip", "member", "bots", "muted") if k in roles and roles[k].position < me.top_role.position]
+        base = me.top_role.position - 1
+        await guild.edit_role_positions({role: max(1, base - i) for i, role in enumerate(order)}, reason=reason)
+    except Exception:  # noqa: BLE001
+        log.info("Could not reorder the new roles; they were still created")
+    ev, po = guild.default_role, discord.PermissionOverwrite
+    gate, member, muted = plan["gate"], roles.get("member"), roles.get("muted")
+
+    def overwrites(cat: dict[str, Any], readonly: bool, kind: str) -> dict[Any, discord.PermissionOverwrite]:
+        ow: dict[Any, discord.PermissionOverwrite] = {}
+        staff = [roles[k] for k in cat["roles"] if k in roles]
+        if cat["access"] == "staff":
+            ow[ev] = po(view_channel=False)
+            for role in staff:
+                ow[role] = po(view_channel=True)
+        elif gate and not cat["open"]:
+            ow[ev] = po(view_channel=False)
+            if member:
+                ow[member] = po(view_channel=True)
+            for k in STAFF_KEYS:
+                if k in roles:
+                    ow[roles[k]] = po(view_channel=True)
+        elif gate and cat["open"] and member:
+            ow[member] = po(view_channel=True)
+        if readonly and kind in ("text", "announcement", "forum"):
+            ow.setdefault(ev, po()).send_messages = False
+            ow[ev].create_public_threads = False
+            if member:
+                ow.setdefault(member, po()).send_messages = False
+            for k in STAFF_KEYS:
+                if k in roles:
+                    ow.setdefault(roles[k], po()).send_messages = True
+        if muted:
+            ow[muted] = po(send_messages=False, add_reactions=False, speak=False, create_public_threads=False)
+        return ow
+
+    for c in plan["categories"]:
+        category = await guild.create_category(c["name"], overwrites=overwrites(c, False, "category"), reason=reason)
+        made_cats += 1
+        for ch in c["channels"]:
+            ow = overwrites(c, ch["readonly"], ch["type"])
+            kw: dict[str, Any] = {"category": category, "overwrites": ow, "reason": reason}
+            try:
+                if ch["type"] == "voice":
+                    await guild.create_voice_channel(ch["name"], **kw)
+                elif ch["type"] == "stage":
+                    try:
+                        await guild.create_stage_channel(ch["name"], **kw)
+                    except discord.HTTPException:
+                        await guild.create_voice_channel(ch["name"], **kw)
+                elif ch["type"] == "forum":
+                    try:
+                        await guild.create_forum(ch["name"], topic=ch["topic"] or None, **kw)
+                    except discord.HTTPException:
+                        await guild.create_text_channel(ch["name"], topic=ch["topic"] or None, **kw)
+                else:
+                    extra: dict[str, Any] = {"topic": ch["topic"] or None, "slowmode_delay": ch["slowmode"]}
+                    try:
+                        await guild.create_text_channel(ch["name"], news=ch["type"] == "announcement", **extra, **kw)
+                    except discord.HTTPException:
+                        await guild.create_text_channel(ch["name"], **extra, **kw)
+                made_chans += 1
+            except discord.Forbidden:
+                raise ValueError(f"Discord refused to create '{ch['name']}'. Check Sentinel's permissions. Created so far: {made_roles} roles, {made_cats} categories, {made_chans} channels.")
+            await asyncio.sleep(0.4)
+    return f"Created {made_roles} roles, {made_cats} categories and {made_chans} channels."
 
 
 class TicketDashboard(commands.Cog):
@@ -179,8 +342,6 @@ class TicketDashboard(commands.Cog):
     # ----------------------------------------------------------------- changes
     @tasks.loop(seconds=10)
     async def pull(self) -> None:
-        if not self.core:
-            return
         async with self.http.get(f"{API}/bot/tickets/pending") as r:  # type: ignore[union-attr]
             if r.status != 200:
                 return
@@ -193,8 +354,8 @@ class TicketDashboard(commands.Cog):
                     results.append({"id": op["id"], "ok": False, "error": "Sentinel can't see this server."})
                     continue
                 try:
-                    await self.apply(guild, op["op"], op.get("data") or {})
-                    results.append({"id": op["id"], "ok": True})
+                    info = await self.apply(guild, op["op"], op.get("data") or {}, op.get("ts"))
+                    results.append({"id": op["id"], "ok": True, "info": info or ""})
                 except (TicketError, SettingError) as e:
                     try:
                         msg = self.core.translator.tl(guild.id, "en", e.key, **e.params)
@@ -237,9 +398,15 @@ class TicketDashboard(commands.Cog):
             if guild.get_role(r) is None:
                 raise ValueError("unknown role")
 
-    async def apply(self, guild: discord.Guild, op: str, d: dict[str, Any]) -> None:
-        core = self.core
+    async def apply(self, guild: discord.Guild, op: str, d: dict[str, Any], ts: Any = None) -> str | None:
         gid = guild.id
+        if op == "server_build":
+            if ts and time.time() * 1000 - float(ts) > 600_000:
+                raise ValueError("This request expired (older than 10 minutes). Send it again.")
+            return await build_server(guild, d.get("plan"))
+        core = self.core
+        if core is None:
+            raise ValueError("The ticket system isn't loaded.")
         if op == "settings":
             changes: dict[str, Any] = {}
             for key, raw in (d.get("changes") or {}).items():
