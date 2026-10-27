@@ -144,20 +144,24 @@ def validate_plan(plan: Any) -> dict[str, Any]:
     return {"roles": roles, "categories": cats, "gate": bool(plan.get("gate"))}
 
 
-async def build_server(guild: discord.Guild, raw_plan: Any) -> str:
+async def build_server(guild: discord.Guild, raw_plan: Any, mode: str = "add") -> str:
     plan = validate_plan(raw_plan)
+    reset = mode == "reset"
+    old_channels = list(guild.channels) if reset else []
+    old_roles = [r for r in guild.roles if not r.is_default() and not r.managed] if reset else []
     me = guild.me
     perms = me.guild_permissions
     if not (perms.manage_channels and perms.manage_roles):
         raise ValueError("Sentinel needs the Manage Channels and Manage Roles permissions.")
     if len(guild.roles) + len(plan["roles"]) > 250 or len(guild.channels) + len(plan["categories"]) + sum(len(c["channels"]) for c in plan["categories"]) > 500:
-        raise ValueError("This server would exceed Discord's role/channel limits.")
+        if not reset:
+            raise ValueError("This server would exceed Discord's role/channel limits.")
     made_roles = made_cats = made_chans = 0
     roles: dict[str, discord.Role] = {}
     reason = "Sentinel server builder (dashboard)"
     for r in plan["roles"]:
         existing = discord.utils.get(guild.roles, name=r["name"])
-        if existing and not existing.managed:
+        if existing and not existing.managed and not reset:
             roles[r["key"]] = existing
             continue
         roles[r["key"]] = await guild.create_role(
@@ -232,7 +236,26 @@ async def build_server(guild: discord.Guild, raw_plan: Any) -> str:
             except discord.Forbidden:
                 raise ValueError(f"Discord refused to create '{ch['name']}'. Check Sentinel's permissions. Created so far: {made_roles} roles, {made_cats} categories, {made_chans} channels.")
             await asyncio.sleep(0.4)
-    return f"Created {made_roles} roles, {made_cats} categories and {made_chans} channels."
+    msg = f"Created {made_roles} roles, {made_cats} categories and {made_chans} channels."
+    if reset:  # the new layout exists, so the server is never left empty: now remove what was there before
+        gone_c = gone_r = 0
+        for ch in old_channels:
+            try:
+                await ch.delete(reason=reason)
+                gone_c += 1
+            except discord.HTTPException:
+                pass  # e.g. community rules/updates channels Discord won't let go
+            await asyncio.sleep(0.4)
+        for role in old_roles:
+            if role.position < me.top_role.position:
+                try:
+                    await role.delete(reason=reason)
+                    gone_r += 1
+                except discord.HTTPException:
+                    pass
+                await asyncio.sleep(0.4)
+        msg += f" Removed {gone_c} old channels and {gone_r} old roles."
+    return msg
 
 
 class TicketDashboard(commands.Cog):
@@ -403,7 +426,7 @@ class TicketDashboard(commands.Cog):
         if op == "server_build":
             if ts and time.time() * 1000 - float(ts) > 600_000:
                 raise ValueError("This request expired (older than 10 minutes). Send it again.")
-            return await build_server(guild, d.get("plan"))
+            return await build_server(guild, d.get("plan"), "reset" if d.get("mode") == "reset" else "add")
         core = self.core
         if core is None:
             raise ValueError("The ticket system isn't loaded.")

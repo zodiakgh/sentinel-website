@@ -51,7 +51,7 @@
     { id: "logs", on: false, staff: true, icon: "📋", en: "Logs", fr: "Logs", d: { en: "Private moderation / message / member logs", fr: "Logs privés de modération, messages et membres" },
       ch: [["🔨", "mod-logs", "logs-modération", "text"], ["💬", "message-logs", "logs-messages", "text"], ["👥", "member-logs", "logs-membres", "text"], ["🔊", "voice-logs", "logs-vocal", "text"]] }
   ];
-  var sel = { lang: UI, deco: "emoji", roles: {}, groups: {}, verify: false };
+  var sel = { mode: "add", lang: UI, deco: "emoji", roles: {}, groups: {}, verify: false };
   ROLES.forEach(function (r) { sel.roles[r.key] = r.on; }); GROUPS.forEach(function (g) { sel.groups[g.id] = g.on; });
   var plan = null, data = null, msg, treeBox;
 
@@ -120,6 +120,8 @@
     treeBox = el("div", "bd-tree");
     var langSel = radio([["en", "English"], ["fr", "Français"]], sel.lang, function (v) { sel.lang = v; regen(); });
     var deco = radio([["emoji", T("Emojis in names (💬│general)", "Emojis dans les noms (💬│général)")], ["plain", T("Plain names", "Noms simples")]], sel.deco, function (v) { sel.deco = v; regen(); });
+    var md = radio([["add", T("Add to the server (keeps everything that exists)", "Ajouter au serveur (garde tout ce qui existe)")], ["reset", T("⚠ Reset: rebuild everything (deletes ALL current channels and roles)", "⚠ Tout refaire (supprime TOUS les salons et rôles actuels)")]], sel.mode, function (v) { sel.mode = v; });
+    app.appendChild(section(T("Mode", "Mode"), T("“Reset” first creates the new layout, then deletes the old channels and roles (not bots' roles). Messages in deleted channels are lost for good.", "« Tout refaire » crée d'abord la nouvelle structure, puis supprime les anciens salons et rôles (pas ceux des bots). Les messages des salons supprimés sont perdus définitivement."), field(T("What should happen?", "Que faire ?"), md)));
     app.appendChild(section(T("Language & style", "Langue & style"), T("Channel and role names are generated in this language (English and French for now).", "Les noms des salons et rôles sont générés dans cette langue (anglais et français pour l'instant)."), field(T("Server language", "Langue du serveur"), langSel), field(T("Style", "Style"), deco)));
     var rg = el("div", "bd-grid"); ROLES.forEach(function (r) { rg.appendChild(check(r[sel.lang], r.d[UI], sel.roles[r.key], function (v) { sel.roles[r.key] = v; regen(); })); });
     app.appendChild(section(T("Roles & permissions", "Rôles & permissions"), T("Ready-made permissions. “Admin” gets management rights but not the Administrator flag; “Muted” is denied everywhere.", "Permissions prêtes à l'emploi. « Admin » reçoit les droits de gestion sans le flag Administrateur ; « Muet » est bloqué partout."), rg));
@@ -130,9 +132,12 @@
     var bar = el("div", "mg-bar"), go = el("button", "btn btn-primary", T("Build my server", "Créer mon serveur")); go.type = "button";
     go.addEventListener("click", function () {
       var c = count(); if (!c.roles && !c.cats) return say(T("The plan is empty.", "Le plan est vide."), true);
-      if (!confirm(T("Sentinel will ADD " + c.roles + " roles, " + c.cats + " categories and " + c.chans + " channels to “" + data.guild.name + "”. Nothing existing is deleted. Continue?", "Sentinel va AJOUTER " + c.roles + " rôles, " + c.cats + " catégories et " + c.chans + " salons à « " + data.guild.name + " ». Rien d'existant n'est supprimé. Continuer ?"))) return;
+      if (sel.mode === "reset") {
+        var typed = prompt(T("This DELETES every current channel and role of “" + data.guild.name + "” and cannot be undone. Type the server name to confirm:", "Ceci SUPPRIME tous les salons et rôles actuels de « " + data.guild.name + " » et est irréversible. Tape le nom du serveur pour confirmer :"));
+        if (typed === null || typed.trim() !== data.guild.name) return say(T("Cancelled: the name didn't match.", "Annulé : le nom ne correspond pas."), true);
+      } else if (!confirm(T("Sentinel will ADD " + c.roles + " roles, " + c.cats + " categories and " + c.chans + " channels to “" + data.guild.name + "”. Nothing existing is deleted. Continue?", "Sentinel va AJOUTER " + c.roles + " rôles, " + c.cats + " catégories et " + c.chans + " salons à « " + data.guild.name + " ». Rien d'existant n'est supprimé. Continuer ?"))) return;
       go.disabled = true; say(T("Sent to the bot… building can take a minute.", "Envoyé au bot… la création peut prendre une minute."));
-      api("/dash/guild/" + gid + "/tickets/op", { op: "server_build", data: { plan: plan } }).then(function (j) { return wait(j.id); })
+      api("/dash/guild/" + gid + "/tickets/op", { op: "server_build", data: { plan: plan, mode: sel.mode } }).then(function (j) { return wait(j.id); })
         .then(function (info) { say("✅ " + (info || T("Done.", "Terminé."))); }).catch(function (e) { say(e.message, true); }).then(function () { go.disabled = false; });
     });
     bar.appendChild(go); app.append(bar, msg);
