@@ -431,26 +431,14 @@ async function dashGuild(env, req, gid) {
   if (!env.BOT_TOKEN) return { err: json(env, req, { error: "misconfigured", missing: ["BOT_TOKEN"] }, 500) };
   return { s, g };
 }
-const TICKET_DEFAULT = () => ({ enabled: false, panelChannelId: "", categoryId: "", logChannelId: "", supportRoleIds: [], maxOpen: 1, namePattern: "ticket-{number}", claim: true, transcript: true, confirmClose: true,
-  panel: { title: "Support tickets", description: "Need help? Press a button below to open a private ticket with the team.", color: "#5865f2", footer: "", buttonStyle: "primary" },
-  welcome: "Hello {user}, thanks for opening a **{type}** ticket. Describe your issue and a member of the team will answer soon.",
-  types: [{ id: "support", label: "Support", emoji: "🎫", description: "General help" }], panelMessageId: "" });
-function ticketConfig(b, old) {
-  const snow = (v) => SNOWFLAKE.test(String(v || "")) ? String(v) : "", d = TICKET_DEFAULT(), p = (b && b.panel) || {};
-  const types = (Array.isArray(b && b.types) ? b.types : d.types).slice(0, 5).map((t) => ({ id: String((t && t.id) || "").toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 20), label: profileText(t && t.label, 40), emoji: profileText(t && t.emoji, 8).replace(/[A-Za-z0-9<>:\s]/g, ""), description: profileText(t && t.description, 100) }))
-    .filter((t) => t.id && t.label);
-  const seen = new Set(); const uniq = types.filter((t) => !seen.has(t.id) && seen.add(t.id));
-  return {
-    enabled: !!(b && b.enabled), panelChannelId: snow(b && b.panelChannelId), categoryId: snow(b && b.categoryId), logChannelId: snow(b && b.logChannelId),
-    supportRoleIds: [...new Set((Array.isArray(b && b.supportRoleIds) ? b.supportRoleIds : []).map(snow).filter(Boolean))].slice(0, 5),
-    maxOpen: Math.max(1, Math.min(10, Math.round(Number(b && b.maxOpen) || 1))),
-    namePattern: ["ticket-{number}", "ticket-{user}", "{type}-{number}"].includes(b && b.namePattern) ? b.namePattern : "ticket-{number}",
-    claim: !!(b && b.claim), transcript: !!(b && b.transcript), confirmClose: !!(b && b.confirmClose),
-    panel: { title: profileText(p.title, 80) || d.panel.title, description: String(p.description || "").replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "").slice(0, 1000) || d.panel.description,
-      color: /^#[0-9a-f]{6}$/i.test(String(p.color || "")) ? String(p.color) : d.panel.color, footer: profileText(p.footer, 80), buttonStyle: ["primary", "secondary", "success", "danger"].includes(p.buttonStyle) ? p.buttonStyle : "primary" },
-    welcome: String((b && b.welcome) || "").replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "").slice(0, 1000) || d.welcome,
-    types: uniq.length ? uniq : d.types, panelMessageId: old && old.panelMessageId ? old.panelMessageId : "", panelPostedIn: old && old.panelPostedIn ? old.panelPostedIn : "", updated: Date.now()
-  };
+/* Bridge to the bot's own ticket system. The bot pushes a snapshot (settings schema + values, types, panels);
+ * the site queues changes (tkq:<gid>); the bot polls /bot/tickets/pending, applies them with its own validation and acks. */
+const TK_OPS = new Set(["settings", "type_create", "type_update", "type_delete", "panel_create", "panel_update", "panel_delete", "panel_publish"]);
+async function botKeyOK(env, req) {
+  if (!env.BOT_API_KEY) return json(env, req, { error: "misconfigured", missing: ["BOT_API_KEY"] }, 500);
+  const given = req.headers.get("X-Sentinel-Key") || "";
+  if (!safeEqual(await sign(env.STATE_SECRET, given), await sign(env.STATE_SECRET, env.BOT_API_KEY))) return json(env, req, { error: "forbidden" }, 403);
+  return null;
 }
 async function dashGuildGet(env, req, gid) {
   const a = await dashGuild(env, req, gid); if (a.err) return a.err;
@@ -459,40 +447,49 @@ async function dashGuildGet(env, req, gid) {
   if (!ch.ok || !ro.ok) return json(env, req, { error: "discord_error", message: "Discord didn't answer. Try again in a moment." }, 502);
   const channels = (await ch.json()).filter((c) => [0, 4].includes(c.type)).sort((x, y) => x.position - y.position).map((c) => ({ id: c.id, name: String(c.name || "").slice(0, 100), type: c.type === 4 ? "category" : "text", parent: c.parent_id || null }));
   const roles = (await ro.json()).filter((r) => r.id !== gid && !r.managed).sort((x, y) => y.position - x.position).map((r) => ({ id: r.id, name: String(r.name || "").slice(0, 100), color: r.color ? "#" + r.color.toString(16).padStart(6, "0") : "" }));
-  const raw = await env.SESSIONS.get(`tk:${gid}`), tickets = raw ? JSON.parse(raw) : TICKET_DEFAULT(), gj = await gi.json();
-  return json(env, req, { guild: { id: gid, name: a.g.name || gj.name, iconUrl: cdn("icons", gid, a.g.icon || gj.icon) }, channels, roles, tickets }, 200, { "Cache-Control": "no-store" });
+  const [sn, q, rs] = await Promise.all([env.SESSIONS.get(`tks:${gid}`), env.SESSIONS.get(`tkq:${gid}`), env.SESSIONS.get(`tkr:${gid}`)]), gj = await gi.json();
+  return json(env, req, { guild: { id: gid, name: a.g.name || gj.name, iconUrl: cdn("icons", gid, a.g.icon || gj.icon) }, channels, roles,
+    snapshot: sn ? JSON.parse(sn) : null, queue: q ? JSON.parse(q) : [], results: rs ? JSON.parse(rs) : [] }, 200, { "Cache-Control": "no-store" });
 }
-async function dashTicketsSave(env, req, gid) {
+async function dashTicketsOp(env, req, gid) {
   if (!originOK(env, req)) return json(env, req, { error: "forbidden" }, 403);
   const a = await dashGuild(env, req, gid); if (a.err) return a.err;
+  let b; try { b = await readBody(req); } catch (_) { return json(env, req, { error: "bad_request" }, 400 ); }
+  if (!b || !TK_OPS.has(b.op) || typeof b.data !== "object" || b.data === null || Array.isArray(b.data)) return json(env, req, { error: "bad_request" }, 400);
+  if (JSON.stringify(b.data).length > 30000) return json(env, req, { error: "too_large", message: "That change is too large." }, 413);
+  const raw = await env.SESSIONS.get(`tkq:${gid}`), q = raw ? JSON.parse(raw) : [];
+  if (q.length >= 30) return json(env, req, { error: "busy", message: "Too many changes are waiting for the bot. Make sure it's online, then try again." }, 429);
+  const item = { id: crypto.randomUUID().replace(/-/g, "").slice(0, 12), ts: Date.now(), op: b.op, data: b.data, by: a.s.data.accountEmail ? "account" : String((a.s.data.user && a.s.data.user.id) || "") };
+  q.push(item); await env.SESSIONS.put(`tkq:${gid}`, JSON.stringify(q), { expirationTtl: 86400 });
+  const ir = await env.SESSIONS.get("tkqidx"), idx = ir ? JSON.parse(ir) : []; if (!idx.includes(gid)) { idx.push(gid); await env.SESSIONS.put("tkqidx", JSON.stringify(idx.slice(-500))); }
+  return json(env, req, { ok: true, id: item.id });
+}
+async function botTicketsPending(env, req) {
+  const bad = await botKeyOK(env, req); if (bad) return bad;
+  const ir = await env.SESSIONS.get("tkqidx"), idx = ir ? JSON.parse(ir) : [], items = [];
+  for (const gid of idx.slice(0, 100)) { const r = await env.SESSIONS.get(`tkq:${gid}`); const ops = r ? JSON.parse(r) : []; if (ops.length) items.push({ gid, ops }); }
+  return json(env, req, { items }, 200, { "Cache-Control": "no-store" });
+}
+async function botTicketsAck(env, req) {
+  const bad = await botKeyOK(env, req); if (bad) return bad;
   let b; try { b = await readBody(req); } catch (_) { return json(env, req, { error: "bad_request" }, 400); }
-  const raw = await env.SESSIONS.get(`tk:${gid}`), old = raw ? JSON.parse(raw) : null, cfg = ticketConfig(b, old);
-  if (cfg.enabled && (!cfg.panelChannelId || !cfg.categoryId)) return json(env, req, { error: "incomplete", message: "Choose the panel channel and the category for new tickets before enabling." }, 400);
-  await env.SESSIONS.put(`tk:${gid}`, JSON.stringify(cfg));
-  return json(env, req, { ok: true, tickets: cfg });
+  const gid = String((b && b.gid) || ""); if (!SNOWFLAKE.test(gid) || !Array.isArray(b.results)) return json(env, req, { error: "bad_request" }, 400);
+  const res = b.results.slice(0, 30).map((x) => ({ id: String(x.id || "").slice(0, 16), ok: !!x.ok, error: String(x.error || "").slice(0, 300), ts: Date.now() }));
+  const done = new Set(res.map((x) => x.id)), raw = await env.SESSIONS.get(`tkq:${gid}`), q = (raw ? JSON.parse(raw) : []).filter((i) => !done.has(i.id));
+  if (q.length) await env.SESSIONS.put(`tkq:${gid}`, JSON.stringify(q), { expirationTtl: 86400 }); else {
+    await env.SESSIONS.delete(`tkq:${gid}`); const ir = await env.SESSIONS.get("tkqidx"); if (ir) await env.SESSIONS.put("tkqidx", JSON.stringify(JSON.parse(ir).filter((g) => g !== gid)));
+  }
+  const rr = await env.SESSIONS.get(`tkr:${gid}`), old = rr ? JSON.parse(rr) : [];
+  await env.SESSIONS.put(`tkr:${gid}`, JSON.stringify([...old, ...res].slice(-30)), { expirationTtl: 86400 * 7 });
+  return json(env, req, { ok: true });
 }
-async function dashTicketsPanel(env, req, gid) {
-  if (!originOK(env, req)) return json(env, req, { error: "forbidden" }, 403);
-  const a = await dashGuild(env, req, gid); if (a.err) return a.err;
-  const raw = await env.SESSIONS.get(`tk:${gid}`); if (!raw) return json(env, req, { error: "not_saved", message: "Save your settings first." }, 400);
-  const cfg = JSON.parse(raw); if (!cfg.panelChannelId) return json(env, req, { error: "incomplete", message: "Choose the panel channel first." }, 400);
-  const styles = { primary: 1, secondary: 2, success: 3, danger: 4 };
-  const payload = { embeds: [{ title: cfg.panel.title, description: cfg.panel.description, color: parseInt(cfg.panel.color.slice(1), 16), ...(cfg.panel.footer ? { footer: { text: cfg.panel.footer } } : {}) }],
-    components: [{ type: 1, components: cfg.types.map((t) => ({ type: 2, style: styles[cfg.panel.buttonStyle] || 1, label: t.label, custom_id: `sentinel:ticket:open:${t.id}`, ...(t.emoji ? { emoji: { name: t.emoji } } : {}) })) }], allowed_mentions: { parse: [] } };
-  let r = null, edited = false;
-  if (cfg.panelMessageId && cfg.panelChannelId === cfg.panelPostedIn) { r = await botCall(env, "PATCH", `/channels/${cfg.panelChannelId}/messages/${cfg.panelMessageId}`, payload, `Ticket panel updated from dashboard by ${a.s.data.accountEmail ? "account" : a.s.data.user.id}`); edited = r.ok; }
-  if (!r || !r.ok) r = await botCall(env, "POST", `/channels/${cfg.panelChannelId}/messages`, payload, "Ticket panel posted from dashboard");
-  if (!r.ok) return json(env, req, { error: "discord_forbidden", message: r.status === 403 || r.status === 404 ? "Sentinel can't post in that channel. Give it View Channel, Send Messages and Embed Links there." : "Discord refused the message." }, 400);
-  const m = await r.json(); cfg.panelMessageId = m.id; cfg.panelPostedIn = cfg.panelChannelId; await env.SESSIONS.put(`tk:${gid}`, JSON.stringify(cfg));
-  return json(env, req, { ok: true, edited, messageId: m.id });
-}
-async function botTicketsGet(env, req, gid) {
-  if (!env.BOT_API_KEY) return json(env, req, { error: "misconfigured", missing: ["BOT_API_KEY"] }, 500);
-  const given = req.headers.get("X-Sentinel-Key") || "";
-  if (!safeEqual(await sign(env.STATE_SECRET, given), await sign(env.STATE_SECRET, env.BOT_API_KEY))) return json(env, req, { error: "forbidden" }, 403);
-  if (!SNOWFLAKE.test(gid)) return json(env, req, { error: "bad_request" }, 400);
-  const raw = await env.SESSIONS.get(`tk:${gid}`); if (!raw) return json(env, req, { enabled: false });
-  const c = JSON.parse(raw); delete c.panelMessageId; delete c.panelPostedIn; return json(env, req, c, 200, { "Cache-Control": "no-store" });
+async function botTicketsSnapshot(env, req, gid) {
+  const bad = await botKeyOK(env, req); if (bad) return bad;
+  const text = await req.text(); if (text.length > 900000) return json(env, req, { error: "too_large" }, 413);
+  let b; try { b = JSON.parse(text); } catch (_) { return json(env, req, { error: "bad_request" }, 400); }
+  if (!b || typeof b !== "object") return json(env, req, { error: "bad_request" }, 400);
+  b.ts = Date.now(); await env.SESSIONS.put(`tks:${gid}`, JSON.stringify(b));
+  return json(env, req, { ok: true });
 }
 async function accountChangePassword(env, req) {
   if (!originOK(env, req)) return json(env, req, { error: "forbidden" }, 403);
@@ -1268,9 +1265,11 @@ export default {
       const s = await session(env, req); if (!s || !s.data.accountEmail) return new Response(null, { status: 302, headers: { Location: `${env.SITE_ORIGIN}/account?link=login_required`, "Cache-Control": "no-store" } });
       return linkDiscord(env);
     }
-    { const dm = pathname.match(/^\/dash\/guild\/(\d{15,25})(\/tickets(?:\/panel)?)?$/);
-      if (dm) { if (req.method === "GET" && !dm[2]) return dashGuildGet(env, req, dm[1]); if (req.method === "POST" && dm[2] === "/tickets") return dashTicketsSave(env, req, dm[1]); if (req.method === "POST" && dm[2] === "/tickets/panel") return dashTicketsPanel(env, req, dm[1]); }
-      const bm = pathname.match(/^\/bot\/guilds\/(\d{15,25})\/tickets$/); if (bm && req.method === "GET") return botTicketsGet(env, req, bm[1]); }
+    { const dm = pathname.match(/^\/dash\/guild\/(\d{15,25})(\/tickets\/op)?$/);
+      if (dm) { if (req.method === "GET" && !dm[2]) return dashGuildGet(env, req, dm[1]); if (req.method === "POST" && dm[2]) return dashTicketsOp(env, req, dm[1]); }
+      if (req.method === "GET" && pathname === "/bot/tickets/pending") return botTicketsPending(env, req);
+      if (req.method === "POST" && pathname === "/bot/tickets/ack") return botTicketsAck(env, req);
+      const bm = pathname.match(/^\/bot\/guilds\/(\d{15,25})\/tickets\/snapshot$/); if (bm && req.method === "POST") return botTicketsSnapshot(env, req, bm[1]); }
     if (req.method === "GET" && pathname === "/lyrics/search") return lyricsSearch(env, req);
     if (req.method === "GET" && pathname === "/profiles/lookup") return profileLookup(env, req);
     if (req.method === "GET" && pathname === "/auth/steam") return steamStart(env, req);

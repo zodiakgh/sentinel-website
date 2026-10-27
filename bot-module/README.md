@@ -1,13 +1,9 @@
-# Sentinel ticket module
+# Pont dashboard ↔ système de tickets Sentinel
 
-`sentinel_tickets.py` is a discord.py 2.x cog. The dashboard (`/manage?guild=ID`) saves the ticket
-settings; the cog reads them from the Worker and runs the tickets (open, claim, close, transcript, logs).
+Ajoute `ticket_dashboard.py` dans `bot/cogs/` (à côté de `ticket.py`). Rien n'est remplacé.
 
-1. `pip install aiohttp discord.py` (already there for most bots).
-2. Set `SENTINEL_BOT_KEY` to the same value as the `BOT_API_KEY` secret of the Cloudflare Worker
-   (and optionally `SENTINEL_API_URL`, default `https://api.sentineldashboard.site`).
-3. Copy `sentinel_tickets.py` next to your bot and load it: `await bot.load_extension("sentinel_tickets")`.
-4. Give the bot: View Channels, Manage Channels, Send Messages, Embed Links, Attach Files, Read Message History.
-5. In the dashboard: choose the panel channel and category, pick support roles, press **Post the panel in Discord**.
+Variables d'environnement sur dishost :
+- `SENTINEL_API_URL` = `https://api.sentineldashboard.site`
+- `SENTINEL_BOT_KEY` = la même valeur que le secret `BOT_API_KEY` du Worker
 
-Settings changes apply within ~30 seconds. The ticket counter is kept in `sentinel_tickets_state.json`.
+Le bot envoie chaque minute un instantané (réglages, types, panneaux) et applique toutes les 10 s les changements faits sur /manage, avec les validations du système de tickets.
