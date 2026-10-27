@@ -653,5 +653,7 @@ section.cta-band .btn-primary:hover{background:#f2f3f5}
 .mg-btn.secondary{background:#4e5058}.mg-btn.success{background:#248046}.mg-btn.danger{background:#da373c}
 
 
-/* Blue and yellow heart brand mark */
-.brand-mark-img{display:block;width:30px;height:30px;object-fit:contain;flex:0 0 30px}
+
+
+/* Small heart sits to the left of the original Sentinel mark */
+.brand-heart{display:block;width:16px;height:16px;object-fit:contain;flex:0 0 16px}
