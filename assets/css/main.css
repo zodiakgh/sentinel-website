@@ -651,3 +651,7 @@ section.cta-band .btn-primary:hover{background:#f2f3f5}
 .mg-btns{display:flex; flex-wrap:wrap; gap:8px; margin-top:6px}
 .mg-btn{padding:6px 14px; border-radius:6px; font-size:13.5px; font-weight:600; color:#fff; background:var(--blurple)}
 .mg-btn.secondary{background:#4e5058}.mg-btn.success{background:#248046}.mg-btn.danger{background:#da373c}
+
+
+/* Blue and yellow heart brand mark */
+.brand-mark-img{display:block;width:30px;height:30px;object-fit:contain;flex:0 0 30px}
