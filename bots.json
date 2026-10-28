@@ -19,7 +19,7 @@
       "description": "Long-running moderation and automation bot with a web dashboard.",
       "descriptionFr": "Bot de modération et d'automatisation historique, avec dashboard web.",
       "image": "https://gofile.io/d/Weo2AYK9",
-      "invite": "",
+      "invite": "https://discord.com/oauth2/authorize?client_id=155149108183695360&scope=bot%20applications.commands",
       "support": ""
     },
     {
@@ -28,8 +28,8 @@
       "url": "https://carl.gg",
       "description": "Reaction roles, logging, custom commands and auto-moderation.",
       "descriptionFr": "Rôles par réaction, logs, commandes personnalisées et auto-modération.",
-      "image": "",
-      "invite": "",
+      "image": "https://prismusercontent.com/discord/avatars/235148962103951360/ed3dac3b6e7a851df781632a4295fcb9.png?size=512",
+      "invite": "https://discord.com/oauth2/authorize?client_id=235148962103951360&scope=bot%20applications.commands",
       "support": ""
     },
     {
@@ -38,18 +38,8 @@
       "url": "https://mee6.xyz",
       "description": "Levels, welcome messages and moderation tools for communities.",
       "descriptionFr": "Niveaux, messages de bienvenue et outils de modération pour les communautés.",
-      "image": "",
-      "invite": "",
-      "support": ""
-    },
-    {
-      "name": "Tickets",
-      "category": "support",
-      "url": "https://ticketsbot.net",
-      "description": "Dedicated support ticket system with panels and transcripts.",
-      "descriptionFr": "Système de tickets de support dédié, avec panneaux et transcriptions.",
-      "image": "",
-      "invite": "",
+      "image": "https://prismusercontent.com/discord/avatars/159985870458322944/765030df32975c5b23f8dfe86d6ff520.png?size=512",
+      "invite": "https://discord.com/oauth2/authorize?client_id=159985870458322944&scope=bot%20applications.commands",
       "support": ""
     },
     {
@@ -59,7 +49,7 @@
       "description": "Server statistics and activity graphs.",
       "descriptionFr": "Statistiques du serveur et graphiques d'activité.",
       "image": "",
-      "invite": "",
+      "invite": "https://discord.com/oauth2/authorize?client_id=491769129318088714&scope=bot%20applications.commands",
       "support": ""
     }
   ]
