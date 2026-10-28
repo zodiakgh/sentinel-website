@@ -1,5 +1,3 @@
-/* Sentinel public profile: shared by /u/<name> and the live preview in the editor.
-   Everything is scoped under .sp-root and driven by CSS variables set by profile-render.js. */
 
 .sp-root{
   --accent:#8b7cff; --text:#f5f7ff; --muted:#98a6bf; --border:#ffffff; --widget:#ffffff;
@@ -18,16 +16,12 @@
 .sp-root img,.sp-root video{display:block; max-width:none}
 .sp-root button{font:inherit; color:inherit}
 .sp-hidden{display:none!important}
-
-/* ---------- background layers ---------- */
 .sp-bgwrap{position:absolute; inset:0; z-index:0; overflow:hidden; pointer-events:none}
 .sp-bg-color,.sp-bg-img,.sp-bg-video,.sp-dim{position:absolute; inset:0; width:100%; height:100%}
 .sp-bg-img,.sp-bg-video{object-fit:cover; transform:translate(var(--px,0),var(--py,0)) scale(var(--bg-scale,1)); transition:transform .25s ease-out}
 .sp-dim{background:#05070d; opacity:var(--dim,.55)}
 .sp-fx,.sp-trail{position:absolute; inset:0; width:100%; height:100%; pointer-events:none}
 .sp-trail{z-index:30}
-
-/* ---------- scroll + stage ---------- */
 .sp-scroll{position:absolute; inset:0; z-index:2; overflow-x:hidden; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain}
 .sp-stage{min-height:100%; display:flex; justify-content:center; align-items:flex-start; padding:clamp(14px,4vw,40px) 14px 90px}
 .sp-root[data-valign="center"] .sp-stage{align-items:center}
@@ -46,8 +40,6 @@
 .sp-root[data-hover="scale"] .sp-card:hover{transform:scale(1.015)}
 .sp-root[data-hover="glow"] .sp-card:hover{box-shadow:var(--card-shadow),0 0 60px color-mix(in srgb,var(--accent) 45%,transparent)}
 .sp-root.is-tilting .sp-card{transition:transform .08s linear}
-
-/* entrance */
 .sp-root[data-anim="fade"] .sp-card{animation:sp-fade .6s ease both}
 .sp-root[data-anim="rise"] .sp-card{animation:sp-rise .7s cubic-bezier(.16,1,.3,1) both}
 .sp-root[data-anim="zoom"] .sp-card{animation:sp-zoom .6s cubic-bezier(.16,1,.3,1) both}
@@ -56,8 +48,6 @@
 @keyframes sp-rise{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
 @keyframes sp-zoom{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
 @keyframes sp-blurin{from{opacity:0;filter:blur(14px)}to{opacity:1;filter:none}}
-
-/* ---------- card content ---------- */
 .sp-banner{height:var(--banner-h,0px); background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 38%,#0b1020),#161d33); background-size:cover; background-position:var(--banner-pos,center); position:relative}
 .sp-banner::after{content:""; position:absolute; inset:0; background:var(--banner-shade,transparent)}
 .sp-body{padding:0 var(--pad) 30px; text-align:var(--align,center); display:flex; flex-direction:column; align-items:var(--items,center)}
@@ -65,7 +55,6 @@
 .sp-root[data-layout="wide"] .sp-card{width:min(1100px,100%)}
 .sp-body > *{max-width:100%}
 .sp-body.no-banner{padding-top:34px}
-
 .sp-avatar-wrap{position:relative; width:var(--avatar); height:var(--avatar); flex:none}
 .sp-banner + .sp-body .sp-avatar-wrap{margin-top:calc(var(--avatar) / -2)}
 .sp-avatar{width:100%; height:100%; object-fit:cover; border-radius:var(--avatar-radius); border:var(--av-bw,4px) solid var(--avatar-border,var(--accent)); background:#10162a; position:relative; z-index:1}
@@ -74,21 +63,16 @@
 .sp-root[data-avatar-fx="spin"] .sp-avatar-wrap::before{content:""; position:absolute; inset:-7px; border-radius:var(--avatar-radius); background:conic-gradient(var(--accent),transparent 35%,var(--name2),transparent 75%,var(--accent)); animation:sp-spin 4s linear infinite; z-index:0}
 @keyframes sp-pulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 60%,transparent)}50%{box-shadow:0 0 0 14px transparent}}
 @keyframes sp-spin{to{transform:rotate(360deg)}}
-
 .sp-name{margin:16px 0 0; font-size:var(--name-size); line-height:1.08; letter-spacing:var(--name-ls); font-weight:var(--name-weight,760); font-family:var(--name-font,inherit); text-transform:var(--name-tt,none); word-break:break-word; color:var(--text)}
 .sp-handle{color:var(--muted); font-size:15px; margin-top:4px}
 .sp-tagline{margin-top:10px; color:var(--muted); font-size:15px; min-height:1.4em}
 .sp-caret::after{content:"▍"; margin-left:1px; animation:sp-blink 1s steps(1) infinite; color:var(--accent)}
 @keyframes sp-blink{50%{opacity:0}}
-
 .sp-meta{display:flex; flex-wrap:wrap; gap:8px; justify-content:var(--items,center); margin-top:12px; color:var(--muted); font-size:13.5px}
 .sp-meta-item{display:inline-flex; align-items:center; gap:6px}
 .sp-meta svg,.sp-meta-item svg{width:14px; height:14px; flex:none}
-
 .sp-bio{margin:14px 0 0; font-size:var(--bio-size); line-height:1.6; max-width:60ch; white-space:pre-wrap; word-break:break-word}
 .sp-status{margin-top:14px; display:inline-flex; align-items:center; gap:8px; padding:8px 14px; border-radius:99px; background:color-mix(in srgb,var(--widget) 8%,transparent); border:1px solid color-mix(in srgb,var(--widget) 14%,transparent); font-size:14px}
-
-/* ---------- name effects ---------- */
 .sp-root[data-name-fx="glow"] .sp-name{text-shadow:0 0 14px var(--accent),0 0 38px color-mix(in srgb,var(--accent) 60%,transparent)}
 .sp-root[data-name-fx="gradient"] .sp-name,.sp-root[data-name-fx="shimmer"] .sp-name{background:linear-gradient(90deg,var(--accent),var(--name2),var(--accent)); background-size:200% 100%; -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:transparent}
 .sp-root[data-name-fx="shimmer"] .sp-name{animation:sp-shimmer 3.2s linear infinite}
@@ -101,8 +85,6 @@
 .sp-root[data-name-fx="glitch"] .sp-name::after{color:var(--name2); transform:translate(2px,0); clip-path:inset(55% 0 0 0); animation:sp-glitch2 2.1s infinite steps(1)}
 @keyframes sp-glitch1{0%,88%{transform:translate(0)}90%{transform:translate(-4px,1px)}94%{transform:translate(3px,-1px)}100%{transform:translate(0)}}
 @keyframes sp-glitch2{0%,80%{transform:translate(0)}84%{transform:translate(4px,-1px)}90%{transform:translate(-3px,1px)}100%{transform:translate(0)}}
-
-/* ---------- links ---------- */
 .sp-links{display:flex; flex-wrap:wrap; gap:var(--gap); margin-top:var(--sec,22px); justify-content:var(--items,center); width:100%}
 .sp-link{display:flex; align-items:center; gap:12px; padding:13px 16px; border-radius:var(--link-radius); font-weight:600; font-size:15px; min-width:0; transition:transform .18s,background .2s,border-color .2s,box-shadow .2s; background:color-mix(in srgb,var(--widget) 8%,transparent); border:1px solid color-mix(in srgb,var(--widget) 15%,transparent); -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px)}
 .sp-link:hover{transform:translateY(-2px); border-color:color-mix(in srgb,var(--accent) 65%,transparent)}
@@ -118,8 +100,6 @@
 .sp-root[data-link-style="solid"] .sp-link,.sp-root[data-link-style="solid"] .sp-icon{background:color-mix(in srgb,var(--widget) 18%,#0b1020); border-color:transparent}
 .sp-root[data-link-style="outline"] .sp-link,.sp-root[data-link-style="outline"] .sp-icon{background:transparent; border-color:color-mix(in srgb,var(--widget) 38%,transparent)}
 .sp-root[data-link-style="minimal"] .sp-link,.sp-root[data-link-style="minimal"] .sp-icon{background:transparent; border-color:transparent}
-
-/* ---------- widgets ---------- */
 .sp-widgets{display:grid; grid-template-columns:repeat(var(--cols,2),minmax(0,1fr)); gap:var(--gap); margin-top:var(--sec,22px); width:100%; text-align:left}
 .sp-widget{padding:16px 18px; border-radius:calc(var(--link-radius) + 2px); background:color-mix(in srgb,var(--widget) 7%,transparent); border:1px solid color-mix(in srgb,var(--widget) 13%,transparent); display:block; min-width:0}
 .sp-root[data-widget-style="solid"] .sp-widget{background:color-mix(in srgb,var(--widget) 16%,#0b1020); border-color:transparent}
@@ -130,8 +110,6 @@
 .sp-widget.quote{border-left:3px solid var(--accent)}
 a.sp-widget{transition:transform .18s,border-color .2s}
 a.sp-widget:hover{transform:translateY(-2px); border-color:color-mix(in srgb,var(--accent) 60%,transparent)}
-
-/* ---------- embeds + player ---------- */
 .sp-embed{margin-top:var(--sec,22px); width:100%}
 .sp-embed iframe{width:100%; border:0; border-radius:14px; background:#0b1020}
 .sp-player{display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:18px; background:color-mix(in srgb,#000 55%,transparent); border:1px solid rgba(255,255,255,.12); -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px); color:#fff; width:100%; text-align:left}
@@ -152,32 +130,23 @@ a.sp-widget:hover{transform:translateY(-2px); border-color:color-mix(in srgb,var
 .sp-player.minimal{width:auto; padding:6px; border-radius:99px; gap:0}
 .sp-player.minimal .sp-pl-mid,.sp-player.minimal .sp-pl-vol,.sp-player.minimal .sp-pl-skip{display:none}
 .sp-player-float.minimal{width:auto}
-
-/* ---------- footer ---------- */
 .sp-foot{margin-top:26px; display:flex; flex-wrap:wrap; gap:6px 14px; justify-content:var(--items,center); color:var(--muted); font-size:12.5px}
 .sp-foot a{color:var(--accent)}
-
-/* ---------- splash ---------- */
 .sp-splash{position:absolute; inset:0; z-index:40; display:grid; place-items:center; cursor:pointer; background:rgba(5,7,13,.62); -webkit-backdrop-filter:blur(22px); backdrop-filter:blur(22px); transition:opacity .55s ease, visibility .55s; color:#fff; text-align:center; padding:24px}
 .sp-splash.out{opacity:0; visibility:hidden; pointer-events:none}
 .sp-splash span{font-size:clamp(20px,4.6vw,30px); font-weight:650; letter-spacing:.02em; animation:sp-splashpulse 2.2s ease-in-out infinite}
 @keyframes sp-splashpulse{0%,100%{opacity:.55}50%{opacity:1}}
-
-/* ---------- cursor ---------- */
 .sp-cursor-dot,.sp-cursor-ring{position:absolute; left:0; top:0; pointer-events:none; z-index:60; border-radius:50%; transform:translate(-100px,-100px); will-change:transform; transition:opacity .25s}
 .sp-cursor-dot{width:8px; height:8px; margin:-4px 0 0 -4px; background:var(--cursor,#fff)}
 .sp-cursor-ring{width:34px; height:34px; margin:-17px 0 0 -17px; border:2px solid var(--cursor,#fff); transition:width .2s,height .2s,margin .2s,background .2s,opacity .25s}
 .sp-cursor-ring.hot{width:50px; height:50px; margin:-25px 0 0 -25px; background:color-mix(in srgb,var(--cursor,#fff) 14%,transparent)}
 .sp-root.cursor-hidden,.sp-root.cursor-hidden *{cursor:none!important}
 .sp-root.cursor-cross,.sp-root.cursor-cross *{cursor:crosshair!important}
-
-/* ---------- states ---------- */
 .sp-state{position:absolute; inset:0; z-index:6; display:grid; place-items:center; text-align:center; padding:24px}
 .sp-state-box{max-width:420px}
 .sp-state h1{margin:0 0 8px; font-size:28px}
 .sp-state p{margin:0 0 18px; color:#9caac1}
 .sp-state a{display:inline-flex; padding:11px 22px; border-radius:99px; background:#fff; color:#07101b; font-weight:650; font-size:14px}
-
 @media (max-width:560px){
   .sp-widgets{grid-template-columns:1fr}
   .sp-root[data-layout="wide"] .sp-card{width:100%}
@@ -186,14 +155,10 @@ a.sp-widget:hover{transform:translateY(-2px); border-color:color-mix(in srgb,var
 @media (prefers-reduced-motion:reduce){
   .sp-root[data-reduce="1"] *,.sp-root[data-reduce="1"] *::before,.sp-root[data-reduce="1"] *::after{animation-duration:.01ms!important; animation-iteration-count:1!important; transition-duration:.01ms!important}
 }
-
-/* ---------- public page chrome ---------- */
 body.sp-page-body{background:#090d17; overflow:hidden}
 body.sp-page-body::before,body.sp-page-body::after{display:none}
 .sp-top{position:absolute; top:12px; right:14px; z-index:12}
 .sp-top a{display:inline-flex; padding:7px 14px; border-radius:99px; font-size:12.5px; font-weight:600; background:rgba(0,0,0,.45); border:1px solid rgba(255,255,255,.14); color:#fff; -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px)}
-
-/* ================= v3: header, badges, polish ================= */
 .sp-root[data-pad="compact"]{--pad:18px}
 .sp-root[data-pad="spacious"]{--pad:clamp(24px,7vw,56px)}
 .sp-root[data-halign="left"] .sp-stage{justify-content:flex-start}
@@ -206,10 +171,8 @@ body.sp-page-body::before,body.sp-page-body::after{display:none}
 .sp-root[data-header="inline"] .sp-id{align-items:flex-start; padding-bottom:6px}
 .sp-root[data-header="inline"] .sp-name{margin-top:0}
 @media (max-width:480px){.sp-root[data-header="inline"] .sp-head{flex-direction:column; align-items:flex-start}}
-
 .sp-dot{position:absolute; right:4%; bottom:4%; width:calc(var(--avatar) * .22); height:calc(var(--avatar) * .22); min-width:14px; min-height:14px; border-radius:50%; z-index:2; border:3px solid #0b1020; background:#747f8d}
 .sp-dot.online{background:#3ba55d} .sp-dot.idle{background:#faa61a} .sp-dot.dnd{background:#ed4245} .sp-dot.offline{background:#747f8d}
-
 .sp-badges{display:flex; flex-wrap:wrap; gap:8px; justify-content:var(--items,center); margin-top:14px; width:100%}
 .sp-badge{--bc:var(--accent); position:relative; display:inline-flex; align-items:center; gap:7px; height:30px; padding:0 12px 0 4px; border-radius:99px; font-size:12px; font-weight:650; cursor:default; outline:none;
   background:color-mix(in srgb,var(--bc) 11%,transparent); border:1px solid color-mix(in srgb,var(--bc) 38%,transparent); transition:transform .15s, box-shadow .2s}
@@ -222,13 +185,9 @@ body.sp-page-body::before,body.sp-page-body::after{display:none}
 .sp-root[data-badge="icons"] .sp-badge i{width:100%; height:100%; background:transparent; font-size:16px}
 .sp-badge[data-tip]:hover::after,.sp-badge[data-tip]:focus::after{content:attr(data-tip); position:absolute; bottom:calc(100% + 9px); left:50%; transform:translateX(-50%); width:max-content; max-width:230px; white-space:normal; text-align:center;
   padding:6px 10px; border-radius:9px; background:#05070d; border:1px solid rgba(255,255,255,.14); color:#fff; font-size:11.5px; font-weight:550; line-height:1.35; z-index:30; pointer-events:none}
-
-/* background extras */
 .sp-vig{position:absolute; inset:0; pointer-events:none; background:radial-gradient(ellipse at center,transparent 45%,rgba(0,0,0,var(--vig,0)) 100%)}
 .sp-grain{position:absolute; inset:0; pointer-events:none; opacity:.09; mix-blend-mode:overlay;
   background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
-
-/* card patterns + animated border */
 .sp-root:not([data-pattern="none"]) .sp-card::after{content:""; position:absolute; inset:0; pointer-events:none; z-index:0}
 .sp-root[data-pattern="grid"] .sp-card::after{background-image:linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px); background-size:28px 28px}
 .sp-root[data-pattern="dots"] .sp-card::after{background-image:radial-gradient(rgba(255,255,255,.14) 1px,transparent 1.5px); background-size:18px 18px}
@@ -238,12 +197,8 @@ body.sp-page-body::before,body.sp-page-body::after{display:none}
 .sp-root[data-anim-border="1"] .sp-card::before{content:""; position:absolute; inset:0; border-radius:inherit; padding:2px; pointer-events:none; z-index:3;
   background:conic-gradient(from var(--ang),var(--accent),var(--name2),var(--accent)); -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask-composite:exclude; animation:sp-ang 5s linear infinite}
 @keyframes sp-ang{to{--ang:360deg}}
-
-/* staggered entrance */
 .sp-root[data-stagger="1"] .sp-body>*{animation:sp-up .65s cubic-bezier(.16,1,.3,1) both; animation-delay:calc(var(--i,0) * 55ms + 120ms)}
 @keyframes sp-up{from{opacity:0; transform:translateY(14px)}to{opacity:1; transform:none}}
-
-/* links: hover modes + sizes + icon backgrounds */
 .sp-link{font-weight:600}
 .sp-link:hover{transform:none}
 .sp-root[data-link-hover="lift"] .sp-link:hover{transform:translateY(-2px); border-color:color-mix(in srgb,var(--accent) 65%,transparent)}
@@ -253,10 +208,7 @@ body.sp-page-body::before,body.sp-page-body::after{display:none}
 .sp-root[data-link-size="small"] .sp-link{padding:9px 14px; font-size:14px}
 .sp-root[data-link-size="large"] .sp-link{padding:17px 20px; font-size:16px}
 .sp-root[data-icon-bg="none"] .sp-icon{background:transparent; border-color:transparent}
-
 .sp-root{touch-action:pan-y; -webkit-tap-highlight-color:transparent}
-
-/* ================= v4 ================= */
 .sp-links{display:flex; flex-direction:column; gap:var(--gap); width:100%}
 .sp-root[data-link-cols="2"] .sp-links:not(.x){display:grid; grid-template-columns:1fr 1fr}
 .sp-root[data-link-cols="2"] .sp-link-head{grid-column:1/-1}
@@ -294,8 +246,6 @@ body.sp-page-body::before,body.sp-page-body::after{display:none}
 .sp-share{font:inherit; font-size:12px; color:var(--muted); background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); border-radius:99px; padding:5px 12px; cursor:pointer; transition:background .2s,color .2s}
 .sp-share:hover{background:rgba(255,255,255,.14); color:var(--text)}
 .sp-foot{flex-wrap:wrap; justify-content:center; align-items:center}
-
-/* ================= v5: cleaner audio player ================= */
 .sp-player{gap:14px; padding:12px 16px 12px 12px; border-radius:20px; background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 14%,rgba(8,10,18,.78)),rgba(8,10,18,.8)); border:1px solid rgba(255,255,255,.1); box-shadow:0 10px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06)}
 .sp-pl-art{width:46px; height:46px; flex:none; border-radius:14px; display:grid; place-items:center; color:var(--accent); background:radial-gradient(circle at 30% 25%,color-mix(in srgb,var(--accent) 38%,transparent),rgba(255,255,255,.05)); border:1px solid color-mix(in srgb,var(--accent) 35%,transparent)}
 .sp-pl-art svg{width:22px; height:22px; fill:currentColor}
@@ -324,8 +274,6 @@ body.sp-page-body::before,body.sp-page-body::after{display:none}
 .sp-pl-sub,.sp-pl-title{white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 .sp-pl-mid{min-width:70px}
 @media (max-width:520px){.sp-pl-volbox{display:none}.sp-player .sp-pl-btn{width:34px; height:34px}.sp-player .sp-pl-btn.main{width:42px; height:42px}}
-
-/* badges v5: custom glyphs, depth, tooltip above everything */
 .sp-badges{position:relative; z-index:8}
 .sp-badge{height:32px; padding:0 13px 0 4px; background:linear-gradient(180deg,color-mix(in srgb,var(--bc) 20%,transparent),color-mix(in srgb,var(--bc) 7%,transparent)); border:1px solid color-mix(in srgb,var(--bc) 42%,transparent); box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 2px 8px rgba(0,0,0,.18); letter-spacing:.01em; transition:transform .18s cubic-bezier(.2,.8,.2,1),box-shadow .2s,border-color .2s}
 .sp-badge i{width:24px; height:24px; background:linear-gradient(145deg,color-mix(in srgb,var(--bc) 55%,#0b1020),color-mix(in srgb,var(--bc) 18%,#0b1020)); box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--bc) 45%,transparent),0 0 10px color-mix(in srgb,var(--bc) 25%,transparent); color:color-mix(in srgb,var(--bc) 35%,#fff)}
@@ -339,8 +287,6 @@ body.sp-page-body::before,body.sp-page-body::after{display:none}
 .sp-root[data-badge="icons"] .sp-badge i{width:100%; height:100%; background:transparent; box-shadow:none}
 .sp-root[data-badge="minimal"] .sp-badge{background:transparent; box-shadow:none}
 .sp-badge[data-tip]:hover::after,.sp-badge[data-tip]:focus::after{z-index:50; box-shadow:0 8px 24px rgba(0,0,0,.45)}
-
-/* badges v6: professional polish */
 .sp-badge{height:30px; padding:0 12px 0 3px; gap:7px; font-size:12px; font-weight:600; letter-spacing:.015em; background:linear-gradient(180deg,color-mix(in srgb,var(--bc) 15%,rgba(255,255,255,.04)),color-mix(in srgb,var(--bc) 6%,rgba(255,255,255,.02))); border:1px solid color-mix(in srgb,var(--bc) 34%,rgba(255,255,255,.08)); box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 1px 2px rgba(0,0,0,.25)}
 .sp-badge i{width:24px; height:24px; background:radial-gradient(circle at 32% 25%,color-mix(in srgb,var(--bc) 62%,#fff 8%),color-mix(in srgb,var(--bc) 30%,#0b1020) 78%); box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--bc) 55%,transparent),inset 0 1px 1px rgba(255,255,255,.35),0 1px 4px rgba(0,0,0,.35); color:#fff}
 .sp-badge .sp-bi{width:14px; height:14px; fill:rgba(255,255,255,.2); stroke:#fff; stroke-width:1.7; filter:drop-shadow(0 1px 1px rgba(0,0,0,.35))}
@@ -349,8 +295,6 @@ body.sp-page-body::before,body.sp-page-body::after{display:none}
 .sp-root[data-badge="icons"] .sp-badge i{background:radial-gradient(circle at 32% 25%,color-mix(in srgb,var(--bc) 62%,#fff 8%),color-mix(in srgb,var(--bc) 30%,#0b1020) 78%)}
 .sp-root[data-badge="icons"] .sp-badge{padding:2px}
 .sp-root[data-badge="minimal"] .sp-badge i{box-shadow:none}
-
-/* steam card */
 .sp-steam{width:100%; margin-top:14px; padding:14px; border-radius:16px; text-align:left; background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.025)); border:1px solid rgba(255,255,255,.1); display:flex; flex-direction:column; gap:12px}
 .sp-st-head{display:flex; align-items:center; gap:12px}
 .sp-st-head>img{width:42px; height:42px; border-radius:10px; object-fit:cover; flex:none}
@@ -371,8 +315,6 @@ body.sp-page-body::before,body.sp-page-body::after{display:none}
 .sp-st-ph{width:80px; height:30px; flex:none; border-radius:6px; overflow:hidden; background:linear-gradient(135deg,rgba(102,192,244,.22),rgba(255,255,255,.05))}
 .sp-st-ph img{width:100%; height:100%; object-fit:cover; display:block}
 .sp-st-game>img{display:none}
-
-/* lyrics */
 .sp-lyrics{width:100%; margin-top:14px; font-family:var(--ly-font,inherit); font-size:var(--ly-size,18px); color:var(--ly-color,inherit); text-align:var(--ly-align,center); line-height:1.35}
 .sp-lyrics.empty{display:none}
 .sp-lyrics.place-bottom,.sp-lyrics.place-center{position:absolute; left:50%; transform:translateX(-50%); width:min(760px,calc(100% - 32px)); margin:0; z-index:9; pointer-events:none; text-shadow:0 2px 14px rgba(0,0,0,.75)}
@@ -388,8 +330,6 @@ body.sp-page-body::before,body.sp-page-body::after{display:none}
 .sp-lyrics.plain .sp-ly-line{opacity:.92}
 .sp-lyrics.plain .sp-ly-list{padding:0; -webkit-mask-image:none; mask-image:none; max-height:calc(var(--ly-size,18px) * 1.35 * 9)}
 .sp-lyrics.glow .sp-ly-cur,.sp-lyrics.glow .sp-ly-line.on{text-shadow:0 0 16px var(--accent),0 0 32px color-mix(in srgb,var(--accent) 60%,transparent)}
-
-/* page 2 */
 .sp-stage{position:relative}
 .sp-hint{position:absolute; left:50%; bottom:18px; transform:translateX(-50%); width:40px; height:40px; border-radius:50%; display:grid; place-items:center; cursor:pointer; color:var(--text,#fff); background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.16); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); animation:sp-bob 2s ease-in-out infinite}
 .sp-hint svg{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round}

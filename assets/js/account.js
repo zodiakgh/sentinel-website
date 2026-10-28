@@ -1,25 +1,236 @@
-(function(){"use strict";
-var API=((window.SENTINEL_CONFIG||{}).authApiUrl||"").replace(/\/+$/,"");
-var $=function(id){return document.getElementById(id)};
-var loginForm=$("login-form"),registerForm=$("register-form"),verifyForm=$("verify-form"),authArea=$("auth-area"),settings=$("settings-area"),message=$("message"),settingsMessage=$("account-message"),currentEmail="";
-function say(el,text,error){el.textContent=text||"";el.classList.toggle("error",!!error)}
-function formData(form){return Object.fromEntries(new FormData(form).entries())}
-async function api(path,body){var r=await fetch(API+path,{method:body?"POST":"GET",credentials:"include",headers:body?{"Content-Type":"application/json","Accept":"application/json"}:{"Accept":"application/json"},body:body?JSON.stringify(body):undefined});var j={};try{j=await r.json()}catch(_){}if(!r.ok){var e=new Error(j.message||j.error||"Request failed");e.code=j.error||"error";throw e}return j}
-function busy(form,on){var b=form.querySelector('button[type="submit"]');if(b){b.disabled=on;b.dataset.old=b.dataset.old||b.textContent;b.textContent=on?"Please wait…":b.dataset.old}}
-function showMode(mode){[loginForm,registerForm,verifyForm].forEach(function(f){f.classList.add("account-hide")});if(mode==="login")loginForm.classList.remove("account-hide");if(mode==="register")registerForm.classList.remove("account-hide");if(mode==="verify")verifyForm.classList.remove("account-hide");$("tab-login").setAttribute("aria-selected",String(mode==="login"));$("tab-register").setAttribute("aria-selected",String(mode==="register"));}
-$("tab-login").addEventListener("click",function(){showMode("login");say(message,"")});$("tab-register").addEventListener("click",function(){showMode("register");say(message,"")});
-loginForm.addEventListener("submit",async function(ev){ev.preventDefault();say(message,"");var d=formData(loginForm);busy(loginForm,true);try{await api("/account/login",{email:d.email,password:d.password});location.href="/account"}catch(e){say(message,e.code==="email_not_verified"?"Please verify your email first.":e.message,true)}finally{busy(loginForm,false)}});
-registerForm.addEventListener("submit",async function(ev){ev.preventDefault();say(message,"");var d=formData(registerForm);if(d.password!==d.confirm){say(message,"Passwords do not match.",true);return}busy(registerForm,true);try{await api("/account/register",{email:d.email,password:d.password});currentEmail=d.email;verifyForm.elements.email.value=d.email;showMode("verify");say(message,"We sent a verification code to your email address.")}catch(e){say(message,e.code==="account_exists"?"An account already exists for this email. Try signing in.":e.message,true)}finally{busy(registerForm,false)}});
-verifyForm.addEventListener("submit",async function(ev){ev.preventDefault();say(message,"");var d=formData(verifyForm);busy(verifyForm,true);try{await api("/account/verify",{email:d.email,code:d.code});loginForm.elements.email.value=d.email;showMode("login");say(message,"Email verified. You can now sign in.")}catch(e){say(message,e.message,true)}finally{busy(verifyForm,false)}});
-$("password-form").addEventListener("submit",async function(ev){ev.preventDefault();say(settingsMessage,"");var d=formData(ev.currentTarget);busy(ev.currentTarget,true);try{await api("/account/password",{currentPassword:d.currentPassword,newPassword:d.newPassword});ev.currentTarget.reset();say(settingsMessage,"Password updated successfully.")}catch(e){say(settingsMessage,e.message,true)}finally{busy(ev.currentTarget,false)}});
-$("unlink-discord").addEventListener("click",async function(){if(!window.confirm("Unlink your Discord account from Sentinel?"))return;try{await api("/account/discord/unlink",{});say(settingsMessage,"Discord has been unlinked.");await load()}catch(e){say(settingsMessage,e.message,true)}});
-$("logout").addEventListener("click",async function(){try{await fetch(API+"/auth/logout",{method:"POST",credentials:"include"})}finally{location.href="/account"}});
-$("google-login").href=API+"/auth/google";
-$("unlink-steam").addEventListener("click",async function(){if(!window.confirm("Unlink your Steam account from Sentinel?"))return;try{await api("/account/steam/unlink",{});say(settingsMessage,"Steam has been unlinked.");await load()}catch(e){say(settingsMessage,e.message,true)}});
-$("unlink-google").addEventListener("click",async function(){if(!window.confirm("Unlink your Google account from Sentinel?"))return;try{await api("/account/google/unlink",{});say(settingsMessage,"Google has been unlinked.");await load()}catch(e){say(settingsMessage,e.message,true)}});
-async function load(){if(!API){say(message,"The account service is not configured yet.",true);return}try{var a=await api("/account/me");authArea.classList.add("account-hide");settings.classList.remove("account-hide");$("account-email").textContent=a.email;$("verified-state").textContent=a.verified?"Your email address is verified.":"Your email address is not verified.";if(a.discord){$("discord-state").textContent="Linked to "+(a.discord.name||a.discord.username)+" ("+a.discord.username+").";$("link-discord").textContent="Discord linked";$("unlink-discord").classList.remove("account-hide")}else{$("discord-state").textContent="No Discord account is linked.";$("link-discord").textContent="Link Discord";$("unlink-discord").classList.add("account-hide")}$("link-discord").href=API+"/auth/link";if(a.google){$("google-state").textContent="Linked to "+a.google.email+".";$("link-google").textContent="Google linked";$("unlink-google").classList.remove("account-hide")}else{$("google-state").textContent="No Google account is linked.";$("link-google").textContent="Link Google";$("unlink-google").classList.add("account-hide")}$("link-google").href=API+"/auth/google?link=1";if(a.steam){$("steam-state").textContent="Linked to "+(a.steam.name||("Steam ID "+a.steam.id))+".";$("link-steam").textContent="Steam linked";$("unlink-steam").classList.remove("account-hide")}else{$("steam-state").textContent="No Steam account is linked.";$("link-steam").textContent="Link Steam";$("unlink-steam").classList.add("account-hide")}$("link-steam").href=API+"/auth/steam";$("current-pw-label").classList.toggle("account-hide",a.hasPassword===false)}catch(e){if(e.code!=="unauthenticated"){say(message,"Could not load account settings: "+e.message,true)}else{authArea.classList.remove("account-hide");settings.classList.add("account-hide")}}}
-var params=new URLSearchParams(location.search),link=params.get("link"),linkNotice="";if(link){var msg={ok:"Discord account linked successfully.",already_used:"That Discord account is already linked to another Sentinel account.",error:"Discord linking failed. Please try again.",login_required:"Sign in to your Sentinel email account before linking Discord."};linkNotice=msg[link]||"";history.replaceState(null,"",location.pathname)}
-var sp=params.get("steam");if(sp){var sm={linked:"Steam account linked successfully.",already_used:"That Steam account is already linked to another Sentinel account.",cancelled:"Steam linking was cancelled.",error:"Steam linking failed. Please try again.",login_required:"Sign in to your Sentinel account before linking Steam."};linkNotice=sm[sp]||(/^error_/.test(sp)?"Steam linking failed ("+sp.slice(6)+"). Please try again.":"");link=sp==="linked"?"ok":"err";history.replaceState(null,"",location.pathname)}
-var gp=params.get("google");if(gp){var gm={ok:"Signed in with Google.",linked:"Google account linked successfully.",already_used:"That Google account is already linked to another Sentinel account.",cancelled:"Google sign-in was cancelled.",error:"Google sign-in failed. Please try again.",login_required:"Sign in to your Sentinel account before linking Google.",misconfigured:"Google sign-in is not configured yet."};linkNotice=gm[gp]||"";link=gp==="ok"||gp==="linked"?"ok":"err";history.replaceState(null,"",location.pathname)}
-load().then(function(){if(linkNotice){if(!settings.classList.contains("account-hide"))say(settingsMessage,linkNotice,link!=="ok");else say(message,linkNotice,link!=="login_required"&&link!=="ok")}});
+(function() {
+  "use strict";
+  var API = ((window.SENTINEL_CONFIG || {}).authApiUrl || "").replace(/\/+$/, "");
+  var $ = function(id) {
+    return document.getElementById(id);
+  };
+  var loginForm = $("login-form"), registerForm = $("register-form"), verifyForm = $("verify-form"), authArea = $("auth-area"), settings = $("settings-area"), message = $("message"), settingsMessage = $("account-message"), currentEmail = "";
+  function say(el, text, error) {
+    el.textContent = text || "";
+    el.classList.toggle("error", !!error);
+  }
+  function formData(form) {
+    return Object.fromEntries(new FormData(form).entries());
+  }
+  async function api(path, body) {
+    var r = await fetch(API + path, { method: body ? "POST" : "GET", credentials: "include", headers: body ? { "Content-Type": "application/json", "Accept": "application/json" } : { "Accept": "application/json" }, body: body ? JSON.stringify(body) : void 0 });
+    var j = {};
+    try {
+      j = await r.json();
+    } catch (_) {
+    }
+    if (!r.ok) {
+      var e = new Error(j.message || j.error || "Request failed");
+      e.code = j.error || "error";
+      throw e;
+    }
+    return j;
+  }
+  function busy(form, on) {
+    var b = form.querySelector('button[type="submit"]');
+    if (b) {
+      b.disabled = on;
+      b.dataset.old = b.dataset.old || b.textContent;
+      b.textContent = on ? "Please wait…" : b.dataset.old;
+    }
+  }
+  function showMode(mode) {
+    [loginForm, registerForm, verifyForm].forEach(function(f) {
+      f.classList.add("account-hide");
+    });
+    if (mode === "login") loginForm.classList.remove("account-hide");
+    if (mode === "register") registerForm.classList.remove("account-hide");
+    if (mode === "verify") verifyForm.classList.remove("account-hide");
+    $("tab-login").setAttribute("aria-selected", String(mode === "login"));
+    $("tab-register").setAttribute("aria-selected", String(mode === "register"));
+  }
+  $("tab-login").addEventListener("click", function() {
+    showMode("login");
+    say(message, "");
+  });
+  $("tab-register").addEventListener("click", function() {
+    showMode("register");
+    say(message, "");
+  });
+  loginForm.addEventListener("submit", async function(ev) {
+    ev.preventDefault();
+    say(message, "");
+    var d = formData(loginForm);
+    busy(loginForm, true);
+    try {
+      await api("/account/login", { email: d.email, password: d.password });
+      location.href = "/account";
+    } catch (e) {
+      say(message, e.code === "email_not_verified" ? "Please verify your email first." : e.message, true);
+    } finally {
+      busy(loginForm, false);
+    }
+  });
+  registerForm.addEventListener("submit", async function(ev) {
+    ev.preventDefault();
+    say(message, "");
+    var d = formData(registerForm);
+    if (d.password !== d.confirm) {
+      say(message, "Passwords do not match.", true);
+      return;
+    }
+    busy(registerForm, true);
+    try {
+      await api("/account/register", { email: d.email, password: d.password });
+      currentEmail = d.email;
+      verifyForm.elements.email.value = d.email;
+      showMode("verify");
+      say(message, "We sent a verification code to your email address.");
+    } catch (e) {
+      say(message, e.code === "account_exists" ? "An account already exists for this email. Try signing in." : e.message, true);
+    } finally {
+      busy(registerForm, false);
+    }
+  });
+  verifyForm.addEventListener("submit", async function(ev) {
+    ev.preventDefault();
+    say(message, "");
+    var d = formData(verifyForm);
+    busy(verifyForm, true);
+    try {
+      await api("/account/verify", { email: d.email, code: d.code });
+      loginForm.elements.email.value = d.email;
+      showMode("login");
+      say(message, "Email verified. You can now sign in.");
+    } catch (e) {
+      say(message, e.message, true);
+    } finally {
+      busy(verifyForm, false);
+    }
+  });
+  $("password-form").addEventListener("submit", async function(ev) {
+    ev.preventDefault();
+    say(settingsMessage, "");
+    var d = formData(ev.currentTarget);
+    busy(ev.currentTarget, true);
+    try {
+      await api("/account/password", { currentPassword: d.currentPassword, newPassword: d.newPassword });
+      ev.currentTarget.reset();
+      say(settingsMessage, "Password updated successfully.");
+    } catch (e) {
+      say(settingsMessage, e.message, true);
+    } finally {
+      busy(ev.currentTarget, false);
+    }
+  });
+  $("unlink-discord").addEventListener("click", async function() {
+    if (!window.confirm("Unlink your Discord account from Sentinel?")) return;
+    try {
+      await api("/account/discord/unlink", {});
+      say(settingsMessage, "Discord has been unlinked.");
+      await load();
+    } catch (e) {
+      say(settingsMessage, e.message, true);
+    }
+  });
+  $("logout").addEventListener("click", async function() {
+    try {
+      await fetch(API + "/auth/logout", { method: "POST", credentials: "include" });
+    } finally {
+      location.href = "/account";
+    }
+  });
+  $("google-login").href = API + "/auth/google";
+  $("unlink-steam").addEventListener("click", async function() {
+    if (!window.confirm("Unlink your Steam account from Sentinel?")) return;
+    try {
+      await api("/account/steam/unlink", {});
+      say(settingsMessage, "Steam has been unlinked.");
+      await load();
+    } catch (e) {
+      say(settingsMessage, e.message, true);
+    }
+  });
+  $("unlink-google").addEventListener("click", async function() {
+    if (!window.confirm("Unlink your Google account from Sentinel?")) return;
+    try {
+      await api("/account/google/unlink", {});
+      say(settingsMessage, "Google has been unlinked.");
+      await load();
+    } catch (e) {
+      say(settingsMessage, e.message, true);
+    }
+  });
+  async function load() {
+    if (!API) {
+      say(message, "The account service is not configured yet.", true);
+      return;
+    }
+    try {
+      var a = await api("/account/me");
+      authArea.classList.add("account-hide");
+      settings.classList.remove("account-hide");
+      $("account-email").textContent = a.email;
+      $("verified-state").textContent = a.verified ? "Your email address is verified." : "Your email address is not verified.";
+      if (a.discord) {
+        $("discord-state").textContent = "Linked to " + (a.discord.name || a.discord.username) + " (" + a.discord.username + ").";
+        $("link-discord").textContent = "Discord linked";
+        $("unlink-discord").classList.remove("account-hide");
+      } else {
+        $("discord-state").textContent = "No Discord account is linked.";
+        $("link-discord").textContent = "Link Discord";
+        $("unlink-discord").classList.add("account-hide");
+      }
+      $("link-discord").href = API + "/auth/link";
+      if (a.google) {
+        $("google-state").textContent = "Linked to " + a.google.email + ".";
+        $("link-google").textContent = "Google linked";
+        $("unlink-google").classList.remove("account-hide");
+      } else {
+        $("google-state").textContent = "No Google account is linked.";
+        $("link-google").textContent = "Link Google";
+        $("unlink-google").classList.add("account-hide");
+      }
+      $("link-google").href = API + "/auth/google?link=1";
+      if (a.steam) {
+        $("steam-state").textContent = "Linked to " + (a.steam.name || "Steam ID " + a.steam.id) + ".";
+        $("link-steam").textContent = "Steam linked";
+        $("unlink-steam").classList.remove("account-hide");
+      } else {
+        $("steam-state").textContent = "No Steam account is linked.";
+        $("link-steam").textContent = "Link Steam";
+        $("unlink-steam").classList.add("account-hide");
+      }
+      $("link-steam").href = API + "/auth/steam";
+      $("current-pw-label").classList.toggle("account-hide", a.hasPassword === false);
+    } catch (e) {
+      if (e.code !== "unauthenticated") {
+        say(message, "Could not load account settings: " + e.message, true);
+      } else {
+        authArea.classList.remove("account-hide");
+        settings.classList.add("account-hide");
+      }
+    }
+  }
+  var params = new URLSearchParams(location.search), link = params.get("link"), linkNotice = "";
+  if (link) {
+    var msg = { ok: "Discord account linked successfully.", already_used: "That Discord account is already linked to another Sentinel account.", error: "Discord linking failed. Please try again.", login_required: "Sign in to your Sentinel email account before linking Discord." };
+    linkNotice = msg[link] || "";
+    history.replaceState(null, "", location.pathname);
+  }
+  var sp = params.get("steam");
+  if (sp) {
+    var sm = { linked: "Steam account linked successfully.", already_used: "That Steam account is already linked to another Sentinel account.", cancelled: "Steam linking was cancelled.", error: "Steam linking failed. Please try again.", login_required: "Sign in to your Sentinel account before linking Steam." };
+    linkNotice = sm[sp] || (/^error_/.test(sp) ? "Steam linking failed (" + sp.slice(6) + "). Please try again." : "");
+    link = sp === "linked" ? "ok" : "err";
+    history.replaceState(null, "", location.pathname);
+  }
+  var gp = params.get("google");
+  if (gp) {
+    var gm = { ok: "Signed in with Google.", linked: "Google account linked successfully.", already_used: "That Google account is already linked to another Sentinel account.", cancelled: "Google sign-in was cancelled.", error: "Google sign-in failed. Please try again.", login_required: "Sign in to your Sentinel account before linking Google.", misconfigured: "Google sign-in is not configured yet." };
+    linkNotice = gm[gp] || "";
+    link = gp === "ok" || gp === "linked" ? "ok" : "err";
+    history.replaceState(null, "", location.pathname);
+  }
+  load().then(function() {
+    if (linkNotice) {
+      if (!settings.classList.contains("account-hide")) say(settingsMessage, linkNotice, link !== "ok");
+      else say(message, linkNotice, link !== "login_required" && link !== "ok");
+    }
+  });
 })();
