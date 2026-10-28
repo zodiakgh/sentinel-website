@@ -1,0 +1,10 @@
+{
+  "bots": [
+    { "name": "Sentinel", "tag": "Our bot", "category": "moderation", "url": "/", "description": "Moderation, AutoMod, tickets, music, giveaways and a full web dashboard, in one bot.", "descriptionFr": "Modération, AutoMod, tickets, musique, giveaways et un dashboard web complet, dans un seul bot.", "featured": true },
+    { "name": "Dyno", "category": "moderation", "url": "https://dyno.gg", "description": "Long-running moderation and automation bot with a web dashboard.", "descriptionFr": "Bot de modération et d'automatisation historique, avec dashboard web." },
+    { "name": "Carl-bot", "category": "utility", "url": "https://carl.gg", "description": "Reaction roles, logging, custom commands and auto-moderation.", "descriptionFr": "Rôles par réaction, logs, commandes personnalisées et auto-modération." },
+    { "name": "MEE6", "category": "community", "url": "https://mee6.xyz", "description": "Levels, welcome messages and moderation tools for communities.", "descriptionFr": "Niveaux, messages de bienvenue et outils de modération pour les communautés." },
+    { "name": "Tickets", "category": "support", "url": "https://ticketsbot.net", "description": "Dedicated support ticket system with panels and transcripts.", "descriptionFr": "Système de tickets de support dédié, avec panneaux et transcriptions." },
+    { "name": "StatBot", "category": "utility", "url": "https://statbot.net", "description": "Server statistics and activity graphs.", "descriptionFr": "Statistiques du serveur et graphiques d'activité." }
+  ]
+}
