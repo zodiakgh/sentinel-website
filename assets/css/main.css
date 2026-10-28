@@ -609,3 +609,8 @@ section.cta-band .btn-primary:hover{background:#f2f3f5}
 .bot-desc{margin:0; color:var(--fg-2); font-size:14.5px; line-height:1.5; flex:1}
 .bot-actions{display:flex; flex-wrap:wrap; gap:8px}
 @media (max-width:640px){.bots-list{grid-template-columns:1fr}.bots-count{margin-left:0}}
+.doc-tabs-wrap{position:sticky; top:64px; z-index:20; background:rgba(0,0,0,.85); backdrop-filter:blur(10px); border-bottom:1px solid var(--line)}
+.doc-tabs{display:flex; gap:8px; padding:12px 0; overflow-x:auto}
+.doc-tabs button{background:var(--panel); color:var(--fg-2); border:1px solid var(--line-3); border-radius:99px; padding:8px 18px; font:inherit; font-weight:600; cursor:pointer; white-space:nowrap}
+.doc-tabs button.on{background:var(--blurple); color:#fff; border-color:var(--blurple)}
+.doc-panel[hidden]{display:none}

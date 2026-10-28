@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://sentineldashboard.site/</loc></url>
-  <url><loc>https://sentineldashboard.site/features</loc></url>
-  <url><loc>https://sentineldashboard.site/commands</loc></url>
   <url><loc>https://sentineldashboard.site/bots</loc></url>
   <url><loc>https://sentineldashboard.site/docs</loc></url>
   <url><loc>https://sentineldashboard.site/dashboard</loc></url>
