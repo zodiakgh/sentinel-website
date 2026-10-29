@@ -766,6 +766,8 @@ async function dashTicketsOp(env, req, gid) {
 async function botTicketsPending(env, req) {
   const bad = await botKeyOK(env, req);
   if (bad) return bad;
+  const hb = Number(await env.SESSIONS.get("hb") || "0");
+  if (Date.now() - hb > 240000) await env.SESSIONS.put("hb", String(Date.now()));
   const ir = await env.SESSIONS.get("tkqidx"), idx = ir ? JSON.parse(ir) : [], items = [];
   for (const gid of idx.slice(0, 100)) {
     const r = await env.SESSIONS.get(`tkq:${gid}`);
@@ -1807,7 +1809,38 @@ ${message}
   }
   return json(env, req, { ok: true });
 }
+const BOT_DOWN_AFTER = 12 * 60000;
+function tgSend(env, chat, text) {
+  return fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ chat_id: chat, text, disable_web_page_preview: true }) }).catch(() => null);
+}
+async function botStatusText(env) {
+  const hb = Number(await env.SESSIONS.get("hb") || "0");
+  if (!hb) return "Sentinel: no signal received yet.";
+  const mins = Math.max(0, Math.round((Date.now() - hb) / 60000));
+  return Date.now() - hb < BOT_DOWN_AFTER ? "Sentinel is online ✅" : `Sentinel looks offline ⚠️\nLast signal about ${mins} min ago.`;
+}
+async function telegramWebhook(env, req) {
+  if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_WEBHOOK_SECRET || !safeEqual(req.headers.get("X-Telegram-Bot-Api-Secret-Token") || "", env.TELEGRAM_WEBHOOK_SECRET)) return new Response("forbidden", { status: 403 });
+  let u; try { u = await req.json(); } catch (_) { return new Response("ok"); }
+  const m = u && u.message, chat = m && m.chat && m.chat.id, cmd = String((m && m.text) || "").trim().split(/[\s@]/)[0].toLowerCase();
+  if (!chat || m.chat.type !== "private") return new Response("ok");
+  if (cmd === "/status") await tgSend(env, chat, await botStatusText(env));
+  else if (cmd === "/id") await tgSend(env, chat, `Your Telegram ID: ${chat}`);
+  else if (cmd === "/start" || cmd === "/help") await tgSend(env, chat, "Sentinel status bot.\n/status - is Sentinel online?\n/id - show your Telegram ID");
+  return new Response("ok");
+}
+async function botWatch(env) {
+  if (!env.TELEGRAM_BOT_TOKEN) return;
+  const hb = Number(await env.SESSIONS.get("hb") || "0"); if (!hb) return;
+  const down = Date.now() - hb > BOT_DOWN_AFTER, was = (await env.SESSIONS.get("hbs")) === "down";
+  if (down === was) return;
+  await env.SESSIONS.put("hbs", down ? "down" : "up");
+  const ids = String(env.TELEGRAM_ADMIN_IDS || "").split(",").map((x) => x.trim()).filter(Boolean);
+  const text = down ? "⚠️ Sentinel looks offline. No signal for over 12 minutes." : "✅ Sentinel is back online.";
+  await Promise.all(ids.map((id) => tgSend(env, id, text)));
+}
 export default {
+  async scheduled(_e, env, ctx) { ctx.waitUntil(botWatch(env)); },
   async fetch(req, env) {
     const { pathname } = new URL(req.url);
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(env, req) });
@@ -1842,6 +1875,7 @@ export default {
     if (req.method === "GET" && pathname === "/auth/callback") return callback(env, req);
     if (req.method === "GET" && pathname === "/api/me") return me(env, req);
     if (req.method === "GET" && pathname === "/account/phone/status") return phoneStatus(env, req);
+    if (req.method === "POST" && pathname === "/telegram/webhook") return telegramWebhook(env, req);
     if (req.method === "GET" && pathname === "/account/telegram/status") return telegramStatus(env, req);
     if (req.method === "POST" && pathname === "/account/telegram/auth") return telegramAuth(env, req);
     if (req.method === "POST" && pathname === "/account/telegram/unlink") return telegramUnlink(env, req);
