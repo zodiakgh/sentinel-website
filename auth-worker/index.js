@@ -214,6 +214,84 @@ async function accountLogin(env, req) {
   await env.SESSIONS.put(`s:${sid}`, JSON.stringify({ accountEmail: email, created: Date.now() }), { expirationTtl: SESSION_TTL });
   return json(env, req, { ok: true }, 200, { "Set-Cookie": cookie("sentinel_session", sid, { maxAge: SESSION_TTL }) });
 }
+const PHONE_RE = /^\+[1-9]\d{7,14}$/;
+const maskPhone = (p) => p.slice(0, 3) + " " + "•".repeat(Math.max(2, p.length - 7)) + " " + p.slice(-2);
+function phoneEnabled(env) { return !!(env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN && env.TWILIO_VERIFY_SID); }
+function twilio(env, path, params) {
+  return fetch(`https://verify.twilio.com/v2/Services/${env.TWILIO_VERIFY_SID}/${path}`, { method: "POST",
+    headers: { Authorization: "Basic " + btoa(`${env.TWILIO_ACCOUNT_SID}:${env.TWILIO_AUTH_TOKEN}`), "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams(params) });
+}
+async function phoneRate(env, key, limit, ttl) {
+  const n = Number(await env.SESSIONS.get(key) || "0"); if (n >= limit) return false;
+  await env.SESSIONS.put(key, String(n + 1), { expirationTtl: ttl }); return true;
+}
+async function phoneStatus(env, req) { return json(env, req, { enabled: phoneEnabled(env) }, 200, { "Cache-Control": "no-store" }); }
+async function phoneBody(env, req) {
+  if (!originOK(env, req)) return { err: json(env, req, { error: "forbidden" }, 403) };
+  if (!phoneEnabled(env)) return { err: json(env, req, { error: "phone_unavailable", message: "Phone sign-in isn't available yet." }, 503) };
+  let b; try { b = await readBody(req); } catch (_) { return { err: json(env, req, { error: "bad_request" }, 400) }; }
+  const phone = String(b.phone || "").replace(/[\s().-]/g, "");
+  if (!PHONE_RE.test(phone)) return { err: json(env, req, { error: "invalid_phone", message: "Enter your number with the country code, like +33 6 12 34 56 78." }, 400) };
+  const allow = String(env.PHONE_ALLOWED_PREFIXES || "").split(",").map((x) => x.trim()).filter(Boolean);
+  if (allow.length && !allow.some((x) => phone.startsWith(x))) return { err: json(env, req, { error: "country_not_supported", message: "Phone sign-in isn't available for this country yet." }, 400) };
+  return { b, phone };
+}
+async function phoneStart(env, req) {
+  const r = await phoneBody(env, req); if (r.err) return r.err;
+  const ip = req.headers.get("CF-Connecting-IP") || "unknown", day = new Date().toISOString().slice(0, 10), pd = await digest(r.phone);
+  if (env.TURNSTILE_SECRET && env.PHONE_TURNSTILE === "1") {
+    const t = String(r.b.turnstile || ""); let ok = false;
+    if (t) { const v = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", { method: "POST", body: new URLSearchParams({ secret: env.TURNSTILE_SECRET, response: t, remoteip: ip }) }); ok = v.ok && (await v.json()).success === true; }
+    if (!ok) return json(env, req, { error: "captcha_failed", message: "Please complete the check and try again." }, 400);
+  }
+  const cap = Number(env.PHONE_DAILY_CAP || 150);
+  if (!(await phoneRate(env, `rl:phg:${day}`, cap, 90000))) return json(env, req, { error: "busy", message: "Too many codes were requested today. Try again tomorrow." }, 429);
+  if (!(await phoneRate(env, `rl:phi:${await digest(ip)}`, 5, 3600)) || !(await phoneRate(env, `rl:php:${pd}`, 3, 3600))) return json(env, req, { error: "rate_limited", message: "Too many attempts. Please wait a while before asking for another code." }, 429);
+  if (r.b.mode === "link") { const s = await session(env, req); if (!s || !s.data.accountEmail) return json(env, req, { error: "unauthenticated" }, 401); if (await env.SESSIONS.get(`ph:${pd}`)) return json(env, req, { error: "phone_in_use", message: "That number is already used by another account." }, 409); }
+  const t = await twilio(env, "Verifications", { To: r.phone, Channel: "sms" });
+  if (!t.ok) return json(env, req, { error: "sms_failed", message: t.status === 429 ? "Too many attempts for this number. Please wait a bit." : "The SMS could not be sent. Check the number and try again." }, t.status === 429 ? 429 : 502);
+  return json(env, req, { ok: true });
+}
+async function phoneVerify(env, req) {
+  const r = await phoneBody(env, req); if (r.err) return r.err;
+  const code = String(r.b.code || "").trim(); if (!/^\d{4,10}$/.test(code)) return json(env, req, { error: "invalid_code", message: "Enter the code from the SMS." }, 400);
+  const pd = await digest(r.phone), ak = `rl:phv:${pd}`;
+  if (!(await phoneRate(env, ak, 6, 600))) return json(env, req, { error: "too_many_attempts", message: "Too many wrong codes. Ask for a new code in a few minutes." }, 429);
+  const t = await twilio(env, "VerificationCheck", { To: r.phone, Code: code });
+  const j = t.ok ? await t.json().catch(() => ({})) : {};
+  if (!t.ok || j.status !== "approved") return json(env, req, { error: "invalid_code", message: "That code is wrong or has expired." }, 400);
+  await env.SESSIONS.delete(ak);
+  const idxKey = `ph:${pd}`;
+  if (r.b.mode === "link") {
+    const s = await session(env, req); if (!s || !s.data.accountEmail) return json(env, req, { error: "unauthenticated" }, 401);
+    const owner = await env.SESSIONS.get(idxKey), key = await accountKey(s.data.accountEmail);
+    if (owner && owner !== key) return json(env, req, { error: "phone_in_use", message: "That number is already used by another account." }, 409);
+    const a = JSON.parse(await env.SESSIONS.get(key) || "null"); if (!a) return json(env, req, { error: "account_not_found" }, 404);
+    if (a.phone && a.phone.e164 !== r.phone) await env.SESSIONS.delete(`ph:${await digest(a.phone.e164)}`);
+    a.phone = { e164: r.phone, linkedAt: Date.now() }; await env.SESSIONS.put(key, JSON.stringify(a)); await env.SESSIONS.put(idxKey, key);
+    return json(env, req, { ok: true, linked: true });
+  }
+  let key = await env.SESSIONS.get(idxKey), id;
+  if (key) { const a = JSON.parse(await env.SESSIONS.get(key) || "null"); if (!a) { await env.SESSIONS.delete(idxKey); key = null; } else id = a.email || a.accountId; }
+  if (!key) {
+    id = `tel:${r.phone}`; key = await accountKey(id);
+    if (await env.SESSIONS.get(key)) return json(env, req, { error: "account_exists" }, 409);
+    await env.SESSIONS.put(key, JSON.stringify({ email: "", accountId: id, label: maskPhone(r.phone), salt: "", passwordHash: "", verified: true, created: Date.now(), discord: null, phone: { e164: r.phone, linkedAt: Date.now() } }));
+    await env.SESSIONS.put(idxKey, key);
+  }
+  const sid = rand(32);
+  await env.SESSIONS.put(`s:${sid}`, JSON.stringify({ accountEmail: id, created: Date.now() }), { expirationTtl: SESSION_TTL });
+  return json(env, req, { ok: true }, 200, { "Set-Cookie": cookie("sentinel_session", sid, { maxAge: SESSION_TTL }) });
+}
+async function phoneUnlink(env, req) {
+  if (!originOK(env, req)) return json(env, req, { error: "forbidden" }, 403);
+  const s = await session(env, req); if (!s || !s.data.accountEmail) return json(env, req, { error: "unauthenticated" }, 401);
+  const key = await accountKey(s.data.accountEmail), a = JSON.parse(await env.SESSIONS.get(key) || "null");
+  if (!a || !a.phone) return json(env, req, { error: "not_linked" }, 400);
+  if (!a.email) return json(env, req, { error: "last_login_method", message: "This number is your only way to sign in, so it can't be removed." }, 400);
+  await env.SESSIONS.delete(`ph:${await digest(a.phone.e164)}`); delete a.phone; await env.SESSIONS.put(key, JSON.stringify(a));
+  return json(env, req, { ok: true });
+}
 async function accountMe(env, req) {
   const s = await session(env, req);
   if (!s) return json(env, req, { error: "unauthenticated" }, 401);
@@ -221,7 +299,7 @@ async function accountMe(env, req) {
   const raw = await env.SESSIONS.get(await accountKey(s.data.accountEmail));
   if (!raw) return json(env, req, { error: "account_not_found" }, 404);
   const a = JSON.parse(raw);
-  return json(env, req, { email: a.email, verified: !!a.verified, created: a.created, discord: a.discord ? { id: a.discord.id, username: a.discord.username, name: a.discord.name, avatarUrl: cdn("avatars", a.discord.id, a.discord.avatar) } : null, google: a.google ? { email: a.google.email } : null, steam: a.steam ? { id: a.steam.id, name: await steamData(env, a.steam.id).then((d) => d && d.name).catch(() => null) } : null, hasPassword: !!a.passwordHash });
+  return json(env, req, { email: a.email || "", phone: a.phone ? { masked: maskPhone(a.phone.e164) } : null, canUnlinkPhone: !!a.email, verified: !!a.verified, created: a.created, discord: a.discord ? { id: a.discord.id, username: a.discord.username, name: a.discord.name, avatarUrl: cdn("avatars", a.discord.id, a.discord.avatar) } : null, google: a.google ? { email: a.google.email } : null, steam: a.steam ? { id: a.steam.id, name: await steamData(env, a.steam.id).then((d) => d && d.name).catch(() => null) } : null, hasPassword: !!a.passwordHash });
 }
 async function accountUnlinkDiscord(env, req) {
   if (!originOK(env, req)) return json(env, req, { error: "forbidden" }, 403);
@@ -813,9 +891,9 @@ async function me(env, req) {
     const guilds2 = d && Array.isArray(d.guilds) ? d.guilds : [];
     return json(env, req, {
       accountType: "email",
-      email: a.email,
+      email: a.email || a.label || "",
       verified: !!a.verified,
-      user: d ? { id: d.id, username: d.username, name: d.name, avatarUrl: cdn("avatars", d.id, d.avatar) } : { id: a.email, username: a.email, name: a.email.split("@")[0], avatarUrl: null },
+      user: d ? { id: d.id, username: d.username, name: d.name, avatarUrl: cdn("avatars", d.id, d.avatar) } : { id: a.email || a.label || "account", username: a.email || a.label || "account", name: (a.email || a.label || "account").split("@")[0], avatarUrl: null },
       linkedDiscord: d ? { id: d.id, username: d.username, name: d.name } : null,
       guilds: guilds2.map((g) => ({ id: g.id, name: g.name, iconUrl: cdn("icons", g.id, g.icon), owner: g.owner, botPresent: g.botPresent })),
       botStatusKnown: false
@@ -1711,6 +1789,10 @@ export default {
     if (req.method === "POST" && pathname === "/account/google/unlink") return accountUnlinkGoogle(env, req);
     if (req.method === "GET" && pathname === "/auth/callback") return callback(env, req);
     if (req.method === "GET" && pathname === "/api/me") return me(env, req);
+    if (req.method === "GET" && pathname === "/account/phone/status") return phoneStatus(env, req);
+    if (req.method === "POST" && pathname === "/account/phone/start") return phoneStart(env, req);
+    if (req.method === "POST" && pathname === "/account/phone/verify") return phoneVerify(env, req);
+    if (req.method === "POST" && pathname === "/account/phone/unlink") return phoneUnlink(env, req);
     if (req.method === "POST" && pathname === "/account/register") return accountRegister(env, req);
     if (req.method === "POST" && pathname === "/account/verify") return accountVerify(env, req);
     if (req.method === "POST" && pathname === "/account/login") return accountLogin(env, req);

@@ -156,6 +156,57 @@
       say(settingsMessage, e.message, true);
     }
   });
+
+  var phoneForm = $("phone-form"), phoneOpen = $("phone-open"), phoneStep = 0, phoneNum = "";
+  var phoneOn = false;
+  api("/account/phone/status").then(function(s) { phoneOn = !!s.enabled; if (phoneOn) { phoneOpen.hidden = false; phoneOpen.style.display = "flex"; $("phone-section").hidden = false; } }).catch(function() {});
+  phoneOpen.addEventListener("click", function() {
+    [loginForm, registerForm, verifyForm].forEach(function(f) { f.classList.add("account-hide"); });
+    phoneForm.classList.remove("account-hide");
+    say(message, "");
+  });
+  ["tab-login", "tab-register"].forEach(function(id) { $(id).addEventListener("click", function() { phoneForm.classList.add("account-hide"); phoneStep = 0; $("phone-code-label").classList.add("account-hide"); $("phone-submit").textContent = "Send code"; }); });
+  function phoneFlow(form, labelId, submitId, mode, area, done) {
+    var step = 0;
+    form.addEventListener("submit", async function(ev) {
+      ev.preventDefault();
+      var d = formData(form), btn = $(submitId);
+      say(area, "");
+      btn.disabled = true;
+      try {
+        if (step === 0) {
+          await api("/account/phone/start", { phone: d.phone, mode: mode });
+          step = 1;
+          $(labelId).classList.remove("account-hide");
+          form.elements.code.required = true;
+          form.elements.code.focus();
+          btn.textContent = mode === "link" ? "Verify and add" : "Verify and continue";
+          say(area, "Code sent. It can take a minute to arrive.");
+        } else {
+          await api("/account/phone/verify", { phone: d.phone, code: d.code, mode: mode });
+          step = 0;
+          form.reset();
+          $(labelId).classList.add("account-hide");
+          form.elements.code.required = false;
+          btn.textContent = "Send code";
+          await done();
+        }
+      } catch (e) {
+        say(area, e.message, true);
+      } finally {
+        btn.disabled = false;
+      }
+    });
+    return function reset() { step = 0; $(labelId).classList.add("account-hide"); btn0(); function btn0() { $(submitId).textContent = "Send code"; } form.reset(); };
+  }
+  phoneFlow(phoneForm, "phone-code-label", "phone-submit", "login", message, function() { location.href = "/account"; });
+  var linkForm = $("phone-link-form");
+  phoneFlow(linkForm, "phone-link-code-label", "phone-link-submit", "link", settingsMessage, async function() { linkForm.classList.add("account-hide"); say(settingsMessage, "Phone number added."); await load(); });
+  $("link-phone").addEventListener("click", function() { linkForm.classList.toggle("account-hide"); });
+  $("unlink-phone").addEventListener("click", async function() {
+    if (!window.confirm("Remove your phone number from this account?")) return;
+    try { await api("/account/phone/unlink", {}); say(settingsMessage, "Phone number removed."); await load(); } catch (e) { say(settingsMessage, e.message, true); }
+  });
   async function load() {
     if (!API) {
       say(message, "The account service is not configured yet.", true);
@@ -165,8 +216,11 @@
       var a = await api("/account/me");
       authArea.classList.add("account-hide");
       settings.classList.remove("account-hide");
-      $("account-email").textContent = a.email;
-      $("verified-state").textContent = a.verified ? "Your email address is verified." : "Your email address is not verified.";
+      $("account-email").textContent = a.email || (a.phone ? a.phone.masked : "your account");
+      $("phone-state").textContent = a.phone ? "Linked: " + a.phone.masked + "." : "No phone number is linked.";
+      $("link-phone").textContent = a.phone ? "Change number" : "Add phone";
+      $("unlink-phone").classList.toggle("account-hide", !a.phone || a.canUnlinkPhone === false);
+      $("verified-state").textContent = !a.email ? "You signed in with your phone number." : a.verified ? "Your email address is verified." : "Your email address is not verified.";
       if (a.discord) {
         $("discord-state").textContent = "Linked to " + (a.discord.name || a.discord.username) + " (" + a.discord.username + ").";
         $("link-discord").textContent = "Discord linked";
