@@ -288,8 +288,60 @@ async function phoneUnlink(env, req) {
   const s = await session(env, req); if (!s || !s.data.accountEmail) return json(env, req, { error: "unauthenticated" }, 401);
   const key = await accountKey(s.data.accountEmail), a = JSON.parse(await env.SESSIONS.get(key) || "null");
   if (!a || !a.phone) return json(env, req, { error: "not_linked" }, 400);
-  if (!a.email) return json(env, req, { error: "last_login_method", message: "This number is your only way to sign in, so it can't be removed." }, 400);
+  if (!a.email && !a.telegram) return json(env, req, { error: "last_login_method", message: "This number is your only way to sign in, so it can't be removed." }, 400);
   await env.SESSIONS.delete(`ph:${await digest(a.phone.e164)}`); delete a.phone; await env.SESSIONS.put(key, JSON.stringify(a));
+  return json(env, req, { ok: true });
+}
+async function tgVerify(env, u) {
+  if (!u || !u.id || !u.hash) return false;
+  const age = Date.now() / 1000 - Number(u.auth_date || 0);
+  if (!(age >= -60 && age < 600)) return false;
+  const data = Object.keys(u).filter((k) => k !== "hash").sort().map((k) => `${k}=${u[k]}`).join("\n");
+  const enc = new TextEncoder(), secret = await crypto.subtle.digest("SHA-256", enc.encode(env.TELEGRAM_BOT_TOKEN));
+  const key = await crypto.subtle.importKey("raw", secret, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const sig = [...new Uint8Array(await crypto.subtle.sign("HMAC", key, enc.encode(data)))].map((b) => b.toString(16).padStart(2, "0")).join("");
+  return safeEqual(sig, String(u.hash));
+}
+async function telegramStatus(env, req) {
+  const on = !!(env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_BOT_USERNAME);
+  return json(env, req, { enabled: on, bot: on ? env.TELEGRAM_BOT_USERNAME : "" }, 200, { "Cache-Control": "no-store" });
+}
+async function telegramAuth(env, req) {
+  if (!originOK(env, req)) return json(env, req, { error: "forbidden" }, 403);
+  if (!env.TELEGRAM_BOT_TOKEN) return json(env, req, { error: "telegram_unavailable", message: "Telegram sign-in isn't available yet." }, 503);
+  let b; try { b = await readBody(req); } catch (_) { return json(env, req, { error: "bad_request" }, 400); }
+  const u = b.user || {};
+  if (!(await phoneRate(env, `rl:tgi:${await digest(req.headers.get("CF-Connecting-IP") || "unknown")}`, 30, 600))) return json(env, req, { error: "rate_limited" }, 429);
+  if (!(await tgVerify(env, u))) return json(env, req, { error: "telegram_invalid", message: "Telegram sign-in failed. Please try again." }, 400);
+  const idxKey = `tg:${await digest(String(u.id))}`, name = String(u.username || u.first_name || "").slice(0, 64);
+  if (b.mode === "link") {
+    const s = await session(env, req); if (!s || !s.data.accountEmail) return json(env, req, { error: "unauthenticated" }, 401);
+    const owner = await env.SESSIONS.get(idxKey), key = await accountKey(s.data.accountEmail);
+    if (owner && owner !== key) return json(env, req, { error: "telegram_in_use", message: "That Telegram account is already linked to another account." }, 409);
+    const a = JSON.parse(await env.SESSIONS.get(key) || "null"); if (!a) return json(env, req, { error: "account_not_found" }, 404);
+    if (a.telegram && String(a.telegram.id) !== String(u.id)) await env.SESSIONS.delete(`tg:${await digest(String(a.telegram.id))}`);
+    a.telegram = { id: String(u.id), name, linkedAt: Date.now() }; await env.SESSIONS.put(key, JSON.stringify(a)); await env.SESSIONS.put(idxKey, key);
+    return json(env, req, { ok: true, linked: true });
+  }
+  let key = await env.SESSIONS.get(idxKey), id;
+  if (key) { const a = JSON.parse(await env.SESSIONS.get(key) || "null"); if (!a) { await env.SESSIONS.delete(idxKey); key = null; } else id = a.email || a.accountId; }
+  if (!key) {
+    id = `tgu:${u.id}`; key = await accountKey(id);
+    if (await env.SESSIONS.get(key)) return json(env, req, { error: "account_exists" }, 409);
+    await env.SESSIONS.put(key, JSON.stringify({ email: "", accountId: id, label: name || "Telegram", salt: "", passwordHash: "", verified: true, created: Date.now(), discord: null, telegram: { id: String(u.id), name, linkedAt: Date.now() } }));
+    await env.SESSIONS.put(idxKey, key);
+  }
+  const sid = rand(32);
+  await env.SESSIONS.put(`s:${sid}`, JSON.stringify({ accountEmail: id, created: Date.now() }), { expirationTtl: SESSION_TTL });
+  return json(env, req, { ok: true }, 200, { "Set-Cookie": cookie("sentinel_session", sid, { maxAge: SESSION_TTL }) });
+}
+async function telegramUnlink(env, req) {
+  if (!originOK(env, req)) return json(env, req, { error: "forbidden" }, 403);
+  const s = await session(env, req); if (!s || !s.data.accountEmail) return json(env, req, { error: "unauthenticated" }, 401);
+  const key = await accountKey(s.data.accountEmail), a = JSON.parse(await env.SESSIONS.get(key) || "null");
+  if (!a || !a.telegram) return json(env, req, { error: "not_linked" }, 400);
+  if (!a.email && !a.phone) return json(env, req, { error: "last_login_method", message: "Telegram is your only way to sign in, so it can't be removed." }, 400);
+  await env.SESSIONS.delete(`tg:${await digest(a.telegram.id)}`); delete a.telegram; await env.SESSIONS.put(key, JSON.stringify(a));
   return json(env, req, { ok: true });
 }
 async function accountMe(env, req) {
@@ -299,7 +351,7 @@ async function accountMe(env, req) {
   const raw = await env.SESSIONS.get(await accountKey(s.data.accountEmail));
   if (!raw) return json(env, req, { error: "account_not_found" }, 404);
   const a = JSON.parse(raw);
-  return json(env, req, { email: a.email || "", phone: a.phone ? { masked: maskPhone(a.phone.e164) } : null, canUnlinkPhone: !!a.email, verified: !!a.verified, created: a.created, discord: a.discord ? { id: a.discord.id, username: a.discord.username, name: a.discord.name, avatarUrl: cdn("avatars", a.discord.id, a.discord.avatar) } : null, google: a.google ? { email: a.google.email } : null, steam: a.steam ? { id: a.steam.id, name: await steamData(env, a.steam.id).then((d) => d && d.name).catch(() => null) } : null, hasPassword: !!a.passwordHash });
+  return json(env, req, { email: a.email || "", phone: a.phone ? { masked: maskPhone(a.phone.e164) } : null, canUnlinkPhone: !!(a.email || a.telegram), telegram: a.telegram ? { name: a.telegram.name } : null, canUnlinkTelegram: !!(a.email || a.phone), verified: !!a.verified, created: a.created, discord: a.discord ? { id: a.discord.id, username: a.discord.username, name: a.discord.name, avatarUrl: cdn("avatars", a.discord.id, a.discord.avatar) } : null, google: a.google ? { email: a.google.email } : null, steam: a.steam ? { id: a.steam.id, name: await steamData(env, a.steam.id).then((d) => d && d.name).catch(() => null) } : null, hasPassword: !!a.passwordHash });
 }
 async function accountUnlinkDiscord(env, req) {
   if (!originOK(env, req)) return json(env, req, { error: "forbidden" }, 403);
@@ -1790,6 +1842,9 @@ export default {
     if (req.method === "GET" && pathname === "/auth/callback") return callback(env, req);
     if (req.method === "GET" && pathname === "/api/me") return me(env, req);
     if (req.method === "GET" && pathname === "/account/phone/status") return phoneStatus(env, req);
+    if (req.method === "GET" && pathname === "/account/telegram/status") return telegramStatus(env, req);
+    if (req.method === "POST" && pathname === "/account/telegram/auth") return telegramAuth(env, req);
+    if (req.method === "POST" && pathname === "/account/telegram/unlink") return telegramUnlink(env, req);
     if (req.method === "POST" && pathname === "/account/phone/start") return phoneStart(env, req);
     if (req.method === "POST" && pathname === "/account/phone/verify") return phoneVerify(env, req);
     if (req.method === "POST" && pathname === "/account/phone/unlink") return phoneUnlink(env, req);

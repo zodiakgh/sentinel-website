@@ -207,6 +207,31 @@
     if (!window.confirm("Remove your phone number from this account?")) return;
     try { await api("/account/phone/unlink", {}); say(settingsMessage, "Phone number removed."); await load(); } catch (e) { say(settingsMessage, e.message, true); }
   });
+
+  function tgWidget(box, cb) {
+    var sc = document.createElement("script");
+    sc.async = true; sc.src = "https://telegram.org/js/telegram-widget.js?22";
+    sc.setAttribute("data-telegram-login", tgBot); sc.setAttribute("data-size", "large"); sc.setAttribute("data-radius", "8");
+    sc.setAttribute("data-request-access", "write"); sc.setAttribute("data-onauth", cb + "(user)");
+    box.appendChild(sc);
+  }
+  var tgBot = "", tgOn = false;
+  window.tgLogin = async function(user) {
+    try { await api("/account/telegram/auth", { user: user, mode: "login" }); location.href = "/account"; } catch (e) { say(message, e.message, true); }
+  };
+  window.tgLink = async function(user) {
+    try { await api("/account/telegram/auth", { user: user, mode: "link" }); say(settingsMessage, "Telegram linked."); await load(); } catch (e) { say(settingsMessage, e.message, true); }
+  };
+  api("/account/telegram/status").then(function(s) {
+    if (!s.enabled) return;
+    tgOn = true; tgBot = s.bot;
+    var b = $("tg-login"); b.hidden = false; b.style.display = "flex"; tgWidget(b, "tgLogin");
+  }).catch(function() {});
+  $("unlink-tg").addEventListener("click", async function() {
+    if (!window.confirm("Unlink Telegram from this account?")) return;
+    try { await api("/account/telegram/unlink", {}); say(settingsMessage, "Telegram unlinked."); await load(); } catch (e) { say(settingsMessage, e.message, true); }
+  });
+  var tgLinkDrawn = false;
   async function load() {
     if (!API) {
       say(message, "The account service is not configured yet.", true);
@@ -216,11 +241,18 @@
       var a = await api("/account/me");
       authArea.classList.add("account-hide");
       settings.classList.remove("account-hide");
-      $("account-email").textContent = a.email || (a.phone ? a.phone.masked : "your account");
+      $("account-email").textContent = a.email || (a.phone ? a.phone.masked : a.telegram ? a.telegram.name : "your account");
+      if (tgOn) {
+        $("tg-section").hidden = false;
+        $("tg-state").textContent = a.telegram ? "Linked: " + (a.telegram.name || "Telegram") + "." : "No Telegram account is linked.";
+        $("unlink-tg").classList.toggle("account-hide", !a.telegram || a.canUnlinkTelegram === false);
+        $("tg-link").style.display = a.telegram ? "none" : "block";
+        if (!a.telegram && !tgLinkDrawn) { tgLinkDrawn = true; tgWidget($("tg-link"), "tgLink"); }
+      }
       $("phone-state").textContent = a.phone ? "Linked: " + a.phone.masked + "." : "No phone number is linked.";
       $("link-phone").textContent = a.phone ? "Change number" : "Add phone";
       $("unlink-phone").classList.toggle("account-hide", !a.phone || a.canUnlinkPhone === false);
-      $("verified-state").textContent = !a.email ? "You signed in with your phone number." : a.verified ? "Your email address is verified." : "Your email address is not verified.";
+      $("verified-state").textContent = !a.email ? "You signed in without an email address." : a.verified ? "Your email address is verified." : "Your email address is not verified.";
       if (a.discord) {
         $("discord-state").textContent = "Linked to " + (a.discord.name || a.discord.username) + " (" + a.discord.username + ").";
         $("link-discord").textContent = "Discord linked";
