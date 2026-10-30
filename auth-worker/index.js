@@ -716,8 +716,8 @@ async function dashGuild(env, req, gid) {
 const TK_OPS = new Set(["settings", "type_create", "type_update", "type_delete", "panel_create", "panel_update", "panel_delete", "panel_publish", "server_build"]);
 async function botKeyOK(env, req) {
   if (!env.BOT_API_KEY) return json(env, req, { error: "misconfigured", missing: ["BOT_API_KEY"] }, 500);
-  const given = req.headers.get("X-Sentinel-Key") || "";
-  if (!safeEqual(await sign(env.STATE_SECRET, given), await sign(env.STATE_SECRET, env.BOT_API_KEY))) return json(env, req, { error: "forbidden" }, 403);
+  const given = (req.headers.get("X-Sentinel-Key") || "").trim();
+  if (!safeEqual(await sign(env.STATE_SECRET, given), await sign(env.STATE_SECRET, String(env.BOT_API_KEY).trim()))) return json(env, req, { error: "forbidden", message: "bot key mismatch" }, 403);
   return null;
 }
 async function dashGuildGet(env, req, gid) {

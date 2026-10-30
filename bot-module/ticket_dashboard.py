@@ -33,7 +33,7 @@ from .ticket_utils import PRIORITIES, is_http_url, parse_color, valid_emoji
 log = logging.getLogger("sentinel.ticket_dashboard")
 
 API = os.environ.get("SENTINEL_API_URL", "").rstrip("/")
-KEY = os.environ.get("SENTINEL_BOT_KEY", "")
+KEY = (os.environ.get("SENTINEL_BOT_KEY") or os.environ.get("SENTINEL_API_KEY") or "").strip().strip("\"'")
 MAX_TYPES, MAX_PANELS = 25, 25
 
 
@@ -268,7 +268,7 @@ class TicketDashboard(commands.Cog):
         if not API or not KEY:
             log.warning("SENTINEL_API_URL / SENTINEL_BOT_KEY not set: ticket dashboard bridge disabled")
             return
-        self.http = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=20), headers={"X-Sentinel-Key": KEY})
+        self.http = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=20), headers={"X-Sentinel-Key": KEY, "User-Agent": "SentinelBot/1.0 (+https://sentineldashboard.site)"})
         log.info("Ticket dashboard bridge started (%s)", API)
         self.pull.start()
         self.push.start()
@@ -343,7 +343,8 @@ class TicketDashboard(commands.Cog):
                     log.info("Ticket snapshot sent for %s", guild.id)
                 self._hash[guild.id] = (digest, loop_time)
             else:
-                log.warning("Snapshot rejected for %s: HTTP %s", guild.id, r.status)
+                body = (await r.text())[:160].replace("\n", " ")
+                log.warning("Snapshot rejected for %s: HTTP %s %s", guild.id, r.status, body)
 
     @tasks.loop(seconds=60)
     async def push(self) -> None:
