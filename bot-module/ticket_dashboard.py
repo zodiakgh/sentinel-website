@@ -343,8 +343,15 @@ class TicketDashboard(commands.Cog):
                     log.info("Ticket snapshot sent for %s", guild.id)
                 self._hash[guild.id] = (digest, loop_time)
             else:
-                body = (await r.text())[:160].replace("\n", " ")
-                log.warning("Snapshot rejected for %s: HTTP %s %s", guild.id, r.status, body)
+                body = await r.text()
+                code = re.search(r"Error code[^0-9]{0,40}(\d{3,4})", body) or re.search(r"error code: (\d{3,4})", body)
+                title = re.search(r"<title>(.*?)</title>", body, re.S)
+                ray = re.search(r"Cloudflare Ray ID:[^0-9a-f]*([0-9a-f]+)", body)
+                if code or title:
+                    detail = f"Cloudflare error {code.group(1) if code else '?'} | {' '.join(title.group(1).split())[:90] if title else ''} | ray {ray.group(1) if ray else '?'}"
+                else:
+                    detail = body[:160].replace("\n", " ")
+                log.warning("Snapshot rejected for %s: HTTP %s %s", guild.id, r.status, detail)
 
     @tasks.loop(seconds=60)
     async def push(self) -> None:
