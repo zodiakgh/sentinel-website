@@ -889,12 +889,15 @@ async function callback(env, req) {
   const url = new URL(req.url);
   const clear = ["Set-Cookie", cookie("sentinel_state", "", { maxAge: 0, path: "/auth" })];
   const vEarly = VERIFY_STATE.exec(url.searchParams.get("state") || "");
+  const stEarly = url.searchParams.get("state") || "";
+  if (url.searchParams.get("error") && (RJ_STATE.test(stEarly) || RV_STATE.test(stEarly))) return rjBack(env, "cancelled", [clear[0], clear[1]], (RJ_STATE.exec(stEarly) || [])[1] || "");
   if (url.searchParams.get("error")) return vEarly ? verifyBack(env, vEarly[1], "cancelled", [clear]) : back(env, "cancelled", [clear]);
   const code = url.searchParams.get("code"), state = url.searchParams.get("state");
   const [cState, cSig] = (cookies(req).sentinel_state || "").split(".");
   if (!code || !state || !cState || !safeEqual(state, cState) || !safeEqual(cSig || "", await sign(env.STATE_SECRET, cState)))
     return vEarly ? verifyBack(env, vEarly[1], "error", [clear]) : back(env, "error", [clear]);
   if (vEarly) return verifyCallback(env, code, vEarly[1], clear);
+  if (RJ_STATE.test(state) || RV_STATE.test(state)) return rejoinCallback(env, code, state, clear);
   const linkState = cookies(req).sentinel_link || "";
   if (linkState && state === linkState && state.startsWith("l-") && safeEqual(cSig || "", await sign(env.STATE_SECRET, state))) {
     return linkDiscordCallback(env, req, code, state, clear);
@@ -963,6 +966,137 @@ async function logout(env, req) {
   return json(env, req, { ok: true }, 200, { "Set-Cookie": cookie("sentinel_session", "", { maxAge: 0 }) });
 }
 const SNOWFLAKE = /^\d{15,25}$/;
+const RJ_STATE = /^rj-(\d{15,25})-/;
+const RV_STATE = /^rv-/;
+const b64dec = (str) => Uint8Array.from(atob(str.replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0));
+async function rjKey(env) {
+  if (!env.TOKEN_ENC_KEY) return null;
+  return crypto.subtle.importKey("raw", await crypto.subtle.digest("SHA-256", enc.encode(env.TOKEN_ENC_KEY)), "AES-GCM", false, ["encrypt", "decrypt"]);
+}
+async function rjSeal(env, obj) {
+  const k = await rjKey(env), iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv }, k, enc.encode(JSON.stringify(obj))));
+  const out = new Uint8Array(12 + ct.length); out.set(iv); out.set(ct, 12);
+  return b64url(out);
+}
+async function rjOpen(env, str) {
+  try {
+    const k = await rjKey(env), raw = b64dec(str);
+    return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: raw.slice(0, 12) }, k, raw.slice(12))));
+  } catch (_) { return null; }
+}
+const rjBack = (env, q, clear, gid) => {
+  const h = new Headers({ Location: `${env.SITE_ORIGIN}/rejoin?${gid ? "guild=" + gid + "&" : ""}status=${q}`, "Cache-Control": "no-store" });
+  if (clear) h.append(clear[0], clear[1]);
+  return new Response(null, { status: 302, headers: h });
+};
+async function rjAuthorize(env, state, scope) {
+  const sig = await sign(env.STATE_SECRET, state), url = new URL("https://discord.com/oauth2/authorize");
+  url.search = new URLSearchParams({ client_id: env.DISCORD_CLIENT_ID, response_type: "code", scope, redirect_uri: `${env.API_ORIGIN}/auth/callback`, state, prompt: "consent" });
+  const h = new Headers({ Location: url.toString(), "Cache-Control": "no-store" });
+  h.append("Set-Cookie", cookie("sentinel_state", `${state}.${sig}`, { maxAge: STATE_TTL, path: "/auth" }));
+  return new Response(null, { status: 302, headers: h });
+}
+async function rejoinStart(env, req) {
+  const gid = new URL(req.url).searchParams.get("guild") || "";
+  if (!SNOWFLAKE.test(gid) || !env.TOKEN_ENC_KEY || !env.BOT_TOKEN) return rjBack(env, "unavailable", null, "");
+  const km = JSON.parse(await env.SESSIONS.get(`km:${gid}`) || "null");
+  if (!km || !km.enabled) return rjBack(env, "disabled", null, gid);
+  return rjAuthorize(env, `rj-${gid}-${rand(12)}`, "identify guilds.join");
+}
+async function rejoinRevokeStart(env) {
+  return rjAuthorize(env, `rv-${rand(12)}`, "identify");
+}
+async function rjDrop(env, uid, gid) {
+  await env.SESSIONS.delete(`rc:${gid}:${uid}`);
+  const list = JSON.parse(await env.SESSIONS.get(`ru:${uid}`) || "[]").filter((x) => x !== gid);
+  if (list.length) { await env.SESSIONS.put(`ru:${uid}`, JSON.stringify(list)); return; }
+  await env.SESSIONS.delete(`ru:${uid}`);
+  const t = await rjOpen(env, await env.SESSIONS.get(`rt:${uid}`) || "");
+  await env.SESSIONS.delete(`rt:${uid}`);
+  if (t && t.refresh) revoke(env, t.refresh);
+}
+async function rejoinCallback(env, code, state, clear) {
+  const rj = RJ_STATE.exec(state);
+  try {
+    const tok = await exchange(env, code), user = await dget("/users/@me", `Bearer ${tok.access_token}`);
+    if (!rj) {
+      for (const g of JSON.parse(await env.SESSIONS.get(`ru:${user.id}`) || "[]")) await rjDrop(env, user.id, g);
+      await env.SESSIONS.delete(`rt:${user.id}`);
+      revoke(env, tok.access_token);
+      return rjBack(env, "revoked", clear, "");
+    }
+    const gid = rj[1], km = JSON.parse(await env.SESSIONS.get(`km:${gid}`) || "null");
+    if (!km || !km.enabled || !tok.refresh_token || !(await rjKey(env))) { revoke(env, tok.access_token); return rjBack(env, "disabled", clear, gid); }
+    const m = await botCall(env, "GET", `/guilds/${gid}/members/${user.id}`);
+    if (!m.ok) { revoke(env, tok.access_token); return rjBack(env, "not_member", clear, gid); }
+    await env.SESSIONS.put(`rt:${user.id}`, await rjSeal(env, { access: tok.access_token, refresh: tok.refresh_token, exp: Date.now() + (tok.expires_in || 604800) * 1000 - 60000 }));
+    await env.SESSIONS.put(`rc:${gid}:${user.id}`, JSON.stringify({ ts: Date.now() }));
+    const list = new Set(JSON.parse(await env.SESSIONS.get(`ru:${user.id}`) || "[]")); list.add(gid);
+    await env.SESSIONS.put(`ru:${user.id}`, JSON.stringify([...list]));
+    return rjBack(env, "ok", clear, gid);
+  } catch (_) {
+    return rjBack(env, "error", clear, rj ? rj[1] : "");
+  }
+}
+async function rjAccessToken(env, uid) {
+  const t = await rjOpen(env, await env.SESSIONS.get(`rt:${uid}`) || "");
+  if (!t) return null;
+  if (Date.now() < t.exp) return t.access;
+  const r = await fetch(`${DISCORD}/oauth2/token`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ client_id: env.DISCORD_CLIENT_ID, client_secret: env.DISCORD_CLIENT_SECRET, grant_type: "refresh_token", refresh_token: t.refresh }) });
+  if (!r.ok) return r.status === 400 || r.status === 401 ? "" : null;
+  const n = await r.json();
+  await env.SESSIONS.put(`rt:${uid}`, await rjSeal(env, { access: n.access_token, refresh: n.refresh_token || t.refresh, exp: Date.now() + (n.expires_in || 604800) * 1000 - 60000 }));
+  return n.access_token;
+}
+async function dashMembersGet(env, req, gid) {
+  const r = await dashGuild(env, req, gid); if (r.err) return r.err;
+  const km = JSON.parse(await env.SESSIONS.get(`km:${gid}`) || "null"), l = km && km.enabled ? await env.SESSIONS.list({ prefix: `rc:${gid}:`, limit: 1000 }) : { keys: [] };
+  return json(env, req, { available: !!(env.TOKEN_ENC_KEY && env.BOT_TOKEN), owner: !!r.g.owner, enabled: !!(km && km.enabled), count: l.keys.length, more: l.list_complete === false, link: `${env.SITE_ORIGIN}/rejoin?guild=${gid}` }, 200, { "Cache-Control": "no-store" });
+}
+async function dashMembersSet(env, req, gid) {
+  if (!originOK(env, req)) return json(env, req, { error: "forbidden" }, 403);
+  const r = await dashGuild(env, req, gid); if (r.err) return r.err;
+  if (!env.TOKEN_ENC_KEY) return json(env, req, { error: "unavailable", message: "This feature isn't configured yet." }, 503);
+  if (!r.g.owner) return json(env, req, { error: "owner_only", message: "Only the server owner can change this." }, 403);
+  let b; try { b = await readBody(req); } catch (_) { return json(env, req, { error: "bad_request" }, 400); }
+  if (b.enabled) {
+    const g = await botCall(env, "GET", `/guilds/${gid}`);
+    if (!g.ok) return json(env, req, { error: "bot_missing", message: "Add Sentinel to the server first." }, 400);
+    await env.SESSIONS.put(`km:${gid}`, JSON.stringify({ enabled: true, owner: (await g.json()).owner_id, ts: Date.now() }));
+  } else {
+    await env.SESSIONS.delete(`km:${gid}`);
+    let cursor;
+    do {
+      const l = await env.SESSIONS.list({ prefix: `rc:${gid}:`, limit: 200, cursor });
+      for (const k of l.keys) await rjDrop(env, k.name.split(":")[2], gid);
+      cursor = l.list_complete ? null : l.cursor;
+    } while (cursor);
+  }
+  return json(env, req, { ok: true });
+}
+async function botRejoinRun(env, req) {
+  const bad = await botKeyOK(env, req); if (bad) return bad;
+  let b; try { b = await readBody(req); } catch (_) { return json(env, req, { error: "bad_request" }, 400); }
+  const src = String(b.source || ""), dst = String(b.target || "");
+  if (!SNOWFLAKE.test(src) || !SNOWFLAKE.test(dst) || !env.TOKEN_ENC_KEY || !env.BOT_TOKEN) return json(env, req, { error: "bad_request" }, 400);
+  const km = JSON.parse(await env.SESSIONS.get(`km:${src}`) || "null");
+  if (!km || !km.enabled) return json(env, req, { enabled: false, done: true });
+  const g = await botCall(env, "GET", `/guilds/${dst}`);
+  if (!g.ok || (await g.json()).owner_id !== km.owner) return json(env, req, { error: "not_owner", message: "Only the original server owner can bring members back." }, 403);
+  const l = await env.SESSIONS.list({ prefix: `rc:${src}:`, limit: 15, cursor: b.cursor || void 0 });
+  const out = { enabled: true, joined: 0, already: 0, failed: 0, done: !!l.list_complete, cursor: l.list_complete ? null : l.cursor };
+  for (const k of l.keys) {
+    const uid = k.name.split(":")[2], at = await rjAccessToken(env, uid);
+    if (at === "") { await rjDrop(env, uid, src); out.failed++; continue; }
+    if (!at) { out.failed++; continue; }
+    const r = await botCall(env, "PUT", `/guilds/${dst}/members/${uid}`, { access_token: at }, "Sentinel backup restore");
+    if (r.status === 201) out.joined++; else if (r.status === 204) out.already++;
+    else if (r.status === 429) { out.retry = Number(r.headers.get("Retry-After") || 5); out.done = false; out.cursor = b.cursor || null; break; }
+    else out.failed++;
+  }
+  return json(env, req, out);
+}
 const VERIFY_STATE = /^v-(\d{15,25})-/;
 const VERIFY_TTL = 60 * 15;
 const UA = "SentinelAuth (https://sentineldashboard.site, 1.0)";
@@ -1859,6 +1993,12 @@ export default {
         if (req.method === "GET" && !dm[2]) return dashGuildGet(env, req, dm[1]);
         if (req.method === "POST" && dm[2]) return dashTicketsOp(env, req, dm[1]);
       }
+      const mm = pathname.match(/^\/dash\/guild\/(\d{15,25})\/members-backup$/);
+      if (mm && req.method === "GET") return dashMembersGet(env, req, mm[1]);
+      if (mm && req.method === "POST") return dashMembersSet(env, req, mm[1]);
+      if (req.method === "GET" && pathname === "/rejoin/start") return rejoinStart(env, req);
+      if (req.method === "GET" && pathname === "/rejoin/revoke") return rejoinRevokeStart(env);
+      if (req.method === "POST" && pathname === "/bot/rejoin/run") return botRejoinRun(env, req);
       if (req.method === "GET" && pathname === "/bot/tickets/pending") return botTicketsPending(env, req);
       if (req.method === "POST" && pathname === "/bot/tickets/ack") return botTicketsAck(env, req);
       const bm = pathname.match(/^\/bot\/guilds\/(\d{15,25})\/tickets\/snapshot$/);
