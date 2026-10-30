@@ -71,7 +71,7 @@
           var inv = S.inviteFor(g.id);
           action = inv ? '<a class="btn btn-sm" target="_blank" rel="noopener noreferrer" href="' + esc(inv) + '">' + esc(t("dash.add", "Add Sentinel ↗")) + "</a>" : "";
         } else if (g.botPresent === true) {
-          action = '<a class="btn btn-sm btn-primary" href="/builder?guild=' + encodeURIComponent(g.id) + '">' + esc(t("dash.build", "Server builder")) + "</a>" + (g.owner ? ' <a class="btn btn-sm" href="/members?guild=' + encodeURIComponent(g.id) + '">' + esc(t("dash.members", "Member backup")) + "</a>" : "");
+          action = '<a class="btn btn-sm btn-primary" href="/guild?guild=' + encodeURIComponent(g.id) + '">' + esc(t("dash.manage", "Manage")) + "</a>";
         }
         return '<li class="guild"><span class="g-ic" aria-hidden="true">' + icon + '</span><span class="g-main"><strong>' + esc(g.name) + '</strong><span class="meta">' + own + badge + "</span></span>" + action + "</li>";
       }).join("");
