@@ -346,7 +346,7 @@ class TicketDashboard(commands.Cog):
                 body = await r.text()
                 code = re.search(r"Error code[^0-9]{0,40}(\d{3,4})", body) or re.search(r"error code: (\d{3,4})", body)
                 title = re.search(r"<title>(.*?)</title>", body, re.S)
-                ray = re.search(r"Cloudflare Ray ID:[^0-9a-f]*([0-9a-f]+)", body)
+                ray = re.search(r"Ray ID:(?:<[^>]*>|\s)*([0-9a-f]{8,})", body)
                 if code or title:
                     detail = f"Cloudflare error {code.group(1) if code else '?'} | {' '.join(title.group(1).split())[:90] if title else ''} | ray {ray.group(1) if ray else '?'}"
                 else:
