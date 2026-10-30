@@ -1117,10 +1117,8 @@ const intIn = (v, max) => {
   return Number.isInteger(n) && n >= 0 && n <= max ? n : 0;
 };
 async function verifyRegister(env, req) {
-  if (!env.BOT_API_KEY) return json(env, req, { error: "misconfigured", missing: ["BOT_API_KEY"] }, 500);
-  const given = req.headers.get("X-Sentinel-Key") || "";
-  if (!safeEqual(await sign(env.STATE_SECRET, given), await sign(env.STATE_SECRET, env.BOT_API_KEY)))
-    return json(env, req, { error: "forbidden" }, 403);
+  const badKey = await botKeyOK(env, req);
+  if (badKey) return badKey;
   let b;
   try {
     b = await req.json();
