@@ -19,7 +19,7 @@
 <link rel="preload" href="/assets/fonts/bricolage-grotesque-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/instrument-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <script>document.documentElement.classList.add("js")</script>
-<link rel="stylesheet" href="/assets/css/main.css?v=23">
+<link rel="stylesheet" href="/assets/css/main.css?v=24">
 </head>
 <body>
 <a class="skip" href="#main" data-i18n="skip">Skip to content</a>
@@ -29,17 +29,27 @@
 <div class="nav-tools"><div class="lang" role="group" aria-label="Language / Langue"><button type="button" data-lang="en" aria-pressed="true" lang="en">EN</button><button type="button" data-lang="fr" aria-pressed="false" lang="fr">FR</button></div><a class="btn btn-sm btn-primary nav-cta" href="/docs#invite" data-invite><span data-i18n="nav.add">Add to Discord</span></a><button class="menu-toggle" id="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Menu" data-i18n-attr="aria-label:nav.menu"><span></span></button></div>
 </div></header>
 <main id="main">
-<section class="page-head"><div class="wrap"><h1 data-i18n="servers.h">Find your server</h1><p class="lead" data-i18n="servers.lead">Browse Discord communities by topic, language and more. Servers list themselves with Sentinel.</p></div></section>
+<section class="page-head srv-hero"><div class="wrap"><h1 data-i18n="servers.h">Find your server</h1><p class="lead" data-i18n="servers.lead">Browse Discord communities by topic, language and more. Servers list themselves with Sentinel.</p>
+<ul class="srv-stats" id="srv-stats" hidden></ul></div></section>
 <section class="section"><div class="wrap">
-<div class="srv-bar"><input id="srv-q" type="search" placeholder="Search servers, topics, tags…" data-i18n-attr="placeholder:servers.search" aria-label="Search" autocomplete="off">
-<select id="srv-category" aria-label="Category"></select><select id="srv-language" aria-label="Language"></select><select id="srv-sort" aria-label="Sort"></select><select id="srv-nsfw" aria-label="NSFW"></select></div>
-<div class="srv-meta"><span id="srv-count" class="bots-count" aria-live="polite"></span><span id="srv-tag"></span></div>
-<ul id="srv-list" class="bots-list" aria-live="polite"></ul>
-<p id="srv-msg" class="mg-hint" hidden></p>
+<div class="srv-searchbox"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><input id="srv-q" type="search" placeholder="Search servers, topics, tags…" data-i18n-attr="placeholder:servers.search" aria-label="Search" autocomplete="off"></div>
+<div class="srv-filters" id="srv-filters">
+<div class="srv-dd" id="dd-category"></div><div class="srv-dd" id="dd-language"></div><div class="srv-dd" id="dd-sort"></div>
+<div class="srv-seg" id="srv-nsfw" role="radiogroup" aria-label="NSFW"></div>
+<button class="srv-toggle" id="srv-verified" type="button" aria-pressed="false"></button>
+<button class="srv-toggle" id="srv-rating" type="button" aria-pressed="false"></button>
+</div>
+<div class="srv-tagsrow" id="srv-toptags"></div>
+<div class="srv-active" id="srv-active"></div>
+<div id="srv-featured-wrap" hidden><h2 class="srv-h" id="srv-featured-h"></h2><ul id="srv-featured" class="bots-list srv-grid"></ul></div>
+<div class="srv-meta"><span id="srv-count" class="bots-count" aria-live="polite"></span></div>
+<ul id="srv-list" class="bots-list srv-grid" aria-live="polite"></ul>
+<div id="srv-msg" class="srv-state" hidden></div>
 <p class="srv-more-wrap"><button id="srv-more" class="btn" type="button" hidden>Load more</button></p>
 <p class="mg-hint"><span data-i18n="servers.add">Want your server here? Add Sentinel, then run</span> <code>/servers setup</code></p>
 </div></section>
 <dialog id="srv-age" class="srv-dialog"><h2 data-i18n="servers.age.h">Adult content</h2><p class="mg-hint" data-i18n="servers.age.p">This directory can show servers with NSFW content. Continue only if you are 18 or older.</p><div class="bot-actions"><button id="srv-age-no" class="btn btn-sm" type="button" data-i18n="servers.age.no">Cancel</button><button id="srv-age-yes" class="btn btn-sm btn-primary" type="button" data-i18n="servers.age.yes">I am 18+</button></div></dialog>
+<dialog id="srv-detail" class="srv-modal" aria-label="Server details"><button class="srv-modal-x" id="srv-detail-x" type="button" aria-label="Close">×</button><div id="srv-detail-body"></div></dialog>
 </main>
 <div class="wrap"><div class="ad-slot" hidden></div></div>
 <footer class="footer"><div class="wrap">
@@ -49,7 +59,7 @@
 <script src="/assets/js/config.js?v=2"></script>
 <script src="/assets/js/i18n-fr.js"></script>
 <script src="/assets/js/app.js"></script>
-<script src="/assets/js/servers.js?v=2"></script>
+<script src="/assets/js/servers.js?v=3"></script>
 <script src="/assets/js/ads.js?v=1"></script>
 </body>
 </html>
