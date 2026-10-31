@@ -762,5 +762,15 @@ window.SENTINEL_FR = {
  "v.m.working": "Vérification en cours…",
  "v.m.generic": "Une erreur est survenue. Rien n’a été modifié. Réessayez dans un instant.",
  "meta.verify.d": "Vérifiez votre compte Discord pour un serveur qui utilise Sentinel.",
- "meta.verify": "Vérification — Sentinel"
+ "meta.verify": "Vérification — Sentinel",
+ "nav.servers": "Serveurs",
+ "meta.servers": "Serveurs — Sentinel",
+ "servers.h": "Trouve ton serveur",
+ "servers.lead": "Parcours des communautés Discord par thème, langue et plus encore. Les serveurs s'inscrivent eux-mêmes avec Sentinel.",
+ "servers.search": "Rechercher un serveur, un thème, un tag…",
+ "servers.add": "Tu veux ton serveur ici ? Ajoute Sentinel, puis lance",
+ "servers.age.h": "Contenu adulte",
+ "servers.age.p": "Cet annuaire peut afficher des serveurs au contenu NSFW. Continue uniquement si tu as 18 ans ou plus.",
+ "servers.age.no": "Annuler",
+ "servers.age.yes": "J'ai 18 ans ou +"
 };

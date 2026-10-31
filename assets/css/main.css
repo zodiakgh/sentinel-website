@@ -609,6 +609,22 @@ section.cta-band .btn-primary:hover{background:#f2f3f5}
 .bot-desc{margin:0; color:var(--fg-2); font-size:14.5px; line-height:1.5; flex:1}
 .bot-actions{display:flex; flex-wrap:wrap; gap:8px}
 @media (max-width:640px){.bots-list{grid-template-columns:1fr}.bots-count{margin-left:0}}
+.srv-bar{display:flex; flex-wrap:wrap; gap:10px; margin-bottom:14px}
+.srv-bar input{flex:1 1 260px; max-width:none}
+.srv-bar input,.srv-bar select{background:var(--panel); color:var(--fg); border:1px solid var(--line-3); border-radius:10px; padding:10px 14px}
+.srv-bar select{flex:1 1 160px}
+.srv-meta{display:flex; align-items:center; gap:12px; margin-bottom:18px; min-height:28px}
+.srv-card{overflow:hidden}
+.srv-banner{height:72px; margin:-20px -20px 0; background:linear-gradient(135deg,var(--bg),var(--panel)); background-size:cover; background-position:center}
+.srv-nsfw{background:#3a1414; border-color:#5a2222; color:#fff}
+.srv-tagbtn{background:none; border:0; padding:0; color:var(--muted); font-size:13px; cursor:pointer}
+.srv-tagbtn:hover{color:var(--fg)}
+.srv-x{background:none; border:0; color:inherit; cursor:pointer; padding:0 0 0 4px; font-size:14px}
+.srv-more-wrap{text-align:center; margin:0 0 22px}
+.srv-dialog{background:var(--panel); color:var(--fg); border:1px solid var(--line-3); border-radius:14px; max-width:380px; padding:24px}
+.srv-dialog::backdrop{background:rgba(0,0,0,.7)}
+.srv-dialog h2{margin:0 0 8px}
+.srv-dialog .bot-actions{justify-content:flex-end; margin-top:16px}
 .doc-tabs-wrap{position:sticky; top:64px; z-index:20; background:rgba(0,0,0,.85); backdrop-filter:blur(10px); border-bottom:1px solid var(--line)}
 .doc-tabs{display:flex; gap:8px; padding:12px 0; overflow-x:auto}
 .doc-tabs button{background:var(--panel); color:var(--fg-2); border:1px solid var(--line-3); border-radius:99px; padding:8px 18px; font:inherit; font-weight:600; cursor:pointer; white-space:nowrap}
