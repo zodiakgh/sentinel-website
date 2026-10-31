@@ -94,7 +94,7 @@
     [7, 30, 365].forEach(function (d) { var b = el("button", "srv-toggle", "+" + d + "d"); b.type = "button"; b.style.minHeight = "38px"; b.addEventListener("click", function () { pmCall({ action: "grant", guild_id: v.id, days: d, note: v.note }); }); acts.append(b); });
     var r = el("button", "srv-toggle", "Revoke"); r.type = "button"; r.style.minHeight = "38px"; r.style.borderColor = "#5a2222";
     r.addEventListener("click", function () { if (confirm("Remove Premium from " + v.name + "?")) pmCall({ action: "revoke", guild_id: v.id }); }); acts.append(r);
-    li.append(el("span", "bot-name", v.name), el("span", "mg-hint", v.id + (v.note ? " · " + v.note : "")), tags, acts);
+    li.append(el("span", "bot-name", v.name), el("span", "mg-hint", v.id + (v.subdomain ? " · " + v.subdomain + ".sentineldashboard.site" : "") + (v.note ? " · " + v.note : "")), tags, acts);
     return li;
   }
   function pmRefresh() {

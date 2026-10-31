@@ -211,6 +211,7 @@
     var tags = el("div", "bot-tags");
     tags.append(el("span", "badge", lab(meta.categories, v.category)), el("span", "badge", lab(meta.languages, v.language)));
     if (v.nsfw) tags.append(el("span", "badge srv-nsfw", "NSFW"));
+    if (v.premium) tags.append(el("span", "badge", "Premium"));
     li.append(ban, head, tags, el("p", "bot-desc srv-desc", v.description || ""));
     if (v.tags && v.tags.length) {
       var row = el("div", "bot-tags");
@@ -315,11 +316,16 @@
     badges.append(el("span", "badge", lab(meta.categories, v.category)), el("span", "badge", lab(meta.languages, v.language)));
     if (v.nsfw) badges.append(el("span", "badge srv-nsfw", "NSFW"));
     if (v.featured) badges.append(el("span", "badge", "★ " + tr("featured")));
+    if (v.premium) badges.append(el("span", "badge", "Premium"));
     info.append(nm, el("p", "mg-hint", num(v.members) + " " + tr("members") + " · " + tr("bumped") + " " + ago(v.bumped_at)), badges);
     head.append(avatar(v, 72), info);
     var inv = invite(v.invite);
     if (inv) { var a = el("a", "btn btn-primary srv-djoin", tr("join")); a.href = inv; a.target = "_blank"; a.rel = "noopener noreferrer"; head.append(a); }
     detBody.append(ban, head, el("p", "srv-ddesc", v.description || tr("noDesc")));
+    if (v.subdomain && /^[a-z0-9-]{3,32}$/.test(v.subdomain)) {
+      var home = el("p", "mg-hint"), link = el("a", "", v.subdomain + ".sentineldashboard.site");
+      link.href = "https://" + v.subdomain + ".sentineldashboard.site"; link.rel = "noopener noreferrer"; home.append(link); detBody.append(home);
+    }
     if (v.tags && v.tags.length) {
       var tg = el("div", "bot-tags");
       v.tags.forEach(function (t) {

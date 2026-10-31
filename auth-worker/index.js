@@ -2010,10 +2010,35 @@ async function botWatch(env) {
   const text = down ? "⚠️ Sentinel looks offline. No signal for over 12 minutes." : "✅ Sentinel is back online.";
   await Promise.all(ids.map((id) => tgSend(env, id, text)));
 }
+const SUBDOMAIN_RESERVED = new Set(["www", "api", "servers-api", "support", "admin", "mail", "ftp", "smtp", "imap", "pop", "dashboard", "docs", "status", "bots", "servers", "premium", "profile", "profiles", "account", "verify", "team", "terms", "privacy", "blog", "cdn", "static", "assets", "app", "dev", "test", "staging", "ns", "ns1", "ns2", "sentinel", "discord", "root", "localhost", "login", "auth"]);
+// Premium custom subdomains: https://<name>.<root> redirects to that server's directory page.
+// Only runs for hosts other than the API host. Anything that is not a Premium name is passed through untouched.
+async function subdomainFetch(env, req, host) {
+  let root, apiHost;
+  try {
+    root = new URL(env.SITE_ORIGIN).hostname.replace(/^www\./, "");
+    apiHost = new URL(env.API_ORIGIN).hostname;
+  } catch (_) { return null; }
+  if (host === apiHost || !host.endsWith("." + root)) return null;
+  const label = host.slice(0, -(root.length + 1));
+  if ((req.method !== "GET" && req.method !== "HEAD") || !/^[a-z0-9](?:[a-z0-9-]{1,30}[a-z0-9])$/.test(label) || SUBDOMAIN_RESERVED.has(label) || !env.SERVERS_API_URL) return fetch(req);
+  let r;
+  try { r = await fetch(String(env.SERVERS_API_URL).replace(/\/+$/, "") + "/api/slug/" + label, { cf: { cacheTtl: 60, cacheEverything: true } }); } catch (_) {
+    return new Response("Temporarily unavailable.", { status: 503, headers: { "Cache-Control": "no-store", "Content-Type": "text/plain; charset=utf-8" } });
+  }
+  if (r.status === 404) return new Response(null, { status: 302, headers: { Location: `${env.SITE_ORIGIN}/servers`, "Cache-Control": "public, max-age=60" } });
+  if (!r.ok) return new Response("Temporarily unavailable.", { status: 503, headers: { "Cache-Control": "no-store", "Content-Type": "text/plain; charset=utf-8" } });
+  let d = null;
+  try { d = await r.json(); } catch (_) {}
+  if (!d || !/^\d{15,22}$/.test(String(d.id || ""))) return new Response(null, { status: 302, headers: { Location: `${env.SITE_ORIGIN}/servers`, "Cache-Control": "no-store" } });
+  return new Response(null, { status: 302, headers: { Location: `${env.SITE_ORIGIN}/servers?server=${d.id}`, "Cache-Control": "public, max-age=60" } });
+}
 export default {
   async scheduled(_e, env, ctx) { ctx.waitUntil(botWatch(env)); },
   async fetch(req, env) {
-    const { pathname } = new URL(req.url);
+    const { pathname, hostname } = new URL(req.url);
+    const sub = await subdomainFetch(env, req, hostname.toLowerCase());
+    if (sub) return sub;
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(env, req) });
     const missing = ["DISCORD_CLIENT_ID", "DISCORD_CLIENT_SECRET", "STATE_SECRET", "SITE_ORIGIN", "API_ORIGIN"].filter((k) => !env[k]);
     if (!env.SESSIONS) missing.push("SESSIONS (KV binding)");
