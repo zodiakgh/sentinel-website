@@ -7,7 +7,7 @@ window.SENTINEL_CONFIG = {
   inviteUrl: "https://discord.com/oauth2/authorize?client_id=1545465845524996219",
   invitePermissions: "8",
   authApiUrl: "https://api.sentineldashboard.site",
-  serversApiUrl: "",
+  serversApiUrl: "servers-api.sentineldashboard.site",
   statusApiUrl: "/status.json",
   adsenseClient: "",
   adsenseSlot: ""
