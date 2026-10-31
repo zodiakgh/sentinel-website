@@ -1419,6 +1419,19 @@ async function adminServersAction(env, req) {
   if (!/^(verify|feature|hide|unlist|ban|unban|resolve)$/.test(action) || !/^\d{15,22}$/.test(guildId)) return json(env, req, { error: "bad_request" }, 400);
   return serversAdminCall(env, req, "/api/admin/action", { method: "POST", body: JSON.stringify({ action, guild_id: guildId, value: b.value !== false, reason: String(b.reason || "").slice(0, 200) }) });
 }
+async function adminPremiumList(env, req) {
+  if (!await adminAuth(env, req)) return json(env, req, { error: "forbidden" }, 403);
+  return serversAdminCall(env, req, "/api/admin/premium", { method: "GET" });
+}
+async function adminPremiumAction(env, req) {
+  if (!originOK(env, req)) return json(env, req, { error: "forbidden" }, 403);
+  if (!await adminAuth(env, req)) return json(env, req, { error: "forbidden" }, 403);
+  let b;
+  try { b = await readBody(req); } catch (_) { return json(env, req, { error: "bad_request" }, 400); }
+  const action = String(b.action || ""), guildId = String(b.guild_id || ""), days = Number(b.days);
+  if (!/^(grant|revoke)$/.test(action) || !/^\d{15,22}$/.test(guildId) || (action === "grant" && !(Number.isInteger(days) && days >= 0 && days <= 3650))) return json(env, req, { error: "bad_request" }, 400);
+  return serversAdminCall(env, req, "/api/admin/premium", { method: "POST", body: JSON.stringify({ action, guild_id: guildId, days: action === "grant" ? days : 0, note: String(b.note || "").slice(0, 120) }) });
+}
 async function adminLookup(env, req) {
   if (!await adminAuth(env, req)) return json(env, req, { error: "forbidden" }, 403);
   const username = profileText(new URL(req.url).searchParams.get("username"), 25).toLowerCase().replace(/^@/, "");
@@ -2067,6 +2080,8 @@ export default {
     if (req.method === "GET" && pathname === "/admin/lookup") return adminLookup(env, req);
     if (req.method === "GET" && pathname === "/admin/servers") return adminServersList(env, req);
     if (req.method === "POST" && pathname === "/admin/servers/action") return adminServersAction(env, req);
+    if (req.method === "GET" && pathname === "/admin/premium") return adminPremiumList(env, req);
+    if (req.method === "POST" && pathname === "/admin/premium/action") return adminPremiumAction(env, req);
     if (req.method === "POST" && pathname === "/support/send") return supportSend(env, req);
     if (pathname.startsWith("/verify/")) {
       const needBot = ["/verify/status", "/verify/complete"].includes(pathname) && !env.BOT_TOKEN;

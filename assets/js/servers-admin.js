@@ -73,8 +73,43 @@
     });
   }
   function refresh() {
-    return call("/admin/servers").then(function (d) { items = d.items || []; gate.hidden = true; app.hidden = false; paint(); });
+    return call("/admin/servers").then(function (d) { items = d.items || []; gate.hidden = true; app.hidden = false; paint(); pmRefresh(); });
   }
+
+  /* ---------- Premium ---------- */
+  var pmList = $("pm-list"), pmMsg = $("pm-msg"), pmBusy = false;
+  function pmSay(t, bad) { pmMsg.textContent = t || ""; pmMsg.style.color = bad ? "var(--red)" : ""; }
+  function pmCall(body) {
+    if (pmBusy) return Promise.resolve();
+    pmBusy = true; pmSay("Working…");
+    return call("/admin/premium/action", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+      .then(function () { pmSay("Done."); return pmRefresh(); })
+      .catch(function (e) { pmSay(e.message || "Failed.", true); })
+      .then(function () { pmBusy = false; });
+  }
+  function pmRow(v) {
+    var li = el("li", "bot-card sa-row"), tags = el("div", "bot-tags");
+    tags.append(el("span", "badge" + (v.active ? "" : " srv-nsfw"), v.active ? (v.expires_at ? "Expires " + new Date(v.expires_at * 1000).toLocaleDateString() : "Lifetime") : "Expired"), el("span", "badge", v.source));
+    var acts = el("div", "bot-actions");
+    [7, 30, 365].forEach(function (d) { var b = el("button", "srv-toggle", "+" + d + "d"); b.type = "button"; b.style.minHeight = "38px"; b.addEventListener("click", function () { pmCall({ action: "grant", guild_id: v.id, days: d, note: v.note }); }); acts.append(b); });
+    var r = el("button", "srv-toggle", "Revoke"); r.type = "button"; r.style.minHeight = "38px"; r.style.borderColor = "#5a2222";
+    r.addEventListener("click", function () { if (confirm("Remove Premium from " + v.name + "?")) pmCall({ action: "revoke", guild_id: v.id }); }); acts.append(r);
+    li.append(el("span", "bot-name", v.name), el("span", "mg-hint", v.id + (v.note ? " · " + v.note : "")), tags, acts);
+    return li;
+  }
+  function pmRefresh() {
+    return call("/admin/premium").then(function (d) {
+      pmList.textContent = "";
+      (d.items || []).forEach(function (v) { pmList.append(pmRow(v)); });
+      if (!(d.items || []).length) pmList.append(el("li", "mg-hint", "No premium servers yet."));
+    }).catch(function (e) { pmSay(e.status === 503 ? "Premium cog is not loaded in the bot." : (e.message || "Could not load Premium."), true); });
+  }
+  $("pm-grant").addEventListener("click", function () {
+    var id = $("pm-id").value.trim(), days = parseInt($("pm-days").value, 10);
+    if (!/^\d{15,22}$/.test(id)) return pmSay("Enter a valid server ID.", true);
+    if (!(days >= 0 && days <= 3650)) return pmSay("Days must be between 0 and 3650.", true);
+    pmCall({ action: "grant", guild_id: id, days: days, note: $("pm-note").value.trim() });
+  });
   q.addEventListener("input", paint);
   $("sa-ban").addEventListener("click", function () { var id = $("sa-id").value.trim(); if (!/^\d{15,22}$/.test(id)) return say("Enter a valid server ID.", true); if (confirm("Ban server " + id + "?")) act("ban", id, true, $("sa-reason").value); });
   $("sa-unban").addEventListener("click", function () { var id = $("sa-id").value.trim(); if (!/^\d{15,22}$/.test(id)) return say("Enter a valid server ID.", true); act("unban", id, true); });
