@@ -707,6 +707,8 @@ section.cta-band .btn-primary:hover{background:#f2f3f5}
 .srv-rtext{margin:6px 0 0; color:var(--fg-2); overflow-wrap:anywhere}
 .srv-how{margin-top:16px}
 @media (max-width:640px){.srv-dd,.srv-seg{flex:1 1 100%}.srv-toggle{flex:1 1 calc(50% - 5px)}.srv-djoin{margin-left:0; width:100%; text-align:center}.srv-modal{width:calc(100vw - 16px)}}
+.sa-list{list-style:none; margin:0 0 22px; padding:0; display:flex; flex-direction:column; gap:12px}
+.sa-row{gap:12px}
 .doc-tabs-wrap{position:sticky; top:64px; z-index:20; background:rgba(0,0,0,.85); backdrop-filter:blur(10px); border-bottom:1px solid var(--line)}
 .doc-tabs{display:flex; gap:8px; padding:12px 0; overflow-x:auto}
 .doc-tabs button{background:var(--panel); color:var(--fg-2); border:1px solid var(--line-3); border-radius:99px; padding:8px 18px; font:inherit; font-weight:600; cursor:pointer; white-space:nowrap}

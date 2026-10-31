@@ -35,6 +35,8 @@ id = "f76238de8c62476b9184012ecadee81e"
 #   npx wrangler secret put STATE_SECRET        # any long random string
 #   npx wrangler secret put BOT_TOKEN           # REQUIRED for server verification (gives the role); also lets the dashboard show where Sentinel is added
 #   npx wrangler secret put BOT_API_KEY         # REQUIRED for server verification: a long random string, the same value as SENTINEL_API_KEY in the bot's env
+#   npx wrangler secret put SERVERS_ADMIN_KEY   # server directory admin panel: a long random string, the same value as SERVERS_ADMIN_KEY in the bot's env
+#   (also add the plain variable SERVERS_API_URL = https://servers-api.sentineldashboard.site in Worker Settings → Variables)
 #   npx wrangler secret put TURNSTILE_SECRET    # OPTIONAL captcha on the verification page (also set the TURNSTILE_SITE_KEY variable below)
 
 # Profile media uploads: create this R2 bucket once with `npx wrangler r2 bucket create sentinel-profile-assets`

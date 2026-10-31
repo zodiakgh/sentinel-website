@@ -1393,6 +1393,32 @@ async function adminBadge(env, req) {
   await env.SESSIONS.put(`bg:${p.ownerHash}`, JSON.stringify(g));
   return json(env, req, { ok: true, username, manual: g.manual, earned: g.earned });
 }
+async function serversAdminCall(env, req, path, init) {
+  if (!env.SERVERS_API_URL || !env.SERVERS_ADMIN_KEY) return json(env, req, { error: "not_configured", message: "SERVERS_API_URL and SERVERS_ADMIN_KEY must be set on the Worker." }, 503);
+  let r;
+  try {
+    r = await fetch(String(env.SERVERS_API_URL).replace(/\/+$/, "") + path, { ...init, headers: { "X-Admin-Key": env.SERVERS_ADMIN_KEY, "Content-Type": "application/json" } });
+  } catch (_) {
+    return json(env, req, { error: "bot_unreachable", message: "The bot API could not be reached." }, 502);
+  }
+  let data = null;
+  try { data = await r.json(); } catch (_) {}
+  if (!r.ok || !data) return json(env, req, { error: "bot_error", message: "The bot refused or failed the request." }, r.ok ? 502 : r.status === 403 ? 502 : r.status);
+  return json(env, req, data);
+}
+async function adminServersList(env, req) {
+  if (!await adminAuth(env, req)) return json(env, req, { error: "forbidden" }, 403);
+  return serversAdminCall(env, req, "/api/admin/servers", { method: "GET" });
+}
+async function adminServersAction(env, req) {
+  if (!originOK(env, req)) return json(env, req, { error: "forbidden" }, 403);
+  if (!await adminAuth(env, req)) return json(env, req, { error: "forbidden" }, 403);
+  let b;
+  try { b = await readBody(req); } catch (_) { return json(env, req, { error: "bad_request" }, 400); }
+  const action = String(b.action || ""), guildId = String(b.guild_id || "");
+  if (!/^(verify|feature|hide|unlist|ban|unban|resolve)$/.test(action) || !/^\d{15,22}$/.test(guildId)) return json(env, req, { error: "bad_request" }, 400);
+  return serversAdminCall(env, req, "/api/admin/action", { method: "POST", body: JSON.stringify({ action, guild_id: guildId, value: b.value !== false, reason: String(b.reason || "").slice(0, 200) }) });
+}
 async function adminLookup(env, req) {
   if (!await adminAuth(env, req)) return json(env, req, { error: "forbidden" }, 403);
   const username = profileText(new URL(req.url).searchParams.get("username"), 25).toLowerCase().replace(/^@/, "");
@@ -2039,6 +2065,8 @@ export default {
     if (req.method === "GET" && shortProfileMatch) return publicProfile(env, req, shortProfileMatch[1]);
     if (req.method === "POST" && pathname === "/admin/badge") return adminBadge(env, req);
     if (req.method === "GET" && pathname === "/admin/lookup") return adminLookup(env, req);
+    if (req.method === "GET" && pathname === "/admin/servers") return adminServersList(env, req);
+    if (req.method === "POST" && pathname === "/admin/servers/action") return adminServersAction(env, req);
     if (req.method === "POST" && pathname === "/support/send") return supportSend(env, req);
     if (pathname.startsWith("/verify/")) {
       const needBot = ["/verify/status", "/verify/complete"].includes(pathname) && !env.BOT_TOKEN;

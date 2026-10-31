@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#000000">
+<meta name="color-scheme" content="dark">
+<title >Server directory admin — Sentinel</title>
+<meta name="description" content="Find the Discord server that fits you. Browse communities by topic, language and more.">
+<meta name="robots" content="noindex,nofollow">
+<link rel="canonical" href="https://sentineldashboard.site/servers-admin">
+<link rel="icon" href="/sentinel.png" type="image/png">
+<link rel="apple-touch-icon" href="/sentinel.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Sentinel">
+<meta property="og:url" content="https://sentineldashboard.site/servers-admin">
+<meta property="og:image" content="https://sentineldashboard.site/sentinel.png">
+<meta name="twitter:card" content="summary">
+<link rel="preload" href="/assets/fonts/bricolage-grotesque-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/instrument-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<script>document.documentElement.classList.add("js")</script>
+<link rel="stylesheet" href="/assets/css/main.css?v=25">
+</head>
+<body>
+<a class="skip" href="#main" data-i18n="skip">Skip to content</a>
+<header class="topbar" id="topbar"><div class="wrap topbar-in">
+<a class="brand" href="/" aria-label="Sentinel"><span class="brand-mark" aria-hidden="true">S</span><span class="brand-word">Sentinel</span></a>
+<nav class="nav" id="site-nav" aria-label="Main"><a class="nl" href="/bots"><span data-i18n="nav.bots">Bots</span></a><a class="nl" href="/servers"><span data-i18n="nav.servers">Servers</span></a><a class="nl" href="/docs"><span data-i18n="nav.docs">Documentation</span></a><a class="nl" href="/dashboard"><span data-i18n="nav.dashboard">Dashboard</span></a><a class="nl" href="/profile-editor"><span data-i18n="nav.profile">Profile</span></a><a class="nl" href="/changelog"><span data-i18n="nav.changelog">News</span></a><a class="nl" href="/status"><span data-i18n="nav.status">Status</span></a><a class="nl" href="https://support.sentineldashboard.site"><span data-i18n="nav.support">Support</span></a><a class="nl nl-cta" href="/docs#invite" data-invite><span data-i18n="nav.add">Add to Discord</span></a></nav>
+<div class="nav-tools"><div class="lang" role="group" aria-label="Language / Langue"><button type="button" data-lang="en" aria-pressed="true" lang="en">EN</button><button type="button" data-lang="fr" aria-pressed="false" lang="fr">FR</button></div><a class="btn btn-sm btn-primary nav-cta" href="/docs#invite" data-invite><span data-i18n="nav.add">Add to Discord</span></a><button class="menu-toggle" id="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Menu" data-i18n-attr="aria-label:nav.menu"><span></span></button></div>
+</div></header>
+<main id="main">
+<section class="page-head"><div class="wrap"><h1>Server directory admin</h1><p class="lead">Verify, feature, hide or ban servers. Only the owner account can use this page.</p></div></section>
+<section class="section"><div class="wrap">
+<div id="sa-gate" class="srv-state" hidden></div>
+<div id="sa-app" hidden>
+<div class="srv-filters"><div class="srv-searchbox" style="flex:1 1 260px;margin:0"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><input id="sa-q" type="search" placeholder="Search by name or ID…" autocomplete="off"></div>
+<div class="srv-seg" id="sa-seg" role="radiogroup" aria-label="Filter"></div></div>
+<p class="mg-hint" id="sa-count" aria-live="polite"></p>
+<ul id="sa-list" class="sa-list"></ul>
+<p class="mg-hint">Banned servers: use the ID. Enter it in the box below to ban a server that is not listed yet, or to lift a ban.</p>
+<div class="srv-filters"><input id="sa-id" class="srv-dd-search" style="flex:1 1 220px;margin:0" placeholder="Server ID" inputmode="numeric" autocomplete="off"><input id="sa-reason" class="srv-dd-search" style="flex:2 1 260px;margin:0" placeholder="Reason (internal)" maxlength="200" autocomplete="off"><button id="sa-ban" class="btn btn-sm" type="button">Ban</button><button id="sa-unban" class="btn btn-sm" type="button">Unban</button></div>
+<p id="sa-msg" class="mg-hint" aria-live="polite"></p>
+</div>
+</div></section>
+</main>
+<div class="wrap"><div class="ad-slot" hidden></div></div>
+<footer class="footer"><div class="wrap">
+<div class="foot-grid"><div><a class="brand" href="/"><span class="brand-mark" aria-hidden="true">S</span><span class="brand-word">Sentinel</span></a><p data-i18n="foot.tag">Moderation, security, automation and community tools for Discord, in one bot.</p></div><div><h4 data-i18n="foot.product">Product</h4><ul><li><a href="/docs"><span data-i18n="foot.docs">Documentation</span></a></li><li><a href="/dashboard"><span data-i18n="foot.dashboard">Dashboard</span></a></li><li><a href="/premium"><span data-i18n="foot.premium">Premium</span></a></li></ul></div><div><h4 data-i18n="foot.community">Community</h4><ul><li><a href="https://support.sentineldashboard.site"><span data-i18n="foot.support">Support</span></a></li><li><a href="/status"><span data-i18n="foot.status">Status</span></a></li><li><a href="/team"><span data-i18n="foot.team">Team</span></a></li><li><a href="https://discord.gg/NwXnVdzyuf" data-support target="_blank" rel="noopener noreferrer"><span data-i18n="foot.discord">Discord server ↗</span></a></li></ul></div><div><h4 data-i18n="foot.legal">Legal</h4><ul><li><a href="/terms"><span data-i18n="foot.terms">Terms of Service</span></a></li><li><a href="/privacy"><span data-i18n="foot.privacy">Privacy Policy</span></a></li></ul></div></div>
+<div class="foot-bottom"><span>© <span data-year>2026</span> Sentinel. <span data-i18n="foot.rights">All rights reserved.</span></span><span data-i18n="foot.disc">Sentinel is an independent project and is not affiliated with Discord Inc.</span></div>
+</div></footer>
+<script src="/assets/js/config.js?v=2"></script>
+<script src="/assets/js/i18n-fr.js"></script>
+<script src="/assets/js/app.js"></script>
+<script src="/assets/js/servers-admin.js?v=1"></script>
+<script src="/assets/js/ads.js?v=1"></script>
+</body>
+</html>
