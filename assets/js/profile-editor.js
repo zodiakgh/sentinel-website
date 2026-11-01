@@ -1103,6 +1103,83 @@
     }));
     return sec("Your tracks", "Up to 3 audio files (MP3, WAV, OGG, M4A). They play in order. Set a title, artist and cover for each.", box, row);
   }
+  function premiumPanel() {
+    var box = E("div", "pe-prem");
+    box.appendChild(E("p", "pe-hint", "Loading your Premium servers…"));
+    api("/account/premium").then(function(d) {
+      renderPremium(box, d);
+    }).catch(function(e) {
+      box.textContent = "";
+      box.appendChild(E("p", "pe-hint", "Could not load Premium: " + (e.message || e.code)));
+    });
+    return [sec("Premium", "If one of your servers has Sentinel Premium, you can give it its own address and choose what it shows.", box)];
+  }
+  function renderPremium(box, d) {
+    box.textContent = "";
+    var note = function(text, linkText, href) {
+      var p = E("p", "pe-hint", text + (linkText ? " " : ""));
+      if (linkText) {
+        var a = E("a", "", linkText);
+        a.href = href;
+        p.appendChild(a);
+      }
+      box.appendChild(p);
+    };
+    if (d.configured === false) return note("Premium is not available yet.");
+    if (!d.hasDiscord) return note("Link your Discord account to see your servers.", "Open account page", "/account");
+    if (!d.items || !d.items.length) return note("None of your servers has Premium yet. Premium costs 1.99 € per month, per server, and is not on sale yet.", "See Premium", "/premium");
+    d.items.forEach(function(it) {
+      var card = E("div", "pe-prem-card");
+      card.style.cssText = "border:1px solid var(--line-3,#3b3b3b);border-radius:12px;padding:14px;margin:0 0 12px";
+      card.appendChild(E("b", "", it.name));
+      var live = E("p", "pe-hint", "");
+      var showLive = function(slug) {
+        live.textContent = "";
+        if (!slug) { live.textContent = "No address yet."; return; }
+        var a = E("a", "", slug + "." + d.domain);
+        a.href = "https://" + slug + "." + d.domain;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        live.append("Live address: ", a);
+      };
+      showLive(it.subdomain);
+      var name = E("input");
+      name.value = it.subdomain || "";
+      name.placeholder = "yourname";
+      name.maxLength = 32;
+      name.autocapitalize = "off";
+      name.setAttribute("aria-label", "Subdomain");
+      var suffix = E("span", "pe-hint", "." + d.domain);
+      var target = E("select");
+      target.setAttribute("aria-label", "What the address shows");
+      var o1 = E("option", "", "Show my server page in the directory");
+      o1.value = "server";
+      var o2 = E("option", "", d.profile ? "Show my public profile (@" + d.profile + ")" : "Show my public profile (create it first)");
+      o2.value = "profile";
+      o2.disabled = !d.profile;
+      target.append(o1, o2);
+      target.value = it.target === "profile" && d.profile ? "profile" : "server";
+      var msg = E("p", "pe-hint", "");
+      var run = function(action) {
+        msg.textContent = "Working…";
+        api("/account/premium/subdomain", { guild_id: it.id, action: action, name: name.value.trim().toLowerCase(), target: target.value }).then(function() {
+          if (action === "clear") { name.value = ""; it.subdomain = null; } else it.subdomain = name.value.trim().toLowerCase();
+          showLive(it.subdomain);
+          msg.textContent = action === "clear" ? "Address removed." : "Saved. It can take a few minutes to start working.";
+        }).catch(function(e) {
+          msg.textContent = "Failed: " + (e.message || e.code);
+        });
+      };
+      var row = E("div", "");
+      row.style.cssText = "display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0";
+      row.append(name, suffix);
+      var acts = E("div", "");
+      acts.style.cssText = "display:flex;gap:8px;flex-wrap:wrap";
+      acts.append(btn("Save", function() { run("set"); }, ""), btn("Remove address", function() { run("clear"); }, ""));
+      card.append(live, row, target, acts, msg);
+      box.appendChild(card);
+    });
+  }
   function badgesPanel() {
     var out = [], hid = function() {
       return state.hiddenBadges || (state.hiddenBadges = []);
@@ -1417,6 +1494,7 @@
       ];
     }],
     ["badges", "Badges", badgesPanel],
+    ["premium", "Premium", premiumPanel],
     ["audio", "Audio", function() {
       return [
         tracksSection(),

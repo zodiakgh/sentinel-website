@@ -1432,6 +1432,64 @@ async function adminPremiumAction(env, req) {
   if (!/^(grant|revoke)$/.test(action) || !/^\d{15,22}$/.test(guildId) || (action === "grant" && !(Number.isInteger(days) && days >= 0 && days <= 3650))) return json(env, req, { error: "bad_request" }, 400);
   return serversAdminCall(env, req, "/api/admin/premium", { method: "POST", body: JSON.stringify({ action, guild_id: guildId, days: action === "grant" ? days : 0, note: String(b.note || "").slice(0, 120) }) });
 }
+async function botAdminJson(env, path, init) {
+  if (!env.SERVERS_API_URL || !env.SERVERS_ADMIN_KEY) return { status: 503, data: { error: "not_configured" } };
+  try {
+    const r = await fetch(String(env.SERVERS_API_URL).replace(/\/+$/, "") + path, { ...init, headers: { "X-Admin-Key": env.SERVERS_ADMIN_KEY, "Content-Type": "application/json" } });
+    let data = {};
+    try { data = await r.json(); } catch (_) {}
+    return { status: r.status, data };
+  } catch (_) { return { status: 502, data: { error: "bot_unreachable" } }; }
+}
+// Servers the signed-in person can manage (snapshot taken when they logged in or linked Discord).
+async function accountGuilds(env, s) {
+  if (s.data.accountEmail) {
+    const email = s.data.accountEmail.trim().toLowerCase(), ownerHash = await digest(email);
+    const raw = await env.SESSIONS.get(`a:${ownerHash}`), a = raw ? JSON.parse(raw) : null, d = a && a.discord;
+    const slug = await env.SESSIONS.get(`pa:${ownerHash}`);
+    return { guilds: d && Array.isArray(d.guilds) ? d.guilds : [], hasDiscord: !!d, profile: slug || null };
+  }
+  return { guilds: Array.isArray(s.data.guilds) ? s.data.guilds : [], hasDiscord: true, profile: null };
+}
+async function accountPremium(env, req) {
+  const s = await session(env, req);
+  if (!s) return json(env, req, { error: "unauthenticated" }, 401);
+  const { guilds, hasDiscord, profile } = await accountGuilds(env, s);
+  const base = { domain: new URL(env.SITE_ORIGIN).hostname.replace(/^www\./, ""), hasDiscord, profile, items: [] };
+  if (!guilds.length) return json(env, req, base);
+  const r = await botAdminJson(env, "/api/admin/premium", { method: "GET" });
+  if (r.status === 503) return json(env, req, { ...base, configured: false });
+  if (r.status !== 200) return json(env, req, { error: "bot_unreachable", message: "The bot could not be reached. Try again later." }, 502);
+  const mine = new Map(guilds.map((g) => [String(g.id), g]));
+  base.items = (r.data.items || []).filter((x) => x.active && mine.has(String(x.id))).map((x) => {
+    const g = mine.get(String(x.id));
+    return { id: String(x.id), name: g.name || x.name, iconUrl: cdn("icons", g.id, g.icon), expires_at: x.expires_at, subdomain: x.subdomain || null, target: x.target || "server", profile: x.profile || null };
+  });
+  return json(env, req, { ...base, configured: true });
+}
+async function accountPremiumSubdomain(env, req) {
+  if (!originOK(env, req)) return json(env, req, { error: "forbidden" }, 403);
+  const s = await session(env, req);
+  if (!s) return json(env, req, { error: "unauthenticated" }, 401);
+  let b;
+  try { b = await readBody(req); } catch (_) { return json(env, req, { error: "bad_request" }, 400); }
+  const guildId = String(b.guild_id || ""), action = b.action === "clear" ? "clear" : "set";
+  if (!/^\d{15,22}$/.test(guildId)) return json(env, req, { error: "bad_request" }, 400);
+  const { guilds, profile } = await accountGuilds(env, s);
+  if (!guilds.some((g) => String(g.id) === guildId)) return json(env, req, { error: "forbidden", message: "You can only change servers you manage." }, 403);
+  let payload;
+  if (action === "clear") payload = { action: "clear_subdomain", guild_id: guildId };
+  else {
+    const name = String(b.name || "").trim().toLowerCase(), target = b.target === "profile" ? "profile" : "server";
+    if (!/^[a-z0-9-]{3,32}$/.test(name)) return json(env, req, { error: "invalid", message: "Use 3 to 32 characters: letters, numbers and hyphens." }, 400);
+    if (target === "profile" && !profile) return json(env, req, { error: "invalid", message: "Create your public profile first to point the address to it." }, 400);
+    payload = { action: "set_subdomain", guild_id: guildId, name, target, profile: target === "profile" ? profile : "" };
+  }
+  const r = await botAdminJson(env, "/api/admin/premium", { method: "POST", body: JSON.stringify(payload) });
+  if (r.status === 400 && r.data && r.data.message) return json(env, req, { error: "invalid", message: String(r.data.message).slice(0, 200) }, 400);
+  if (r.status !== 200) return json(env, req, { error: "bot_error", message: "The bot could not apply the change. Try again later." }, 502);
+  return json(env, req, { ok: true });
+}
 async function adminLookup(env, req) {
   if (!await adminAuth(env, req)) return json(env, req, { error: "forbidden" }, 403);
   const username = profileText(new URL(req.url).searchParams.get("username"), 25).toLowerCase().replace(/^@/, "");
@@ -2031,6 +2089,7 @@ async function subdomainFetch(env, req, host) {
   let d = null;
   try { d = await r.json(); } catch (_) {}
   if (!d || !/^\d{15,22}$/.test(String(d.id || ""))) return new Response(null, { status: 302, headers: { Location: `${env.SITE_ORIGIN}/servers`, "Cache-Control": "no-store" } });
+  if (d.target === "profile" && /^[a-z0-9_-]{1,24}$/.test(String(d.profile || ""))) return new Response(null, { status: 302, headers: { Location: `${env.SITE_ORIGIN}/u/${d.profile}`, "Cache-Control": "public, max-age=60" } });
   return new Response(null, { status: 302, headers: { Location: `${env.SITE_ORIGIN}/servers?server=${d.id}`, "Cache-Control": "public, max-age=60" } });
 }
 export default {
@@ -2106,6 +2165,8 @@ export default {
     if (req.method === "GET" && pathname === "/admin/servers") return adminServersList(env, req);
     if (req.method === "POST" && pathname === "/admin/servers/action") return adminServersAction(env, req);
     if (req.method === "GET" && pathname === "/admin/premium") return adminPremiumList(env, req);
+    if (req.method === "GET" && pathname === "/account/premium") return accountPremium(env, req);
+    if (req.method === "POST" && pathname === "/account/premium/subdomain") return accountPremiumSubdomain(env, req);
     if (req.method === "POST" && pathname === "/admin/premium/action") return adminPremiumAction(env, req);
     if (req.method === "POST" && pathname === "/support/send") return supportSend(env, req);
     if (pathname.startsWith("/verify/")) {

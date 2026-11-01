@@ -439,7 +439,7 @@ window.SENTINEL_FR = {
  "pr.n": "Les abonnements ne sont pas encore ouverts et rien ne peut être acheté aujourd’hui. Cette page l’indiquera dès que le paiement sera disponible.",
  "pr.h2": "Ce que tu obtiens",
  "pr.l1": "Un bump dans l’annuaire de serveurs toutes les 30 minutes au lieu de toutes les 2 heures.",
- "pr.l4": "Un sous-domaine personnalisé pour la page de ton serveur, du type tonnom.sentineldashboard.site.",
+ "pr.l4": "Un sous-domaine personnalisé du type tonnom.sentineldashboard.site, réglé depuis ton profil sur le site. Il peut afficher la page de ton serveur ou ton profil public.",
  "pr.l2": "Prix : 1,99 € par mois, par serveur. Tout changement sera publié ici en premier.",
  "pr.l3": "Méfie-toi de toute personne qui vend un « Sentinel Premium » ailleurs : il n’est pas encore en vente.",
  "pr.b1": "Voir les fonctionnalités actuelles",
