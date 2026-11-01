@@ -1480,7 +1480,7 @@ async function accountPremium(env, req) {
   return json(env, req, { ...base, configured: true, purchasable: stripeReady(env), available, supportUrl: env.SUPPORT_URL || "" });
 }
 const PREMIUM_PRICE_CENTS = 199;
-function stripeReady(env) { return !!(env.STRIPE_SECRET_KEY && env.STRIPE_WEBHOOK_SECRET && env.SERVERS_API_URL && env.SERVERS_ADMIN_KEY); }
+function stripeReady(env) { return !!(env.LEMON_API_KEY && env.LEMON_WEBHOOK_SECRET && env.LEMON_STORE_ID && env.LEMON_VARIANT_ID && env.SERVERS_API_URL && env.SERVERS_ADMIN_KEY); }
 async function premiumStatus(env, req) {
   return json(env, req, { purchasable: stripeReady(env), price: "1.99", currency: "EUR", lifetime: true });
 }
@@ -1499,26 +1499,18 @@ async function accountPremiumCheckout(env, req) {
   const list = await botAdminJson(env, "/api/admin/premium", { method: "GET" });
   if (list.status !== 200) return json(env, req, { error: "bot_unreachable", message: "Could not check this server. Try again later." }, 502);
   if ((list.data.items || []).some((x) => String(x.id) === guildId && x.active)) return json(env, req, { error: "already_premium", message: "This server already has Premium." }, 409);
-  const f = new URLSearchParams({
-    mode: "payment",
-    "line_items[0][quantity]": "1",
-    "line_items[0][price_data][currency]": "eur",
-    "line_items[0][price_data][unit_amount]": String(PREMIUM_PRICE_CENTS),
-    "line_items[0][price_data][product_data][name]": "Sentinel Premium (lifetime)",
-    "line_items[0][price_data][product_data][description]": `One-time payment for the server "${String(g.name || guildId).slice(0, 80)}"`,
-    client_reference_id: guildId,
-    "metadata[guild_id]": guildId,
-    "payment_intent_data[metadata][guild_id]": guildId,
-    success_url: `${env.SITE_ORIGIN}/profile-editor?tab=premium&paid=1`,
-    cancel_url: `${env.SITE_ORIGIN}/profile-editor?tab=premium`
-  });
+  const payload = { data: { type: "checkouts", attributes: {
+    product_options: { name: "Sentinel Premium (lifetime)", description: `One-time payment for the server "${String(g.name || guildId).slice(0, 80)}"`, redirect_url: `${env.SITE_ORIGIN}/profile-editor?tab=premium&paid=1` },
+    checkout_data: { custom: { guild_id: guildId } }
+  }, relationships: { store: { data: { type: "stores", id: String(env.LEMON_STORE_ID) } }, variant: { data: { type: "variants", id: String(env.LEMON_VARIANT_ID) } } } } };
   let r, d = {};
   try {
-    r = await fetch("https://api.stripe.com/v1/checkout/sessions", { method: "POST", headers: { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`, "Content-Type": "application/x-www-form-urlencoded" }, body: f });
+    r = await fetch("https://api.lemonsqueezy.com/v1/checkouts", { method: "POST", headers: { Authorization: `Bearer ${env.LEMON_API_KEY}`, Accept: "application/vnd.api+json", "Content-Type": "application/vnd.api+json" }, body: JSON.stringify(payload) });
     d = await r.json();
   } catch (_) { return json(env, req, { error: "payment_unreachable", message: "The payment service could not be reached." }, 502); }
-  if (!r.ok || !d.url) return json(env, req, { error: "payment_error", message: "The payment could not be started." }, 502);
-  return json(env, req, { url: d.url });
+  const url = d && d.data && d.data.attributes && d.data.attributes.url;
+  if (!r.ok || !url) return json(env, req, { error: "payment_error", message: "The payment could not be started." }, 502);
+  return json(env, req, { url });
 }
 async function hmacHex(secret, value) {
   const key = await crypto.subtle.importKey("raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
@@ -1526,22 +1518,21 @@ async function hmacHex(secret, value) {
 }
 async function stripeWebhook(env, req) {
   if (!stripeReady(env)) return new Response("not configured", { status: 503 });
-  const raw = await req.text(), header = req.headers.get("Stripe-Signature") || "";
-  const parts = Object.fromEntries(header.split(",").map((p) => { const i = p.indexOf("="); return [p.slice(0, i).trim(), p.slice(i + 1).trim()]; }));
-  const t = Number(parts.t);
-  if (!t || Math.abs(Date.now() / 1000 - t) > 300) return new Response("bad timestamp", { status: 400 });
-  const expected = await hmacHex(env.STRIPE_WEBHOOK_SECRET, `${t}.${raw}`);
-  const sigs = header.split(",").filter((p) => p.trim().startsWith("v1=")).map((p) => p.trim().slice(3));
-  if (!sigs.some((x) => safeEqual(x, expected))) return new Response("bad signature", { status: 400 });
+  const raw = await req.text(), sig = (req.headers.get("X-Signature") || "").trim();
+  if (!sig || !safeEqual(sig, await hmacHex(env.LEMON_WEBHOOK_SECRET, raw))) return new Response("bad signature", { status: 400 });
   let ev;
   try { ev = JSON.parse(raw); } catch (_) { return new Response("bad body", { status: 400 }); }
-  if (ev.type !== "checkout.session.completed" && ev.type !== "checkout.session.async_payment_succeeded") return new Response("ignored", { status: 200 });
-  const o = ev.data && ev.data.object ? ev.data.object : {};
-  if (o.payment_status !== "paid") return new Response("not paid yet", { status: 200 });
-  const guildId = String((o.metadata && o.metadata.guild_id) || o.client_reference_id || "");
-  if (!/^\d{15,22}$/.test(guildId) || !/^cs_[A-Za-z0-9_]+$/.test(String(o.id || ""))) return new Response("bad session", { status: 400 });
+  const name = ev.meta && ev.meta.event_name;
+  const o = ev.data || {}, at = o.attributes || {};
+  const guildId = String((ev.meta && ev.meta.custom_data && ev.meta.custom_data.guild_id) || "");
+  if (!/^\d{15,22}$/.test(guildId) || !/^\d{1,20}$/.test(String(o.id || ""))) return new Response("ignored", { status: 200 });
+  if (name === "order_refunded") {
+    await botAdminJson(env, "/api/admin/premium", { method: "POST", body: JSON.stringify({ action: "revoke", guild_id: guildId }) });
+    return new Response("ok", { status: 200 });
+  }
+  if (name !== "order_created" || at.status !== "paid") return new Response("ignored", { status: 200 });
   if (await env.SESSIONS.get(`pay:${o.id}`)) return new Response("already processed", { status: 200 });
-  const r = await botAdminJson(env, "/api/admin/premium", { method: "POST", body: JSON.stringify({ action: "grant", guild_id: guildId, days: 0, source: "stripe", note: String(o.id).slice(0, 60) }) });
+  const r = await botAdminJson(env, "/api/admin/premium", { method: "POST", body: JSON.stringify({ action: "grant", guild_id: guildId, days: 0, source: "stripe", note: `lemon-${o.id}` }) });
   if (r.status !== 200) return new Response("bot unavailable, retry", { status: 500 });
   await env.SESSIONS.put(`pay:${o.id}`, JSON.stringify({ guildId, at: Date.now() }), { expirationTtl: 60 * 60 * 24 * 400 });
   return new Response("ok", { status: 200 });
