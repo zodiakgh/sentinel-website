@@ -104,6 +104,18 @@
       if (!(d.items || []).length) pmList.append(el("li", "mg-hint", "No premium servers yet."));
     }).catch(function (e) { pmSay(e.status === 503 ? "Premium cog is not loaded in the bot." : (e.message || "Could not load Premium."), true); });
   }
+  $("sd-set").addEventListener("click", function () {
+    var id = $("sd-id").value.trim(), name = $("sd-name").value.trim().toLowerCase(), target = $("sd-target").value, prof = $("sd-profile").value.trim();
+    if (!/^\d{15,22}$/.test(id)) return pmSay("Enter a valid server ID.", true);
+    if (!/^[a-z0-9-]{3,32}$/.test(name)) return pmSay("Name: 3 to 32 letters, numbers or hyphens.", true);
+    if (target === "profile" && !prof) return pmSay("Enter the profile username.", true);
+    pmCall({ action: "set_subdomain", guild_id: id, name: name, target: target, profile: prof });
+  });
+  $("sd-clear").addEventListener("click", function () {
+    var id = $("sd-id").value.trim();
+    if (!/^\d{15,22}$/.test(id)) return pmSay("Enter a valid server ID.", true);
+    pmCall({ action: "clear_subdomain", guild_id: id });
+  });
   $("pm-grant").addEventListener("click", function () {
     var id = $("pm-id").value.trim(), days = parseInt($("pm-days").value, 10);
     if (!/^\d{15,22}$/.test(id)) return pmSay("Enter a valid server ID.", true);

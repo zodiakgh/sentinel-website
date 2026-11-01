@@ -43,3 +43,4 @@ id = "f76238de8c62476b9184012ecadee81e"
 [[r2_buckets]]
 binding = "PROFILE_ASSETS"
 bucket_name = "sentinel-profile-assets"
+# Stripe (lifetime Premium): wrangler secret put STRIPE_SECRET_KEY ; wrangler secret put STRIPE_WEBHOOK_SECRET

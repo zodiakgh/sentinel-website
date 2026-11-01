@@ -41,8 +41,11 @@
 <div class="srv-filters"><input id="sa-id" class="srv-dd-search" style="flex:1 1 220px;margin:0" placeholder="Server ID" inputmode="numeric" autocomplete="off"><input id="sa-reason" class="srv-dd-search" style="flex:2 1 260px;margin:0" placeholder="Reason (internal)" maxlength="200" autocomplete="off"><button id="sa-ban" class="btn btn-sm" type="button">Ban</button><button id="sa-unban" class="btn btn-sm" type="button">Unban</button></div>
 <p id="sa-msg" class="mg-hint" aria-live="polite"></p>
 <h2 class="srv-h">Premium servers</h2>
-<p class="mg-hint">Grants Premium to one server. 0 days means lifetime. Granting again adds days.</p>
-<div class="srv-filters"><input id="pm-id" class="srv-dd-search" style="flex:1 1 220px;margin:0" placeholder="Server ID" inputmode="numeric" autocomplete="off"><input id="pm-days" class="srv-dd-search" style="flex:0 1 120px;margin:0" type="number" min="0" max="3650" value="30" aria-label="Days"><input id="pm-note" class="srv-dd-search" style="flex:2 1 220px;margin:0" placeholder="Note (internal)" maxlength="120" autocomplete="off"><button id="pm-grant" class="btn btn-sm btn-primary" type="button">Grant</button></div>
+<p class="mg-hint">Normally Premium is granted automatically after payment. Use this for gifts or fixes. 0 days means lifetime.</p>
+<div class="srv-filters"><input id="pm-id" class="srv-dd-search" style="flex:1 1 220px;margin:0" placeholder="Server ID" inputmode="numeric" autocomplete="off"><input id="pm-days" class="srv-dd-search" style="flex:0 1 120px;margin:0" type="number" min="0" max="3650" value="0" aria-label="Days"><input id="pm-note" class="srv-dd-search" style="flex:2 1 220px;margin:0" placeholder="Note (internal)" maxlength="120" autocomplete="off"><button id="pm-grant" class="btn btn-sm btn-primary" type="button">Grant</button></div>
+<h3 class="srv-h">Subdomain (staff)</h3>
+<p class="mg-hint">Set the address of a Premium server by hand. "Public profile" needs the buyer's profile username.</p>
+<div class="srv-filters"><input id="sd-id" class="srv-dd-search" style="flex:1 1 200px;margin:0" placeholder="Server ID" inputmode="numeric" autocomplete="off"><input id="sd-name" class="srv-dd-search" style="flex:1 1 160px;margin:0" placeholder="name (before .sentineldashboard.site)" maxlength="32" autocomplete="off"><select id="sd-target" class="srv-dd-search" style="flex:1 1 180px;margin:0"><option value="server">Shows the server page</option><option value="profile">Shows a public profile</option></select><input id="sd-profile" class="srv-dd-search" style="flex:1 1 150px;margin:0" placeholder="profile username" maxlength="24" autocomplete="off"><button id="sd-set" class="btn btn-sm btn-primary" type="button">Set</button><button id="sd-clear" class="btn btn-sm" type="button">Clear</button></div>
 <ul id="pm-list" class="sa-list"></ul>
 <p id="pm-msg" class="mg-hint" aria-live="polite"></p>
 </div>
@@ -56,7 +59,7 @@
 <script src="/assets/js/config.js?v=2"></script>
 <script src="/assets/js/i18n-fr.js"></script>
 <script src="/assets/js/app.js"></script>
-<script src="/assets/js/servers-admin.js?v=2"></script>
+<script src="/assets/js/servers-admin.js?v=3"></script>
 <script src="/assets/js/ads.js?v=1"></script>
 </body>
 </html>

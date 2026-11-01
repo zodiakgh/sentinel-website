@@ -7,7 +7,7 @@
   };
   var LIMITS = { image: 5, audio: 3, video: 3 }, SIZES = { image: 8, audio: 15, video: 45 };
   var state = null, saved = "", savedState = null, assets = [], counts = {}, view = null, account = null, serverProfile = null, badgeData = { all: [], catalog: [], isOwner: false };
-  var activeTab = "templates", pvTimer = 0, saving = false, phone = false;
+  var activeTab = new URLSearchParams(location.search).get("tab") === "premium" ? "premium" : "templates", pvTimer = 0, saving = false, phone = false;
   function E(tag, cls, text) {
     var n = document.createElement(tag);
     if (cls) n.className = cls;
@@ -1105,14 +1105,14 @@
   }
   function premiumPanel() {
     var box = E("div", "pe-prem");
-    box.appendChild(E("p", "pe-hint", "Loading your Premium servers…"));
+    box.appendChild(E("p", "pe-hint", "Loading your servers…"));
     api("/account/premium").then(function(d) {
       renderPremium(box, d);
     }).catch(function(e) {
       box.textContent = "";
       box.appendChild(E("p", "pe-hint", "Could not load Premium: " + (e.message || e.code)));
     });
-    return [sec("Premium", "If one of your servers has Sentinel Premium, you can give it its own address and choose what it shows.", box)];
+    return [sec("Premium", "One payment, lifetime, per server: bump every 30 minutes and a custom address like yourname.sentineldashboard.site.", box)];
   }
   function renderPremium(box, d) {
     box.textContent = "";
@@ -1125,60 +1125,59 @@
       }
       box.appendChild(p);
     };
+    if (new URLSearchParams(location.search).get("paid") === "1") note("Thank you! Your server gets Premium within a minute. Refresh this tab if it is not listed yet.");
     if (d.configured === false) return note("Premium is not available yet.");
     if (!d.hasDiscord) return note("Link your Discord account to see your servers.", "Open account page", "/account");
-    if (!d.items || !d.items.length) return note("None of your servers has Premium yet. Premium costs 1.99 € per month, per server, and is not on sale yet.", "See Premium", "/premium");
-    d.items.forEach(function(it) {
+    var support = (window.SENTINEL_CONFIG || {}).supportUrl || "";
+    (d.items || []).forEach(function(it) {
       var card = E("div", "pe-prem-card");
       card.style.cssText = "border:1px solid var(--line-3,#3b3b3b);border-radius:12px;padding:14px;margin:0 0 12px";
-      card.appendChild(E("b", "", it.name));
-      var live = E("p", "pe-hint", "");
-      var showLive = function(slug) {
-        live.textContent = "";
-        if (!slug) { live.textContent = "No address yet."; return; }
-        var a = E("a", "", slug + "." + d.domain);
-        a.href = "https://" + slug + "." + d.domain;
+      card.appendChild(E("b", "", it.name + " - Premium (lifetime)"));
+      var p = E("p", "pe-hint", "");
+      if (it.subdomain) {
+        var a = E("a", "", it.subdomain + "." + d.domain);
+        a.href = "https://" + it.subdomain + "." + d.domain;
         a.target = "_blank";
         a.rel = "noopener noreferrer";
-        live.append("Live address: ", a);
-      };
-      showLive(it.subdomain);
-      var name = E("input");
-      name.value = it.subdomain || "";
-      name.placeholder = "yourname";
-      name.maxLength = 32;
-      name.autocapitalize = "off";
-      name.setAttribute("aria-label", "Subdomain");
-      var suffix = E("span", "pe-hint", "." + d.domain);
-      var target = E("select");
-      target.setAttribute("aria-label", "What the address shows");
-      var o1 = E("option", "", "Show my server page in the directory");
-      o1.value = "server";
-      var o2 = E("option", "", d.profile ? "Show my public profile (@" + d.profile + ")" : "Show my public profile (create it first)");
-      o2.value = "profile";
-      o2.disabled = !d.profile;
-      target.append(o1, o2);
-      target.value = it.target === "profile" && d.profile ? "profile" : "server";
-      var msg = E("p", "pe-hint", "");
-      var run = function(action) {
-        msg.textContent = "Working…";
-        api("/account/premium/subdomain", { guild_id: it.id, action: action, name: name.value.trim().toLowerCase(), target: target.value }).then(function() {
-          if (action === "clear") { name.value = ""; it.subdomain = null; } else it.subdomain = name.value.trim().toLowerCase();
-          showLive(it.subdomain);
-          msg.textContent = action === "clear" ? "Address removed." : "Saved. It can take a few minutes to start working.";
-        }).catch(function(e) {
-          msg.textContent = "Failed: " + (e.message || e.code);
-        });
-      };
-      var row = E("div", "");
-      row.style.cssText = "display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0";
-      row.append(name, suffix);
-      var acts = E("div", "");
-      acts.style.cssText = "display:flex;gap:8px;flex-wrap:wrap";
-      acts.append(btn("Save", function() { run("set"); }, ""), btn("Remove address", function() { run("clear"); }, ""));
-      card.append(live, row, target, acts, msg);
+        p.append("Your address: ", a);
+      } else {
+        p.append("Your address is set up by our staff. Open a ticket in the ");
+        if (/^https:\/\//.test(support)) {
+          var l = E("a", "", "support server");
+          l.href = support;
+          l.target = "_blank";
+          l.rel = "noopener noreferrer";
+          p.append(l);
+        } else p.append("support server");
+        p.append(" with the name you want (letters, numbers and hyphens) and what it should show.");
+      }
+      card.append(p);
       box.appendChild(card);
     });
+    var avail = d.available || [];
+    if (!(d.items || []).length && !avail.length) return note("No server found. Add Sentinel to a server you manage first.", "Add to Discord", "/docs#invite");
+    if (avail.length) {
+      var head = E("p", "pe-hint", d.purchasable ? "Buy Premium for a server (1.99 € once, lifetime):" : "Premium is not on sale yet. Servers you manage:");
+      box.appendChild(head);
+      avail.forEach(function(g) {
+        var row = E("div", "");
+        row.style.cssText = "display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:6px 0";
+        row.appendChild(E("span", "", g.name));
+        if (d.purchasable) {
+          var msg = E("span", "pe-hint", "");
+          var b = btn("Buy lifetime Premium", function() {
+            msg.textContent = "Opening payment…";
+            api("/account/premium/checkout", { guild_id: g.id }).then(function(r) {
+              location.href = r.url;
+            }).catch(function(e) {
+              msg.textContent = "Failed: " + (e.message || e.code);
+            });
+          }, "");
+          row.append(msg, b);
+        }
+        box.appendChild(row);
+      });
+    }
   }
   function badgesPanel() {
     var out = [], hid = function() {
@@ -1705,7 +1704,7 @@
       msg.classList.add("pe-hide");
       $("app").classList.remove("pe-hide");
       $("bar").classList.remove("pe-hide");
-      activeTab = data.profile ? "profile" : "templates";
+      if (activeTab !== "premium") activeTab = data.profile ? "profile" : "templates";
       buildPanels();
       view = SP.mount($("pv"), previewProfile(), { preview: true });
       syncPv();

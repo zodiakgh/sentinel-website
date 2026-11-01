@@ -31,10 +31,11 @@
 <div class="nav-tools"><div class="lang" role="group" aria-label="Language / Langue"><button type="button" data-lang="en" aria-pressed="true" lang="en">EN</button><button type="button" data-lang="fr" aria-pressed="false" lang="fr">FR</button></div><a class="btn btn-sm btn-primary nav-cta" href="/docs#invite" data-invite><span data-i18n="nav.add">Add to Discord</span></a><button class="menu-toggle" id="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Menu" data-i18n-attr="aria-label:nav.menu"><span></span></button></div>
 </div></header>
 <main id="main">
-<section class="page-head"><div class="wrap"><h1 data-i18n="pr.h1">Sentinel Premium</h1><p class="lead" data-i18n="pr.lead">Bump your server every 30 minutes instead of every 2 hours, and get your own address like yourname.sentineldashboard.site. 1.99 € per month, per server.</p></div></section><section class="section"><div class="wrap prose" style="max-width:760px">
-<div class="notice"><span class="tag"><span data-i18n="pr.tag">SOON</span></span><p><span data-i18n="pr.n">Subscriptions are not open yet and nothing can be bought today. This page will say so as soon as payment is available.</span></p></div>
+<section class="page-head"><div class="wrap"><h1 data-i18n="pr.h1">Sentinel Premium</h1><p class="lead" data-i18n="pr.lead">Bump your server every 30 minutes instead of every 2 hours, and get your own address like yourname.sentineldashboard.site. 1.99 €, one time, for life, per server.</p></div></section><section class="section"><div class="wrap prose" style="max-width:760px">
+<p id="pr-buy" hidden style="margin:0 0 20px"><a class="btn btn-primary" href="/profile-editor?tab=premium"><span data-i18n="pr.buy">Buy Premium</span></a></p>
+<div class="notice" id="pr-soon"><span class="tag"><span data-i18n="pr.tag">SOON</span></span><p><span data-i18n="pr.n">Subscriptions are not open yet and nothing can be bought today. This page will say so as soon as payment is available.</span></p></div>
 <h2><span data-i18n="pr.h2">What you get</span></h2>
-<ul><li><span data-i18n="pr.l1">Bump in the server directory every 30 minutes instead of every 2 hours.</span></li><li><span data-i18n="pr.l4">A custom subdomain like yourname.sentineldashboard.site, set from your profile on the website. It can show your server page or your public profile.</span></li><li><span data-i18n="pr.l2">Price: 1.99 € per month, per server. Any change will be published here first.</span></li><li><span data-i18n="pr.l3">Be careful with anyone selling “Sentinel Premium” elsewhere: it is not on sale yet.</span></li></ul>
+<ul><li><span data-i18n="pr.l1">Bump in the server directory every 30 minutes instead of every 2 hours.</span></li><li><span data-i18n="pr.l4">A custom subdomain like yourname.sentineldashboard.site, set up by our staff after your purchase. It can show your server page or your public profile.</span></li><li><span data-i18n="pr.l2">Price: 1.99 €, paid once, for life, per server. Any change will be published here first.</span></li><li><span data-i18n="pr.l3">Be careful with anyone selling “Sentinel Premium” elsewhere: it is not on sale yet.</span></li></ul>
 <p class="btn-row" style="margin-top:28px"><a class="btn btn-primary" href="/docs#features"><span data-i18n="pr.b1">See current features</span></a><a class="btn" href="https://discord.gg/NwXnVdzyuf" data-support target="_blank" rel="noopener noreferrer"><span data-i18n="pr.b2">Ask in the support server ↗</span></a></p>
 </div></section>
 </main>
@@ -46,5 +47,6 @@
 <script src="/assets/js/i18n-fr.js"></script>
 <script src="/assets/js/app.js"></script>
 
+<script src="/assets/js/premium-page.js?v=1"></script>
 </body>
 </html>
