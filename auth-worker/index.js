@@ -1537,6 +1537,100 @@ async function stripeWebhook(env, req) {
   await env.SESSIONS.put(`pay:${o.id}`, JSON.stringify({ guildId, at: Date.now() }), { expirationTtl: 60 * 60 * 24 * 400 });
   return new Response("ok", { status: 200 });
 }
+// ---- Newsletter (double opt-in, one-click unsubscribe) ----
+const NL_EMAIL_RE = /^[^\s@<>"']{1,64}@[^\s@<>"']{1,255}\.[A-Za-z]{2,24}$/;
+function nlEsc(v) { return String(v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+async function nlToken(env, kind, h) { return (await hmacHex(env.STATE_SECRET, `nl:${kind}:${h}`)).slice(0, 40); }
+async function nlSend(env, messages) {
+  if (!env.RESEND_API_KEY) throw new Error("email_not_configured");
+  const r = await fetch("https://api.resend.com/emails/batch", { method: "POST", headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" }, body: JSON.stringify(messages) });
+  if (!r.ok) throw new Error("email_send_failed");
+}
+function nlFrom(env) { return env.NEWSLETTER_FROM || env.ACCOUNT_EMAIL_FROM || "Sentinel <noreply@sentineldashboard.site>"; }
+function nlHtml(inner, foot) {
+  return `<div style="font-family:Arial,sans-serif;background:#0b0b0d;color:#f2f2f2;padding:28px;border-radius:14px;max-width:560px;margin:auto"><h1 style="margin:0 0 14px;font-size:20px">Sentinel</h1>${inner}<p style="margin-top:28px;font-size:12px;color:#8a8a8f">${foot}</p></div>`;
+}
+async function newsletterSubscribe(env, req) {
+  if (!originOK(env, req)) return json(env, req, { error: "forbidden" }, 403);
+  let b;
+  try { b = await readBody(req); } catch (_) { return json(env, req, { error: "bad_request" }, 400); }
+  const email = String(b.email || "").trim().toLowerCase();
+  if (!NL_EMAIL_RE.test(email) || email.length > 254) return json(env, req, { error: "bad_email", message: "Enter a valid email address." }, 400);
+  const h = await digest(`nl:${email}`);
+  const ip = req.headers.get("CF-Connecting-IP") || "x";
+  const rk = `nlrate:${await digest(ip)}`;
+  const n = Number(await env.SESSIONS.get(rk) || 0);
+  if (n >= 5) return json(env, req, { error: "rate_limited", message: "Too many attempts. Try again later." }, 429);
+  await env.SESSIONS.put(rk, String(n + 1), { expirationTtl: 3600 });
+  const cur = await env.SESSIONS.get(`nl:${h}`);
+  if (cur && JSON.parse(cur).status === "confirmed") return json(env, req, { ok: true });
+  await env.SESSIONS.put(`nl:${h}`, JSON.stringify({ email, status: "pending", at: Date.now() }), { expirationTtl: 60 * 60 * 24 * 3 });
+  const link = `${env.API_ORIGIN}/newsletter/confirm?h=${h}&t=${await nlToken(env, "c", h)}`;
+  try {
+    await nlSend(env, [{ from: nlFrom(env), to: [email], subject: "Confirm your Sentinel newsletter subscription",
+      text: `Confirm your subscription to Sentinel news: ${link}\nIf you did not ask for this, ignore this email.`,
+      html: nlHtml(`<p>Confirm your subscription to the Sentinel newsletter:</p><p><a href="${link}" style="color:#fff;background:#222;padding:10px 16px;border-radius:8px;text-decoration:none;display:inline-block">Confirm subscription</a></p>`, "If you did not ask for this, just ignore this email and nothing will happen.") }]);
+  } catch (_) { return json(env, req, { error: "email_failed", message: "The confirmation email could not be sent." }, 502); }
+  return json(env, req, { ok: true });
+}
+async function newsletterConfirm(env, req) {
+  const u = new URL(req.url), h = u.searchParams.get("h") || "", t = u.searchParams.get("t") || "";
+  const back = (s) => Response.redirect(`${env.SITE_ORIGIN}/newsletter?status=${s}`, 302);
+  if (!/^[a-f0-9]{64}$/.test(h) || !safeEqual(t, await nlToken(env, "c", h))) return back("invalid");
+  const raw = await env.SESSIONS.get(`nl:${h}`);
+  if (!raw) return back("expired");
+  const d = JSON.parse(raw);
+  await env.SESSIONS.put(`nl:${h}`, JSON.stringify({ email: d.email, status: "confirmed", at: Date.now() }));
+  return back("confirmed");
+}
+async function newsletterUnsub(env, req) {
+  const u = new URL(req.url), h = u.searchParams.get("h") || "", t = u.searchParams.get("t") || "";
+  if (!/^[a-f0-9]{64}$/.test(h) || !safeEqual(t, await nlToken(env, "u", h))) return Response.redirect(`${env.SITE_ORIGIN}/newsletter?status=invalid`, 302);
+  if (req.method === "POST") { await env.SESSIONS.delete(`nl:${h}`); return new Response("ok", { status: 200 }); }
+  await env.SESSIONS.delete(`nl:${h}`);
+  return Response.redirect(`${env.SITE_ORIGIN}/newsletter?status=unsubscribed`, 302);
+}
+async function nlConfirmed(env) {
+  const out = [];
+  let cursor;
+  do {
+    const l = await env.SESSIONS.list({ prefix: "nl:", cursor });
+    for (const k of l.keys) {
+      if (!/^nl:[a-f0-9]{64}$/.test(k.name)) continue;
+      const raw = await env.SESSIONS.get(k.name);
+      if (!raw) continue;
+      const d = JSON.parse(raw);
+      if (d.status === "confirmed") out.push({ h: k.name.slice(3), email: d.email });
+    }
+    cursor = l.list_complete ? undefined : l.cursor;
+  } while (cursor);
+  return out;
+}
+async function adminNewsletter(env, req) {
+  if (!await adminAuth(env, req)) return json(env, req, { error: "forbidden" }, 403);
+  if (req.method === "GET") return json(env, req, { subscribers: (await nlConfirmed(env)).length, configured: !!env.RESEND_API_KEY });
+  if (!originOK(env, req)) return json(env, req, { error: "forbidden" }, 403);
+  let b;
+  try { b = await readBody(req); } catch (_) { return json(env, req, { error: "bad_request" }, 400); }
+  const subject = String(b.subject || "").trim().slice(0, 150), text = String(b.body || "").trim().slice(0, 8000);
+  if (!subject || !text) return json(env, req, { error: "bad_request", message: "Subject and message are required." }, 400);
+  const test = b.test_to ? String(b.test_to).trim().toLowerCase() : "";
+  let list;
+  if (test) { if (!NL_EMAIL_RE.test(test)) return json(env, req, { error: "bad_email" }, 400); list = [{ h: await digest(`nl:${test}`), email: test }]; }
+  else { if (b.confirm !== true) return json(env, req, { error: "bad_request", message: "Confirmation required." }, 400); list = await nlConfirmed(env); }
+  const paras = text.split(/\n{2,}/).map((p) => `<p style="line-height:1.55">${nlEsc(p).replace(/\n/g, "<br>")}</p>`).join("");
+  const msgs = [];
+  for (const x of list) {
+    const un = `${env.API_ORIGIN}/newsletter/unsubscribe?h=${x.h}&t=${await nlToken(env, "u", x.h)}`;
+    msgs.push({ from: nlFrom(env), to: [x.email], subject, text: `${text}\n\n---\nUnsubscribe: ${un}`,
+      headers: { "List-Unsubscribe": `<${un}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" },
+      html: nlHtml(paras, `You get this because you subscribed to Sentinel news. <a href="${un}" style="color:#8a8a8f">Unsubscribe</a>`) });
+  }
+  let sent = 0;
+  try { for (let i = 0; i < msgs.length; i += 100) { await nlSend(env, msgs.slice(i, i + 100)); sent += Math.min(100, msgs.length - i); } }
+  catch (_) { return json(env, req, { error: "email_failed", sent, message: `Sending stopped after ${sent} emails.` }, 502); }
+  return json(env, req, { ok: true, sent });
+}
 async function adminLookup(env, req) {
   if (!await adminAuth(env, req)) return json(env, req, { error: "forbidden" }, 403);
   const username = profileText(new URL(req.url).searchParams.get("username"), 25).toLowerCase().replace(/^@/, "");
@@ -2215,6 +2309,10 @@ export default {
     if (req.method === "GET" && pathname === "/account/premium") return accountPremium(env, req);
     if (req.method === "GET" && pathname === "/premium/status") return premiumStatus(env, req);
     if (req.method === "POST" && pathname === "/account/premium/checkout") return accountPremiumCheckout(env, req);
+    if (req.method === "POST" && pathname === "/newsletter/subscribe") return newsletterSubscribe(env, req);
+    if (req.method === "GET" && pathname === "/newsletter/confirm") return newsletterConfirm(env, req);
+    if ((req.method === "GET" || req.method === "POST") && pathname === "/newsletter/unsubscribe") return newsletterUnsub(env, req);
+    if ((req.method === "GET" || req.method === "POST") && pathname === "/admin/newsletter") return adminNewsletter(env, req);
     if (req.method === "POST" && pathname === "/stripe/webhook") return stripeWebhook(env, req);
     if (req.method === "POST" && pathname === "/admin/premium/action") return adminPremiumAction(env, req);
     if (req.method === "POST" && pathname === "/support/send") return supportSend(env, req);

@@ -122,6 +122,24 @@
     if (!(days >= 0 && days <= 3650)) return pmSay("Days must be between 0 and 3650.", true);
     pmCall({ action: "grant", guild_id: id, days: days, note: $("pm-note").value.trim() });
   });
+  var nlBusy = false;
+  function nlSay(t, bad) { var m = $("nl-amsg"); m.textContent = t || ""; m.style.color = bad ? "var(--red)" : ""; }
+  function nlCount() { call("/admin/newsletter").then(function (d) { $("nl-count").textContent = d.subscribers + " confirmed subscriber(s)." + (d.configured ? "" : " Email sending is not configured."); }).catch(function () { $("nl-count").textContent = ""; }); }
+  function nlSend(test) {
+    if (nlBusy) return;
+    var subject = $("nl-subject").value.trim(), body = $("nl-body").value.trim(), to = $("nl-test").value.trim();
+    if (!subject || !body) return nlSay("Subject and message are required.", true);
+    if (test && !to) return nlSay("Enter a test email address.", true);
+    if (!test && !confirm("Send this email to ALL confirmed subscribers?")) return;
+    nlBusy = true; nlSay("Sending…");
+    call("/admin/newsletter", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(test ? { subject: subject, body: body, test_to: to } : { subject: subject, body: body, confirm: true }) })
+      .then(function (d) { nlSay("Sent to " + d.sent + " address(es)."); })
+      .catch(function (e) { nlSay(e.message || "Failed.", true); })
+      .then(function () { nlBusy = false; });
+  }
+  $("nl-send-test").addEventListener("click", function () { nlSend(true); });
+  $("nl-send-all").addEventListener("click", function () { nlSend(false); });
+  nlCount();
   q.addEventListener("input", paint);
   $("sa-ban").addEventListener("click", function () { var id = $("sa-id").value.trim(); if (!/^\d{15,22}$/.test(id)) return say("Enter a valid server ID.", true); if (confirm("Ban server " + id + "?")) act("ban", id, true, $("sa-reason").value); });
   $("sa-unban").addEventListener("click", function () { var id = $("sa-id").value.trim(); if (!/^\d{15,22}$/.test(id)) return say("Enter a valid server ID.", true); act("unban", id, true); });
