@@ -1,1 +1,0 @@
-(()=>{const menu=document.querySelector('[data-m-menu]'),links=document.querySelector('[data-m-links]');if(menu&&links){menu.addEventListener('click',()=>{const open=links.classList.toggle('open');menu.setAttribute('aria-expanded',String(open));});}document.querySelectorAll('[data-m-year]').forEach(el=>el.textContent=new Date().getFullYear());})();
