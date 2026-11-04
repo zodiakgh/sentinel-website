@@ -1,0 +1,4 @@
+Sentinel deployment test
+
+This file was created to test the GitHub → Cloudflare automatic deployment trigger.
+Timestamp: 2026-11-04
