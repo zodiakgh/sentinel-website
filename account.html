@@ -1,57 +1,93 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#080c16"><meta name="description" content="Create and manage your Sentinel account.">
-<title>Account — Sentinel</title><link rel="icon" href="/sentinel.png" type="image/png">
-<link rel="preload" href="/assets/fonts/bricolage-grotesque-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="/assets/fonts/instrument-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
-<script>document.documentElement.classList.add("js")</script><link rel="stylesheet" href="/assets/css/main.css?v=17">
-<style>
-.account-shell{width:min(100% - 32px,520px);margin:56px auto 96px}
-.account-brand{display:flex;justify-content:center;margin-bottom:28px}
-.account-panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:clamp(22px,5vw,36px)}
-.account-panel h1{font-size:clamp(28px,5vw,36px);line-height:1.1;letter-spacing:-.03em}
-.account-tabs{display:flex;gap:4px;padding:4px;background:var(--bg);border:1px solid var(--line);border-radius:12px;margin:22px 0}
-.account-tabs button{flex:1;border:0;border-radius:9px;padding:10px;background:transparent;color:var(--muted);font:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:background .2s,color .2s}
-.account-tabs button:hover{color:var(--fg)}
-.account-tabs button[aria-selected=true]{background:var(--fg);color:var(--on-fg)}
-.account-form{display:grid;gap:14px}
-.account-form label{display:grid;gap:7px;font-size:13.5px;font-weight:550;color:var(--fg-2)}
-.account-form input{width:100%;box-sizing:border-box;padding:12px 14px;border:1px solid var(--line-3);border-radius:10px;background:var(--bg);color:var(--fg);font:inherit;outline:none;transition:border-color .2s}
-.account-form input:focus{border-color:var(--fg)}
-.account-form .btn{width:100%;justify-content:center;margin-top:6px}
-.account-message{margin:14px 0;padding:12px 14px;border-radius:10px;background:var(--panel-2);border:1px solid var(--line);color:var(--fg);font-size:14px}
-.account-message.error{background:#1a0e0e;border-color:#4a1f1f;color:#ffb4b4}
-.account-message:empty{display:none}
-.account-muted{color:var(--muted);font-size:14px;line-height:1.65}
-.account-settings{display:grid;gap:14px;margin-top:22px}
-.account-setting{padding:18px;border:1px solid var(--line);border-radius:14px;background:var(--bg)}
-.account-setting h3{margin:0 0 6px;font-size:17px}
-.account-setting p{margin:0 0 14px;color:var(--muted);font-size:14px}
-.account-row{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
-.account-hide{display:none!important}
-.account-divider{height:1px;background:var(--line);margin:22px 0}
-.account-topline{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
-.account-topline h1{margin:0}
-.account-kicker{color:var(--dim);text-transform:uppercase;font-size:11.5px;font-weight:650;letter-spacing:.14em;margin-bottom:10px}
-.account-small{font-size:12px;color:var(--dim)}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080808">
+  <meta name="color-scheme" content="dark">
+  <title>Sentinel — Discontinued for now</title>
+  <meta name="description" content="Sentinel is discontinued for now. You can still contact me or explore my other project, B3TA.">
+  <meta name="robots" content="noindex,follow">
+  <link rel="canonical" href="https://sentineldashboard.site/">
+  <style>
+    :root{color-scheme:dark;--bg:#080808;--panel:#101010;--line:#292929;--muted:#777;--text:#e7e7e7;--soft:#aaa}
+    *{box-sizing:border-box}
+    html{min-height:100%;background:var(--bg);scroll-behavior:smooth}
+    body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;display:flex;flex-direction:column}
+    a{color:inherit;text-decoration:none}
+    .shell{width:min(1120px,calc(100% - 64px));margin:0 auto}
+    header{height:86px;border-bottom:1px solid var(--line);display:flex;align-items:center}
+    .header-inner{display:flex;align-items:center;justify-content:space-between}
+    .wordmark{font-size:13px;font-weight:750;letter-spacing:.22em;text-transform:uppercase}
+    .header-note,.eyebrow,.index,.meta{font-family:"SFMono-Regular",Consolas,monospace;text-transform:uppercase;letter-spacing:.12em;font-size:10px;color:var(--muted)}
+    .header-note{display:flex;align-items:center;gap:10px}
+    .status-dot{width:6px;height:6px;background:#777;border-radius:50%;display:inline-block}
+    main{flex:1;display:flex;flex-direction:column;justify-content:center;padding:clamp(72px,11vh,130px) 0 90px}
+    .eyebrow{display:flex;align-items:center;gap:14px;margin:0 0 34px}
+    .eyebrow:before{content:"";width:32px;height:1px;background:#777}
+    h1{font-size:clamp(48px,9.3vw,112px);line-height:.91;letter-spacing:-.085em;text-transform:uppercase;font-weight:760;max-width:1050px;margin:0}
+    h1 span{display:block;color:#777}
+    .intro{max-width:530px;color:#969696;font-size:15px;line-height:1.8;margin:34px 0 0}
+    .divider{height:1px;background:var(--line);margin:clamp(66px,10vh,112px) 0 0}
+    .bottom-grid{display:grid;grid-template-columns:1fr 1fr;gap:0}
+    .item{padding:27px 30px 0 0;min-height:154px}
+    .item+ .item{border-left:1px solid var(--line);padding-left:30px;padding-right:0}
+    .index{display:block;margin-bottom:24px}
+    .item h2{font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:650;color:#888;margin:0 0 18px}
+    .contact{display:inline-flex;align-items:center;gap:13px;font-size:15px;font-weight:600;letter-spacing:-.02em;transition:color .2s}
+    .contact:hover,.project:hover{color:#fff}
+    .discord-icon{width:35px;height:35px;border:1px solid #444;border-radius:50%;display:grid;place-items:center;color:#bbb;transition:border-color .2s,background .2s}
+    .contact:hover .discord-icon{border-color:#888;background:#171717}
+    .discord-icon svg{width:19px;height:19px;display:block;fill:currentColor}
+    .project{display:inline-flex;align-items:center;gap:13px;font-size:22px;font-weight:650;letter-spacing:-.045em;transition:color .2s}
+    .project-mark{width:35px;height:35px;border:1px solid #444;display:grid;place-items:center;font-size:11px;letter-spacing:-.06em;color:#bbb}
+    .arrow{font-size:14px;color:#777;transition:transform .2s}
+    .project:hover .arrow{transform:translate(3px,-3px)}
+    footer{border-top:1px solid var(--line);padding:22px 0}
+    .footer-inner{display:flex;justify-content:space-between;gap:20px;align-items:center}
+    .footer-inner span{font-family:"SFMono-Regular",Consolas,monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#626262}
+    @media(max-width:640px){.shell{width:calc(100% - 40px)}header{height:70px}.header-note{font-size:8px}main{padding:78px 0 64px}h1{font-size:clamp(46px,13vw,76px)}.intro{font-size:14px}.divider{margin-top:70px}.bottom-grid{grid-template-columns:1fr}.item{min-height:0;padding:25px 0 30px}.item+.item{border-left:0;border-top:1px solid var(--line);padding:25px 0 15px}.index{margin-bottom:17px}.footer-inner{align-items:flex-start;flex-direction:column;gap:9px}}
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
+  </style>
 </head>
 <body>
-<header class="topbar"><div class="wrap topbar-in"><a class="brand" href="/" aria-label="Sentinel"><span class="brand-mark" aria-hidden="true">S</span><span class="brand-word">Sentinel</span></a><nav class="nav" id="site-nav" aria-label="Main"><a class="nl" href="/docs#features">Features</a><a class="nl" href="/docs#commands">Commands</a><a class="nl" href="/servers"><span data-i18n="nav.servers">Servers</span></a><a class="nl" href="/docs">Documentation</a><a class="nl" href="/dashboard">Dashboard</a><a class="nl" href="/changelog"><span data-i18n="nav.changelog">News</span></a><a class="nl" href="/status"><span data-i18n="nav.status">Status</span></a><a class="nl" href="https://support.sentineldashboard.site">Support</a></nav><div class="nav-tools"><a class="btn btn-sm" href="/">Back to site</a></div></div></header>
-<main id="main" class="account-shell"><div class="account-brand"><a class="brand" href="/"><span class="brand-mark">S</span><span class="brand-word">Sentinel</span></a></div>
-<section class="account-panel" aria-labelledby="account-title"><div class="account-kicker">Sentinel identity</div><div class="account-topline"><h1 id="account-title">Your account</h1><span class="account-small">Secure account access</span></div><p class="account-muted" id="account-intro">Create an account with your email and password. You can link Discord later in account settings.</p>
-<div id="auth-area"><div class="account-tabs" role="tablist" aria-label="Account access"><button type="button" id="tab-login" role="tab" aria-selected="true">Sign in</button><button type="button" id="tab-register" role="tab" aria-selected="false">Create account</button></div>
-<div id="message" class="account-message" role="status" aria-live="polite"></div>
-<a class="btn btn-google" id="google-login" href="#" style="display:flex;justify-content:center;gap:10px;margin-bottom:14px"><svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.2 5.5-4.7 7.2l7.6 5.9c4.4-4.1 6.9-10.1 6.9-17.6z"/><path fill="#FBBC05" d="M10.5 28.7a14.5 14.5 0 010-9.4l-7.9-6.1a24 24 0 000 21.6l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.6-5.9c-2.1 1.4-4.9 2.3-8.3 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg><span>Continue with Google</span></a><p class="account-small" style="text-align:center;margin:0 0 12px">Forgot your password? Use Google with the same email to get back in.</p>
-<div id="tg-login" hidden style="display:none;justify-content:center;margin-bottom:14px"></div>
-<button type="button" class="btn" id="phone-open" hidden style="display:none;width:100%;justify-content:center;margin-bottom:14px">Continue with phone number</button>
-<form class="account-form account-hide" id="phone-form"><label>Phone number<input type="tel" name="phone" autocomplete="tel" inputmode="tel" required maxlength="24" placeholder="+33 6 12 34 56 78"></label><label id="phone-code-label" class="account-hide">Code from the SMS<input type="text" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{4,10}" maxlength="10" placeholder="123456"></label><button class="btn btn-primary" type="submit" id="phone-submit">Send code</button><p class="account-small">We text you a one-time code. No password needed, and new numbers get an account automatically. Standard SMS rates may apply.</p></form>
-<form class="account-form" id="login-form"><label>Email address<input type="email" name="email" autocomplete="email" required maxlength="254" placeholder="you@example.com"></label><label>Password<input type="password" name="password" autocomplete="current-password" required maxlength="128" placeholder="Your password"></label><button class="btn btn-primary" type="submit">Sign in</button><p class="account-small">New to Sentinel? Create an account above.</p></form>
-<form class="account-form account-hide" id="register-form"><label>Email address<input type="email" name="email" autocomplete="email" required maxlength="254" placeholder="you@example.com"></label><label>Password <span class="account-small">(10 characters minimum)</span><input type="password" name="password" autocomplete="new-password" required minlength="10" maxlength="128" placeholder="Create a strong password"></label><label>Confirm password<input type="password" name="confirm" autocomplete="new-password" required minlength="10" maxlength="128" placeholder="Repeat your password"></label><button class="btn btn-primary" type="submit">Create account</button><p class="account-small">We will email you a verification code. Your password is never sent by email.</p></form>
-<form class="account-form account-hide" id="verify-form"><label>Email address<input type="email" name="email" autocomplete="email" required maxlength="254" placeholder="you@example.com"></label><label>6-digit verification code<input type="text" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" minlength="6" maxlength="6" required placeholder="000000"></label><button class="btn btn-primary" type="submit">Verify email</button><p class="account-small">The code expires after 10 minutes.</p></form></div>
-<div id="settings-area" class="account-hide"><div id="account-message" class="account-message" role="status" aria-live="polite"></div><p class="account-muted">Signed in as <strong id="account-email"></strong></p><div class="account-settings"><section class="account-setting"><h3>Email verification</h3><p id="verified-state">Your email address is verified.</p></section><section class="account-setting"><div class="account-row"><div><h3>Discord account</h3><p id="discord-state">No Discord account is linked.</p></div><div class="account-row"><a class="btn btn-sm btn-primary" id="link-discord" href="#">Link Discord</a><button class="btn btn-sm account-hide" id="unlink-discord" type="button">Unlink Discord</button></div></div><p class="account-small">Linking lets your Sentinel account recognize your Discord identity. A Discord account can only be linked to one Sentinel account. Unlinking requires your current Sentinel password.</p></section><section class="account-setting" id="tg-section" hidden><div class="account-row"><div><h3>Telegram</h3><p id="tg-state">No Telegram account is linked.</p></div><button class="btn btn-sm account-hide" id="unlink-tg" type="button">Unlink</button></div><div id="tg-link" style="margin-top:10px"></div><p class="account-small">Lets you sign in with Telegram.</p></section><section class="account-setting" id="phone-section" hidden><div class="account-row"><div><h3>Phone number</h3><p id="phone-state">No phone number is linked.</p></div><div class="account-row"><button class="btn btn-sm btn-primary" id="link-phone" type="button">Add phone</button><button class="btn btn-sm account-hide" id="unlink-phone" type="button">Remove phone</button></div></div><form class="account-form account-hide" id="phone-link-form"><label>Phone number<input type="tel" name="phone" autocomplete="tel" inputmode="tel" maxlength="24" placeholder="+33 6 12 34 56 78"></label><label id="phone-link-code-label" class="account-hide">Code from the SMS<input type="text" name="code" inputmode="numeric" pattern="[0-9]{4,10}" maxlength="10" placeholder="123456"></label><button class="btn btn-primary" type="submit" id="phone-link-submit">Send code</button></form><p class="account-small">Lets you sign in with a text-message code. A number can only be used by one account.</p></section><section class="account-setting"><div class="account-row"><div><h3>Google account</h3><p id="google-state">No Google account is linked.</p></div><div class="account-row"><a class="btn btn-sm btn-primary" id="link-google" href="#">Link Google</a><button class="btn btn-sm account-hide" id="unlink-google" type="button">Unlink Google</button></div></div><p class="account-small">Lets you sign in with Google, for example if you forget your password.</p></section><section class="account-setting"><div class="account-row"><div><h3>Steam account</h3><p id="steam-state">No Steam account is linked.</p></div><div class="account-row"><a class="btn btn-sm btn-primary" id="link-steam" href="#">Link Steam</a><button class="btn btn-sm account-hide" id="unlink-steam" type="button">Unlink Steam</button></div></div><p class="account-small">Lets your profile show your Steam name, games and playtime. You choose whether to display it in the profile editor.</p></section><section class="account-setting"><h3>Change password</h3><form class="account-form" id="password-form"><label id="current-pw-label">Current password<input type="password" name="currentPassword" autocomplete="current-password" maxlength="128"></label><label>New password<input type="password" name="newPassword" autocomplete="new-password" required minlength="10" maxlength="128"></label><button class="btn btn-sm" type="submit">Update password</button></form></section></div><div class="account-divider"></div><button class="btn" id="logout" type="button">Sign out</button></div>
-</section><p class="account-muted" style="text-align:center;margin-top:20px">By continuing, you agree to Sentinel’s <a href="/terms">Terms</a> and <a href="/privacy">Privacy Policy</a>.</p></main>
-<script src="/assets/js/config.js"></script><script src="/assets/js/account.js?v=7"></script>
-</body></html>
+  <header>
+    <div class="shell header-inner">
+      <a class="wordmark" href="https://sentineldashboard.site/">Sentinel</a>
+      <div class="header-note"><span class="status-dot"></span> Project status / On hold</div>
+    </div>
+  </header>
+  <main class="shell">
+    <p class="eyebrow">Notice · 05 November 2026</p>
+    <h1>Sentinel is <span>discontinued</span> for now.</h1>
+    <p class="intro">The Sentinel project and its website are currently on hold. Development, updates and maintenance have been discontinued for the time being. Thank you to everyone who supported the project.</p>
+    <div class="divider"></div>
+    <section class="bottom-grid" aria-label="Other links">
+      <div class="item">
+        <span class="index">01 / Contact</span>
+        <h2>You can always contact me</h2>
+        <a class="contact" href="https://discord.com/users/1232408342085898241" target="_blank" rel="noopener noreferrer" aria-label="Contact me on Discord">
+          <span class="discord-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M19.7 5.2a18.4 18.4 0 0 0-4.5-1.4l-.6 1.2a17 17 0 0 0-5.1 0l-.6-1.2a18.4 18.4 0 0 0-4.5 1.4C1.6 9.4.8 13.5 1.2 17.5a18.5 18.5 0 0 0 5.5 2.8l1.2-2a11.8 11.8 0 0 1-1.9-.9l.5-.4a13.2 13.2 0 0 0 11 0l.5.4a11.8 11.8 0 0 1-1.9.9l1.2 2a18.5 18.5 0 0 0 5.5-2.8c.5-4.7-.8-8.8-3.1-12.3ZM8.7 14.9c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2Zm6.6 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2Z"/></svg>
+          </span>
+          <span>Discord</span><span class="arrow">↗</span>
+        </a>
+      </div>
+      <div class="item">
+        <span class="index">02 / Another project</span>
+        <h2>My other project</h2>
+        <a class="project" href="https://b3ta.lol" target="_blank" rel="noopener noreferrer">
+          <span class="project-mark" aria-hidden="true">B3</span>
+          <span>B3TA</span><span class="arrow">↗</span>
+        </a>
+      </div>
+    </section>
+  </main>
+  <footer>
+    <div class="shell footer-inner">
+      <span>Sentinel / Project archive</span>
+      <span>Independent project · No longer maintained</span>
+    </div>
+  </footer>
+</body>
+</html>
