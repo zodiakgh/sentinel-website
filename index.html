@@ -1,77 +1,93 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#000000">
-<meta name="color-scheme" content="dark">
-<title data-i18n="meta.home">Sentinel — All-in-one Discord Bot</title>
-<meta name="description" content="Sentinel is an all-in-one Discord bot for moderation, security, automation, support and community engagement. Explore the features, commands and documentation." data-i18n-attr="content:meta.home.d">
-<meta name="robots" content="index,follow">
-<link rel="canonical" href="https://sentineldashboard.site">
-<link rel="icon" href="/sentinel.png" type="image/png">
-<link rel="apple-touch-icon" href="/sentinel.png">
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="Sentinel">
-<meta property="og:title" content="Sentinel — All-in-one Discord Bot" data-i18n-attr="content:meta.home">
-<meta property="og:description" content="Sentinel is an all-in-one Discord bot for moderation, security, automation, support and community engagement. Explore the features, commands and documentation." data-i18n-attr="content:meta.home.d">
-<meta property="og:url" content="https://sentineldashboard.site">
-<meta property="og:image" content="https://sentineldashboard.site/sentinel.png">
-<meta name="twitter:card" content="summary">
-<link rel="preload" href="/assets/fonts/bricolage-grotesque-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="/assets/fonts/instrument-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
-<script>document.documentElement.classList.add("js")</script>
-<link rel="stylesheet" href="/assets/css/main.css?v=17">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080808">
+  <meta name="color-scheme" content="dark">
+  <title>Sentinel — Discontinued for now</title>
+  <meta name="description" content="Sentinel is discontinued for now. You can still contact me or explore my other project, B3TA.">
+  <meta name="robots" content="noindex,follow">
+  <link rel="canonical" href="https://sentineldashboard.site/">
+  <style>
+    :root{color-scheme:dark;--bg:#080808;--panel:#101010;--line:#292929;--muted:#777;--text:#e7e7e7;--soft:#aaa}
+    *{box-sizing:border-box}
+    html{min-height:100%;background:var(--bg);scroll-behavior:smooth}
+    body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;display:flex;flex-direction:column}
+    a{color:inherit;text-decoration:none}
+    .shell{width:min(1120px,calc(100% - 64px));margin:0 auto}
+    header{height:86px;border-bottom:1px solid var(--line);display:flex;align-items:center}
+    .header-inner{display:flex;align-items:center;justify-content:space-between}
+    .wordmark{font-size:13px;font-weight:750;letter-spacing:.22em;text-transform:uppercase}
+    .header-note,.eyebrow,.index,.meta{font-family:"SFMono-Regular",Consolas,monospace;text-transform:uppercase;letter-spacing:.12em;font-size:10px;color:var(--muted)}
+    .header-note{display:flex;align-items:center;gap:10px}
+    .status-dot{width:6px;height:6px;background:#777;border-radius:50%;display:inline-block}
+    main{flex:1;display:flex;flex-direction:column;justify-content:center;padding:clamp(72px,11vh,130px) 0 90px}
+    .eyebrow{display:flex;align-items:center;gap:14px;margin:0 0 34px}
+    .eyebrow:before{content:"";width:32px;height:1px;background:#777}
+    h1{font-size:clamp(48px,9.3vw,112px);line-height:.91;letter-spacing:-.085em;text-transform:uppercase;font-weight:760;max-width:1050px;margin:0}
+    h1 span{display:block;color:#777}
+    .intro{max-width:530px;color:#969696;font-size:15px;line-height:1.8;margin:34px 0 0}
+    .divider{height:1px;background:var(--line);margin:clamp(66px,10vh,112px) 0 0}
+    .bottom-grid{display:grid;grid-template-columns:1fr 1fr;gap:0}
+    .item{padding:27px 30px 0 0;min-height:154px}
+    .item+ .item{border-left:1px solid var(--line);padding-left:30px;padding-right:0}
+    .index{display:block;margin-bottom:24px}
+    .item h2{font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:650;color:#888;margin:0 0 18px}
+    .contact{display:inline-flex;align-items:center;gap:13px;font-size:15px;font-weight:600;letter-spacing:-.02em;transition:color .2s}
+    .contact:hover,.project:hover{color:#fff}
+    .discord-icon{width:35px;height:35px;border:1px solid #444;border-radius:50%;display:grid;place-items:center;color:#bbb;transition:border-color .2s,background .2s}
+    .contact:hover .discord-icon{border-color:#888;background:#171717}
+    .discord-icon svg{width:19px;height:19px;display:block;fill:currentColor}
+    .project{display:inline-flex;align-items:center;gap:13px;font-size:22px;font-weight:650;letter-spacing:-.045em;transition:color .2s}
+    .project-mark{width:35px;height:35px;border:1px solid #444;display:grid;place-items:center;font-size:11px;letter-spacing:-.06em;color:#bbb}
+    .arrow{font-size:14px;color:#777;transition:transform .2s}
+    .project:hover .arrow{transform:translate(3px,-3px)}
+    footer{border-top:1px solid var(--line);padding:22px 0}
+    .footer-inner{display:flex;justify-content:space-between;gap:20px;align-items:center}
+    .footer-inner span{font-family:"SFMono-Regular",Consolas,monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#626262}
+    @media(max-width:640px){.shell{width:calc(100% - 40px)}header{height:70px}.header-note{font-size:8px}main{padding:78px 0 64px}h1{font-size:clamp(46px,13vw,76px)}.intro{font-size:14px}.divider{margin-top:70px}.bottom-grid{grid-template-columns:1fr}.item{min-height:0;padding:25px 0 30px}.item+.item{border-left:0;border-top:1px solid var(--line);padding:25px 0 15px}.index{margin-bottom:17px}.footer-inner{align-items:flex-start;flex-direction:column;gap:9px}}
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
+  </style>
 </head>
 <body>
-<a class="skip" href="#main" data-i18n="skip">Skip to content</a>
-<header class="topbar" id="topbar"><div class="wrap topbar-in">
-<a class="brand" href="/" aria-label="Sentinel"><span class="brand-mark" aria-hidden="true">S</span><span class="brand-word">Sentinel</span><img class="brand-heart" src="/assets/img/sentinel-heart.svg" alt="" aria-hidden="true"></a>
-<nav class="nav" id="site-nav" aria-label="Main"><a class="nl" href="/bots"><span data-i18n="nav.bots">Bots</span></a><a class="nl" href="/servers"><span data-i18n="nav.servers">Servers</span></a><a class="nl" href="/docs"><span data-i18n="nav.docs">Documentation</span></a><a class="nl" href="/dashboard"><span data-i18n="nav.dashboard">Dashboard</span></a><a class="nl" href="/profile-editor"><span data-i18n="nav.profile">Profile</span></a><a class="nl" href="/changelog"><span data-i18n="nav.changelog">News</span></a><a class="nl" href="/status"><span data-i18n="nav.status">Status</span></a><a class="nl" href="https://support.sentineldashboard.site"><span data-i18n="nav.support">Support</span></a><a class="nl nl-cta" href="/docs#invite" data-invite><span data-i18n="nav.add">Add to Discord</span></a></nav>
-<div class="nav-tools"><div class="lang" role="group" aria-label="Language / Langue"><button type="button" data-lang="en" aria-pressed="true" lang="en">EN</button><button type="button" data-lang="fr" aria-pressed="false" lang="fr">FR</button></div><a class="btn btn-sm btn-primary nav-cta" href="/docs#invite" data-invite><span data-i18n="nav.add">Add to Discord</span></a><button class="menu-toggle" id="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Menu" data-i18n-attr="aria-label:nav.menu"><span></span></button></div>
-</div></header>
-<main id="main">
-<section class="hero"><div class="wrap hero-grid"><div class="hero-copy">
-<h1 class="hero-title"><span class="ln"><span data-i18n="home.h1a">One bot.</span></span><span class="ln"><span data-i18n="home.h1b">More control.</span></span></h1>
-<p class="lead" data-i18n="home.lead">Sentinel is an all-in-one Discord bot designed to help communities manage moderation, security, automation, support and community engagement through a unified set of tools.</p>
-<div class="btn-row"><a class="btn btn-primary btn-lg" href="/docs#invite" data-invite><span data-i18n="home.add">Add to Discord</span></a><a class="btn btn-lg" href="/docs#commands"><span data-i18n="home.explore">Explore Commands</span></a><a class="btn btn-lg btn-vote" href="https://top.gg/bot/1545465845524996219/vote" target="_blank" rel="noopener noreferrer"><img src="/assets/img/topgg.png" width="20" height="20" alt="" loading="lazy"><span data-i18n="home.vote">Vote for Sentinel</span></a></div>
-<p class="hero-note" data-invite-missing hidden><span data-i18n="home.nolink">The public invitation link is not published yet; “Add to Discord” opens the invitation guide.</span></p>
-</div>
-<figure class="watch"><div class="watch-bar"><span class="watch-dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="watch-title" aria-hidden="true">#mod-log</span></div>
-<ol class="watch-list" aria-hidden="true"><li style="--i:0"><span class="w-mod"><span data-i18n="w.m0">AutoMod</span></span><span class="w-msg"><span data-i18n="w.1">Invite link removed from #general</span></span><span class="w-act"><span data-i18n="w.1a">Deleted</span></span></li><li style="--i:1"><span class="w-mod"><span data-i18n="w.m1">Verification</span></span><span class="w-msg"><span data-i18n="w.2">New member waiting for verification</span></span><span class="w-act"><span data-i18n="w.2a">Held</span></span></li><li style="--i:2"><span class="w-mod"><span data-i18n="w.m2">Moderation</span></span><span class="w-msg"><span data-i18n="w.3">Warning added to a member’s history</span></span><span class="w-act"><span data-i18n="w.3a">Warned</span></span></li><li style="--i:3"><span class="w-mod"><span data-i18n="w.m3">AntiNuke</span></span><span class="w-msg"><span data-i18n="w.4">Burst of channel deletions detected</span></span><span class="w-act"><span data-i18n="w.4a">Blocked</span></span></li><li style="--i:4"><span class="w-mod"><span data-i18n="w.m4">Tickets</span></span><span class="w-msg"><span data-i18n="w.5">Ticket opened and picked up by support</span></span><span class="w-act"><span data-i18n="w.5a">Claimed</span></span></li></ol><span class="watch-scan" aria-hidden="true"></span>
-<figcaption><span data-i18n="w.cap">Illustration of what Sentinel’s modules do. These are not live events.</span></figcaption></figure>
-</div>
-<div class="wrap"><div class="facts" role="list">
-<div class="fact" role="listitem"><b>426</b><span><span data-i18n="home.s1">slash commands</span></span></div>
-<div class="fact" role="listitem"><b>65</b><span><span data-i18n="home.s2">top-level command names</span></span></div>
-<div class="fact" role="listitem"><b>9</b><span><span data-i18n="home.s3">command categories</span></span></div>
-<div class="fact" role="listitem"><b>25</b><span><span data-i18n="home.s4">documented feature areas</span></span></div>
-</div><p class="small facts-note"><span data-i18n="home.sn">Figures are generated automatically, not from live usage.</span></p></div></section>
-
-<section class="section light"><div class="wrap caps">
-<div class="caps-head" data-reveal><h2><span data-i18n="home.f.h2a">Made to manage.</span><br><span data-i18n="home.f.h2b">Built to protect.</span></h2><p data-i18n="home.f.p">Feature highlights below show what the bot does today. See the full list for details and requirements.</p><p><a class="btn" href="/docs#features"><span data-i18n="home.f.all">See every feature</span></a></p></div>
-<ul class="caps-list"><li data-reveal><a class="cap" href="/docs#features#automod"><span class="cap-name"><span data-i18n="home.c1">Moderation &amp; AutoMod</span></span><span class="cap-desc"><span data-i18n="home.c1.d">Moderation commands with warning history, plus an AutoMod engine of 10 configurable modules and a monitor mode that never punishes.</span></span><span class="cap-more"><span data-i18n="home.c1.m">Learn more</span></span></a></li><li data-reveal><a class="cap" href="/docs#features#antinuke"><span class="cap-name"><span data-i18n="home.c2">AntiNuke &amp; security</span></span><span class="cap-desc"><span data-i18n="home.c2.d">Rate-based protection against mass deletions, bans and bot additions, a server lockdown and a honeypot trap channel.</span></span><span class="cap-more"><span data-i18n="home.c2.m">Learn more</span></span></a></li><li data-reveal><a class="cap" href="/docs#features#tickets"><span class="cap-name"><span data-i18n="home.c3">Tickets</span></span><span class="cap-desc"><span data-i18n="home.c3.d">A full ticket system with panels, claiming, priorities, notes, transcripts and statistics, in English and French.</span></span><span class="cap-more"><span data-i18n="home.c3.m">Learn more</span></span></a></li><li data-reveal><a class="cap" href="/docs#features#verify"><span class="cap-name"><span data-i18n="home.c4">Welcome &amp; verification</span></span><span class="cap-desc"><span data-i18n="home.c4.d">Welcome messages and cards, and a button-based verification gate with account-age checks and bot blocking.</span></span><span class="cap-more"><span data-i18n="home.c4.m">Learn more</span></span></a></li><li data-reveal><a class="cap" href="/docs#features#music"><span class="cap-name"><span data-i18n="home.c5">Music &amp; TempVoice</span></span><span class="cap-desc"><span data-i18n="home.c5.d">Queue-based music with audio filters, and temporary voice rooms that members control themselves.</span></span><span class="cap-more"><span data-i18n="home.c5.m">Learn more</span></span></a></li><li data-reveal><a class="cap" href="/docs#features#flow"><span class="cap-name"><span data-i18n="home.c6">Engagement &amp; automation</span></span><span class="cap-desc"><span data-i18n="home.c6.d">Leveling, economy, giveaways and Flow, a workflow engine with triggers, conditions and actions.</span></span><span class="cap-more"><span data-i18n="home.c6.m">Learn more</span></span></a></li></ul></div></section>
-
-<section class="section layers"><div class="wrap">
-<div class="layers-head" data-reveal><h2><span data-i18n="home.s.h2">Protection that stays out of the way.</span></h2>
-<p class="lead" data-i18n="home.s.p1">Sentinel combines preventive tools, such as verification, AutoMod, AntiNuke and a lockdown, with the community features that keep a server alive: tickets, welcome messages, levels, giveaways and temporary voice rooms.</p>
-<p class="lead" data-i18n="home.s.p2">Most modules are configured from inside Discord with guided panels and setup wizards, so administrators do not need a separate dashboard.</p></div>
-<ul class="layer-grid">
-<li data-reveal><b><span data-i18n="home.l1">10 AutoMod modules</span></b><span><span data-i18n="home.l1d">8 actions, exemptions, presets, incident log</span></span></li>
-<li data-reveal><b><span data-i18n="home.l2">10 AntiNuke protections</span></b><span><span data-i18n="home.l2d">per-module thresholds and time windows</span></span></li>
-<li data-reveal><b><span data-i18n="home.l3">Verification gate</span></b><span><span data-i18n="home.l3d">verified/unverified roles, account-age check</span></span></li>
-<li data-reveal><b><span data-i18n="home.l4">Backups &amp; snapshots</span></b><span><span data-i18n="home.l4d">save, compare and restore server structure</span></span></li></ul></div></section>
-
-<section class="section light cta-band"><div class="wrap" data-reveal><h2><span data-i18n="home.cta.h2">Talk to the team.</span></h2><p data-i18n="home.cta.p">Questions about setup, a bug to report or a feature to suggest: the support server is the place to go.</p>
-<div class="btn-row"><a class="btn btn-primary btn-lg" href="https://discord.gg/NwXnVdzyuf" data-support target="_blank" rel="noopener noreferrer"><span data-i18n="home.cta.b1">Join the support server ↗</span></a><a class="btn btn-lg" href="https://support.sentineldashboard.site"><span data-i18n="home.cta.b2">How to get help</span></a></div></div></section>
-</main>
-<footer class="footer"><div class="wrap">
-<div class="foot-grid"><div><a class="brand" href="/"><span class="brand-mark" aria-hidden="true">S</span><span class="brand-word">Sentinel</span><img class="brand-heart" src="/assets/img/sentinel-heart.svg" alt="" aria-hidden="true"></a><p data-i18n="foot.tag">Moderation, security, automation and community tools for Discord, in one bot.</p></div><div><h4 data-i18n="foot.product">Product</h4><ul><li><a href="/docs"><span data-i18n="foot.docs">Documentation</span></a></li><li><a href="/newsletter">Newsletter</a></li><li><a href="/dashboard"><span data-i18n="foot.dashboard">Dashboard</span></a></li><li><a href="/premium"><span data-i18n="foot.premium">Premium</span></a></li></ul></div><div><h4 data-i18n="foot.community">Community</h4><ul><li><a href="https://support.sentineldashboard.site"><span data-i18n="foot.support">Support</span></a></li><li><a href="/status"><span data-i18n="foot.status">Status</span></a></li><li><a href="/team"><span data-i18n="foot.team">Team</span></a></li><li><a href="https://discord.gg/NwXnVdzyuf" data-support target="_blank" rel="noopener noreferrer"><span data-i18n="foot.discord">Discord server ↗</span></a></li></ul></div><div><h4 data-i18n="foot.legal">Legal</h4><ul><li><a href="/terms"><span data-i18n="foot.terms">Terms of Service</span></a></li><li><a href="/privacy"><span data-i18n="foot.privacy">Privacy Policy</span></a></li></ul></div></div>
-<div class="foot-bottom"><span>© <span data-year>2026</span> Sentinel. <span data-i18n="foot.rights">All rights reserved.</span></span><span data-i18n="foot.disc">Sentinel is an independent project and is not affiliated with Discord Inc.</span></div>
-</div></footer>
-<script src="/assets/js/config.js"></script>
-<script src="/assets/js/i18n-fr.js"></script>
-<script src="/assets/js/app.js"></script>
-
+  <header>
+    <div class="shell header-inner">
+      <a class="wordmark" href="https://sentineldashboard.site/">Sentinel</a>
+      <div class="header-note"><span class="status-dot"></span> Project status / On hold</div>
+    </div>
+  </header>
+  <main class="shell">
+    <p class="eyebrow">Notice · 05 November 2026</p>
+    <h1>Sentinel is <span>discontinued</span> for now.</h1>
+    <p class="intro">The Sentinel project and its website are currently on hold. Development, updates and maintenance have been discontinued for the time being. Thank you to everyone who supported the project.</p>
+    <div class="divider"></div>
+    <section class="bottom-grid" aria-label="Other links">
+      <div class="item">
+        <span class="index">01 / Contact</span>
+        <h2>You can always contact me</h2>
+        <a class="contact" href="https://discord.com/users/1232408342085898241" target="_blank" rel="noopener noreferrer" aria-label="Contact me on Discord">
+          <span class="discord-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M19.7 5.2a18.4 18.4 0 0 0-4.5-1.4l-.6 1.2a17 17 0 0 0-5.1 0l-.6-1.2a18.4 18.4 0 0 0-4.5 1.4C1.6 9.4.8 13.5 1.2 17.5a18.5 18.5 0 0 0 5.5 2.8l1.2-2a11.8 11.8 0 0 1-1.9-.9l.5-.4a13.2 13.2 0 0 0 11 0l.5.4a11.8 11.8 0 0 1-1.9.9l1.2 2a18.5 18.5 0 0 0 5.5-2.8c.5-4.7-.8-8.8-3.1-12.3ZM8.7 14.9c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2Zm6.6 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2Z"/></svg>
+          </span>
+          <span>Discord</span><span class="arrow">↗</span>
+        </a>
+      </div>
+      <div class="item">
+        <span class="index">02 / Another project</span>
+        <h2>My other project</h2>
+        <a class="project" href="https://b3ta.lol" target="_blank" rel="noopener noreferrer">
+          <span class="project-mark" aria-hidden="true">B3</span>
+          <span>B3TA</span><span class="arrow">↗</span>
+        </a>
+      </div>
+    </section>
+  </main>
+  <footer>
+    <div class="shell footer-inner">
+      <span>Sentinel / Project archive</span>
+      <span>Independent project · No longer maintained</span>
+    </div>
+  </footer>
 </body>
 </html>
