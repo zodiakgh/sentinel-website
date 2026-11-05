@@ -1,158 +1,93 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#080c16"><meta name="description" content="Customize your public Sentinel profile."><meta name="robots" content="noindex, nofollow">
-<title>Profile editor — Sentinel</title><link rel="icon" href="/sentinel.png" type="image/png">
-<link rel="stylesheet" href="/assets/css/main.css?v=17">
-<link rel="stylesheet" href="/assets/css/profile.css?v=17">
-<style>
-.pe,.pe-bar,.pe-modal{--pe-bg:#0b101b;--pe-card:#101827;--pe-card2:#162033;--pe-line:rgba(151,177,218,.16);--pe-line2:rgba(151,177,218,.3);--pe-fg:#f3f7ff;--pe-mut:#93a1ba;--pe-acc:#78e4ff;--pe-ok:#4bbe69;--pe-bad:#ff6b6b;
-  width:min(1480px,100%);margin:0 auto;padding:18px 14px 110px;color:var(--pe-fg)}
-.pe *{box-sizing:border-box}
-.pe-hide{display:none!important}
-.pe-top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:14px}
-.pe-top h1{margin:2px 0 4px;font-size:clamp(22px,4vw,32px);letter-spacing:-.03em}
-.pe-top p{margin:0;color:var(--pe-mut);font-size:14px}
-.pe-kicker{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--pe-acc);font-weight:700}
-.pe-status{padding:12px 14px;border-radius:12px;background:var(--pe-card);border:1px solid var(--pe-line);color:var(--pe-mut);font-size:14px}
-.pe-status.error{color:#ffb4b4;border-color:rgba(255,107,107,.4)}
-.pe-status.ok{color:#a7f0bd;border-color:rgba(75,190,105,.4)}
-.pe-app{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-items:start}
-@media(min-width:980px){.pe-app{grid-template-columns:minmax(380px,520px) minmax(0,1fr)}}
-.pe-side{min-width:0}
-.pe-tabs{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 10px;margin:0 -2px;position:sticky;top:0;z-index:20;background:linear-gradient(180deg,#0b101b 70%,transparent);scrollbar-width:none}
-.pe-tabs::-webkit-scrollbar{display:none}
-.pe-tab{flex:none;border:1px solid var(--pe-line);background:var(--pe-card);color:var(--pe-mut);padding:9px 14px;border-radius:99px;font-size:13.5px;font-weight:650;cursor:pointer;white-space:nowrap}
-.pe-tab[aria-selected=true]{background:var(--pe-fg);color:#07101b;border-color:var(--pe-fg)}
-.pe-panel{display:none;gap:14px;flex-direction:column}
-.pe-panel.on{display:flex}
-.pe-sec{background:var(--pe-card);border:1px solid var(--pe-line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:14px}
-.pe-sec>h2{margin:0;font-size:15px;letter-spacing:-.01em}
-.pe-sec>p.pe-hint{margin:-8px 0 0}
-.pe-hint{font-size:12.5px;color:var(--pe-mut);line-height:1.45}
-.pe-f{display:flex;flex-direction:column;gap:6px;min-width:0}
-.pe-f>label,.pe-lab{font-size:12.5px;font-weight:650;color:#c9d4e8;display:flex;justify-content:space-between;gap:8px}
-.pe-lab output{color:var(--pe-mut);font-weight:500;font-variant-numeric:tabular-nums}
-.pe input[type=text],.pe input[type=url],.pe textarea,.pe select{width:100%;background:#0a0f19;border:1px solid var(--pe-line);color:var(--pe-fg);border-radius:10px;padding:11px 12px;font-size:16px;font-family:inherit;outline:none;min-width:0}
-.pe textarea{min-height:84px;resize:vertical;line-height:1.45}
-.pe input:focus,.pe textarea:focus,.pe select:focus{border-color:var(--pe-acc)}
-.pe input[type=color]{width:100%;height:42px;padding:3px;border-radius:10px;background:#0a0f19;border:1px solid var(--pe-line);cursor:pointer}
-.pe input[type=range]{width:100%;accent-color:var(--pe-acc);height:28px}
-.pe-g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.pe-g3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-@media(max-width:420px){.pe-g3{grid-template-columns:1fr 1fr}}
-.pe-seg{display:flex;flex-wrap:wrap;gap:6px}
-.pe-seg button{flex:1 1 auto;border:1px solid var(--pe-line);background:#0a0f19;color:var(--pe-mut);padding:9px 10px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;min-width:0}
-.pe-seg button[aria-pressed=true]{background:color-mix(in srgb,var(--pe-acc) 18%,#0a0f19);border-color:var(--pe-acc);color:#fff}
-.pe-tg{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid var(--pe-line);border-radius:12px;background:#0a0f19;cursor:pointer}
-.pe-tg span{font-size:14px}
-.pe-tg small{display:block;color:var(--pe-mut);font-size:12px;margin-top:1px}
-.pe-sw{width:44px;height:26px;border-radius:99px;background:#27324a;position:relative;flex:none;transition:background .2s}
-.pe-sw::after{content:"";position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s}
-.pe-tg[aria-checked=true] .pe-sw{background:var(--pe-ok)}
-.pe-tg[aria-checked=true] .pe-sw::after{transform:translateX(18px)}
-.pe-btn{border:1px solid var(--pe-line2);background:transparent;color:var(--pe-fg);border-radius:10px;padding:9px 14px;font-size:13.5px;font-weight:650;cursor:pointer;font-family:inherit}
-.pe-btn:hover{border-color:var(--pe-fg)}
-.pe-btn.pri{background:var(--pe-fg);color:#07101b;border-color:var(--pe-fg)}
-.pe-btn.bad{color:#ff9d9d;border-color:rgba(255,107,107,.4)}
-.pe-btn:disabled{opacity:.5;cursor:not-allowed}
-.pe-row{display:flex;gap:8px;align-items:center}
-.pe-row>input{flex:1}
-.pe-media-f{display:flex;flex-direction:column;gap:8px}
-.pe-media-f .pe-row{flex-wrap:wrap}
-.pe-thumb{width:44px;height:44px;border-radius:10px;background:#0a0f19 center/cover;border:1px solid var(--pe-line);flex:none;display:grid;place-items:center;color:var(--pe-mut);font-size:18px}
-.pe-item{border:1px solid var(--pe-line);border-radius:12px;padding:10px;background:#0d1422;display:flex;flex-direction:column;gap:8px}
-.pe-item-head{display:flex;align-items:center;gap:8px}
-.pe-item-head .ico{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:#0a0f19;border:1px solid var(--pe-line);flex:none}
-.pe-item-head .ico svg{width:17px;height:17px}
-.pe-item-head strong{flex:1;font-size:13px;color:var(--pe-mut);font-weight:600}
-.pe-bd-list{display:grid;gap:8px}.pe-bd{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--pe-line,rgba(255,255,255,.12));border-radius:12px;background:rgba(255,255,255,.03)}.pe-bd.locked{opacity:.55}.pe-bd-ic{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-size:18px;flex:none;background:color-mix(in srgb,var(--bc,#8b7cff) 22%,#0b1020);border:1px solid color-mix(in srgb,var(--bc,#8b7cff) 45%,transparent)}.pe-bd-tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.pe-bd-tx small{opacity:.7;font-size:12px}.pe-bd .pe-btn{flex:none;padding:6px 12px}.pe-bd-lock{flex:none}
-.pe-embed{display:flex;max-width:440px;border-radius:6px;overflow:hidden;background:#2b2d31;margin:8px 0}.pe-embed-bar{width:4px;flex:none;background:#5865f2}.pe-embed-body{padding:10px 14px 12px;min-width:0;display:grid;gap:4px}.pe-embed-site{font-size:12px;color:#b5bac1}.pe-embed-title{font-size:15px;font-weight:650;color:#00a8fc;overflow-wrap:anywhere}.pe-embed-desc{font-size:13.5px;color:#dbdee1;overflow-wrap:anywhere}.pe-embed-img{width:72px;height:72px;border-radius:8px;object-fit:cover;justify-self:start;margin-top:6px}.pe-embed.large .pe-embed-img{width:100%;height:auto;max-height:220px;aspect-ratio:16/9;border-radius:6px}
-.pe-tpl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
-.pe-tpl{border:1px solid var(--pe-line);background:var(--pe-card2);border-radius:14px;padding:0;overflow:hidden;cursor:pointer;text-align:left;color:var(--pe-fg);font-family:inherit}
-.pe-tpl:hover{border-color:var(--pe-acc)}
-.pe-tpl-sw{height:74px;display:flex;align-items:center;justify-content:center;position:relative}
-.pe-tpl-sw i{width:54px;height:36px;border-radius:9px;border:1px solid rgba(255,255,255,.18);display:block}
-.pe-tpl b{display:block;padding:9px 11px 2px;font-size:13.5px}
-.pe-tpl small{display:block;padding:0 11px 10px;color:var(--pe-mut);font-size:12px}
-.pe-quota{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.pe-quota div{border:1px solid var(--pe-line);border-radius:12px;padding:10px;background:#0a0f19}
-.pe-quota span{display:block;font-size:11.5px;color:var(--pe-mut)}
-.pe-quota strong{font-size:16px}
-.pe-lib{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
-.pe-asset{border:1px solid var(--pe-line);border-radius:12px;overflow:hidden;background:#0a0f19;display:flex;flex-direction:column}
-.pe-asset .th{height:84px;background:#0d1422 center/cover;display:grid;place-items:center;font-size:26px;color:var(--pe-mut)}
-.pe-asset .nm{padding:7px 9px 0;font-size:12px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pe-asset .mt{padding:0 9px 6px;font-size:11px;color:var(--pe-mut)}
-.pe-asset .ac{display:flex;gap:6px;padding:0 8px 8px}
-.pe-asset .ac .pe-btn{flex:1;padding:6px 8px;font-size:12px}
-.pe-prog{height:6px;border-radius:99px;background:#1b2740;overflow:hidden}
-.pe-prog i{display:block;height:100%;width:0;background:var(--pe-acc);transition:width .15s}
-.pe-pv{min-width:0}
-.pe-pv-bar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;font-size:12.5px;color:var(--pe-mut)}
-.pe-pv-bar .pe-btn{padding:6px 10px;font-size:12px}
-.pe-pv-frame{height:calc(100vh - 150px);min-height:520px;border-radius:18px;overflow:hidden;border:1px solid var(--pe-line2);background:#05070d;margin:0 auto;width:100%;transition:width .25s;position:relative}
-.pe-pv-frame.phone{width:390px;max-width:100%}
-#pv{position:absolute;inset:0}
-@media(min-width:980px){.pe-pv{position:sticky;top:12px}}
-@media(max-width:979px){
-  .pe-pv{display:none;position:fixed;inset:78px 0 68px 0;z-index:60;background:#05070d;padding:8px 8px 0}
-  body.show-pv .pe-pv{display:block}
-  body.show-pv .pe-side{visibility:hidden}
-  .pe-pv-frame{height:calc(100% - 34px);min-height:0;border-radius:14px}
-  .pe-pv-frame.phone{width:100%}
-  #pv-device{display:none}
-}
-.pe-bar{position:fixed;left:0;right:0;bottom:0;z-index:70;display:flex;gap:8px;align-items:center;padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:rgba(8,12,22,.92);border-top:1px solid var(--pe-line);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
-.pe-bar .pe-btn{padding:12px 16px;font-size:14.5px}
-.pe-bar .grow{flex:1;min-width:0;font-size:12.5px;color:var(--pe-mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pe-bar .grow.dirty{color:#ffd37a}
-.pe-bar .grow.ok{color:#a7f0bd}
-.pe-bar .grow.error{color:#ffb4b4}
-@media(min-width:980px){#bar-pv{display:none}}
-.pe-modal{position:fixed;inset:0;z-index:90;background:rgba(3,6,12,.7);display:flex;align-items:flex-end;justify-content:center;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
-@media(min-width:700px){.pe-modal{align-items:center}}
-.pe-sheet{width:min(720px,100%);max-height:84vh;overflow:auto;background:var(--pe-card);border:1px solid var(--pe-line2);border-radius:20px 20px 0 0;padding:16px}
-@media(min-width:700px){.pe-sheet{border-radius:20px}}
-.pe-sheet h3{margin:0 0 4px;font-size:17px}
-.pe-sheet-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:12px}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080808">
+  <meta name="color-scheme" content="dark">
+  <title>Sentinel — Discontinued for now</title>
+  <meta name="description" content="Sentinel is discontinued for now. You can still contact me or explore my other project, B3TA.">
+  <meta name="robots" content="noindex,follow">
+  <link rel="canonical" href="https://sentineldashboard.site/">
+  <style>
+    :root{color-scheme:dark;--bg:#080808;--panel:#101010;--line:#292929;--muted:#777;--text:#e7e7e7;--soft:#aaa}
+    *{box-sizing:border-box}
+    html{min-height:100%;background:var(--bg);scroll-behavior:smooth}
+    body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;display:flex;flex-direction:column}
+    a{color:inherit;text-decoration:none}
+    .shell{width:min(1120px,calc(100% - 64px));margin:0 auto}
+    header{height:86px;border-bottom:1px solid var(--line);display:flex;align-items:center}
+    .header-inner{display:flex;align-items:center;justify-content:space-between}
+    .wordmark{font-size:13px;font-weight:750;letter-spacing:.22em;text-transform:uppercase}
+    .header-note,.eyebrow,.index,.meta{font-family:"SFMono-Regular",Consolas,monospace;text-transform:uppercase;letter-spacing:.12em;font-size:10px;color:var(--muted)}
+    .header-note{display:flex;align-items:center;gap:10px}
+    .status-dot{width:6px;height:6px;background:#777;border-radius:50%;display:inline-block}
+    main{flex:1;display:flex;flex-direction:column;justify-content:center;padding:clamp(72px,11vh,130px) 0 90px}
+    .eyebrow{display:flex;align-items:center;gap:14px;margin:0 0 34px}
+    .eyebrow:before{content:"";width:32px;height:1px;background:#777}
+    h1{font-size:clamp(48px,9.3vw,112px);line-height:.91;letter-spacing:-.085em;text-transform:uppercase;font-weight:760;max-width:1050px;margin:0}
+    h1 span{display:block;color:#777}
+    .intro{max-width:530px;color:#969696;font-size:15px;line-height:1.8;margin:34px 0 0}
+    .divider{height:1px;background:var(--line);margin:clamp(66px,10vh,112px) 0 0}
+    .bottom-grid{display:grid;grid-template-columns:1fr 1fr;gap:0}
+    .item{padding:27px 30px 0 0;min-height:154px}
+    .item+ .item{border-left:1px solid var(--line);padding-left:30px;padding-right:0}
+    .index{display:block;margin-bottom:24px}
+    .item h2{font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:650;color:#888;margin:0 0 18px}
+    .contact{display:inline-flex;align-items:center;gap:13px;font-size:15px;font-weight:600;letter-spacing:-.02em;transition:color .2s}
+    .contact:hover,.project:hover{color:#fff}
+    .discord-icon{width:35px;height:35px;border:1px solid #444;border-radius:50%;display:grid;place-items:center;color:#bbb;transition:border-color .2s,background .2s}
+    .contact:hover .discord-icon{border-color:#888;background:#171717}
+    .discord-icon svg{width:19px;height:19px;display:block;fill:currentColor}
+    .project{display:inline-flex;align-items:center;gap:13px;font-size:22px;font-weight:650;letter-spacing:-.045em;transition:color .2s}
+    .project-mark{width:35px;height:35px;border:1px solid #444;display:grid;place-items:center;font-size:11px;letter-spacing:-.06em;color:#bbb}
+    .arrow{font-size:14px;color:#777;transition:transform .2s}
+    .project:hover .arrow{transform:translate(3px,-3px)}
+    footer{border-top:1px solid var(--line);padding:22px 0}
+    .footer-inner{display:flex;justify-content:space-between;gap:20px;align-items:center}
+    .footer-inner span{font-family:"SFMono-Regular",Consolas,monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#626262}
+    @media(max-width:640px){.shell{width:calc(100% - 40px)}header{height:70px}.header-note{font-size:8px}main{padding:78px 0 64px}h1{font-size:clamp(46px,13vw,76px)}.intro{font-size:14px}.divider{margin-top:70px}.bottom-grid{grid-template-columns:1fr}.item{min-height:0;padding:25px 0 30px}.item+.item{border-left:0;border-top:1px solid var(--line);padding:25px 0 15px}.index{margin-bottom:17px}.footer-inner{align-items:flex-start;flex-direction:column;gap:9px}}
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
+  </style>
 </head>
 <body>
-<header class="topbar"><div class="wrap topbar-in"><a class="brand" href="/" aria-label="Sentinel"><span class="brand-mark" aria-hidden="true">S</span><span class="brand-word">Sentinel</span></a><nav class="nav" id="site-nav" aria-label="Main"><a class="nl" href="/docs#features">Features</a><a class="nl" href="/docs#commands">Commands</a><a class="nl" href="/account">Account</a></nav><div class="nav-tools"><a class="btn btn-sm" href="/account">Back to account</a></div></div></header>
-
-<main class="pe">
-  <div class="pe-top">
-    <div><div class="pe-kicker">Sentinel Profiles</div><h1>Profile editor</h1><p>Design your public page. Everything updates live in the preview.</p></div>
-    <a class="pe-btn" id="open-profile" href="#" target="_blank" rel="noopener noreferrer" hidden>View public profile ↗</a>
-  </div>
-  <div id="auth-message" class="pe-status">Checking your session…</div>
-
-  <div class="pe-app pe-hide" id="app">
-    <section class="pe-side">
-      <nav class="pe-tabs" id="tabs" role="tablist" aria-label="Editor sections"></nav>
-      <form id="profile-form" class="pe-panels" onsubmit="return false" autocomplete="off"><div id="panels"></div></form>
+  <header>
+    <div class="shell header-inner">
+      <a class="wordmark" href="https://sentineldashboard.site/">Sentinel</a>
+      <div class="header-note"><span class="status-dot"></span> Project status / On hold</div>
+    </div>
+  </header>
+  <main class="shell">
+    <p class="eyebrow">Notice · 05 November 2026</p>
+    <h1>Sentinel is <span>discontinued</span> for now.</h1>
+    <p class="intro">The Sentinel project and its website are currently on hold. Development, updates and maintenance have been discontinued for the time being. Thank you to everyone who supported the project.</p>
+    <div class="divider"></div>
+    <section class="bottom-grid" aria-label="Other links">
+      <div class="item">
+        <span class="index">01 / Contact</span>
+        <h2>You can always contact me</h2>
+        <a class="contact" href="https://discord.com/users/1232408342085898241" target="_blank" rel="noopener noreferrer" aria-label="Contact me on Discord">
+          <span class="discord-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M19.7 5.2a18.4 18.4 0 0 0-4.5-1.4l-.6 1.2a17 17 0 0 0-5.1 0l-.6-1.2a18.4 18.4 0 0 0-4.5 1.4C1.6 9.4.8 13.5 1.2 17.5a18.5 18.5 0 0 0 5.5 2.8l1.2-2a11.8 11.8 0 0 1-1.9-.9l.5-.4a13.2 13.2 0 0 0 11 0l.5.4a11.8 11.8 0 0 1-1.9.9l1.2 2a18.5 18.5 0 0 0 5.5-2.8c.5-4.7-.8-8.8-3.1-12.3ZM8.7 14.9c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2Zm6.6 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2Z"/></svg>
+          </span>
+          <span>Discord</span><span class="arrow">↗</span>
+        </a>
+      </div>
+      <div class="item">
+        <span class="index">02 / Another project</span>
+        <h2>My other project</h2>
+        <a class="project" href="https://b3ta.lol" target="_blank" rel="noopener noreferrer">
+          <span class="project-mark" aria-hidden="true">B3</span>
+          <span>B3TA</span><span class="arrow">↗</span>
+        </a>
+      </div>
     </section>
-    <aside class="pe-pv" id="pv-pane" aria-label="Live preview">
-      <div class="pe-pv-bar"><span>Live preview</span><span style="display:flex;gap:6px"><button type="button" class="pe-btn" id="pv-splash">Enter screen</button><button type="button" class="pe-btn" id="pv-device">Mobile view</button></span></div>
-      <div class="pe-pv-frame" id="pv-frame"><div id="pv"></div></div>
-    </aside>
-  </div>
-</main>
-
-<div class="pe-bar pe-hide" id="bar">
-  <button type="button" class="pe-btn" id="bar-pv">Preview</button>
-  <span class="grow" id="save-message">All changes saved</span>
-  <button type="button" class="pe-btn" id="reset-profile">Revert</button>
-  <button type="button" class="pe-btn pri" id="save-profile">Save profile</button>
-</div>
-
-<div class="pe-modal pe-hide" id="modal" role="dialog" aria-modal="true"><div class="pe-sheet" id="sheet"></div></div>
-<input type="file" id="media-file" hidden accept="image/png,image/jpeg,image/webp,image/gif,image/avif,audio/mpeg,audio/wav,audio/ogg,audio/mp4,audio/aac,audio/webm,video/mp4,video/webm,video/quicktime">
-
-<script src="/assets/js/config.js"></script>
-<script src="/assets/js/profile-render.js?v=22"></script>
-<script src="/assets/js/profile-editor.js?v=17"></script>
+  </main>
+  <footer>
+    <div class="shell footer-inner">
+      <span>Sentinel / Project archive</span>
+      <span>Independent project · No longer maintained</span>
+    </div>
+  </footer>
 </body>
 </html>
