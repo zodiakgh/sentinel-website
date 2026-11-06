@@ -1,3 +1,4 @@
 /profile-editor /profile-editor.html 200
 /profile /profile.html 200
 /u/* /profile.html 200
+/admin /admin.html 200
