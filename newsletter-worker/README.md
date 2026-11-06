@@ -45,7 +45,7 @@ https://newsletter.sentineldashboard.site/health
 
 ## 4. Admin
 
-Open `https://sentineldashboard.site/admin` and enter the ADMIN_TOKEN. The token is kept in session storage for the current browser tab/session and is sent only to the newsletter API over HTTPS.
+Open `https://www.sentineldashboard.site/admin.html` and enter the ADMIN_TOKEN. The token is kept in session storage for the current browser tab/session and is sent only to the newsletter API over HTTPS.
 
 ## Notes
 
