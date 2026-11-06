@@ -10,9 +10,11 @@ binding = "DB"
 database_name = "sentinel-newsletter"
 database_id = "REPLACE_WITH_D1_DATABASE_ID"
 
+[vars]
+RESEND_FROM = "Sentinel <updates@sentineldashboard.site>"
+
 # Add these in Cloudflare Worker Settings → Variables and Secrets:
 # RESEND_API_KEY (secret)
 # ADMIN_TOKEN (secret: use a long random value)
-# RESEND_FROM (variable: Sentinel <updates@sentineldashboard.site>)
 # Verify sentineldashboard.site in Resend before sending.
 routes = [{ pattern = "newsletter.sentineldashboard.site", custom_domain = true }]
