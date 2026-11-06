@@ -13,10 +13,7 @@ Copy the returned database ID into `newsletter-worker/wrangler.toml` (replace `R
 Apply the schema:
 
 ```bash
-npx wrangler d1 execute sentinel-newsletter --remote --file= schema.sql
-```
-
-Run the command from the `newsletter-worker` directory and remove the space after `--file=` if your shell requires it:
+Run the command from the `newsletter-worker` directory:
 ```bash
 npx wrangler d1 execute sentinel-newsletter --remote --file=schema.sql
 ```
