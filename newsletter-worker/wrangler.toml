@@ -10,6 +10,8 @@ binding = "DB"
 database_name = "sentinel-newsletter"
 database_id = "REPLACE_WITH_D1_DATABASE_ID"
 
+routes = [{ pattern = "newsletter.sentineldashboard.site", custom_domain = true }]
+
 [vars]
 RESEND_FROM = "Sentinel <updates@sentineldashboard.site>"
 
@@ -17,4 +19,3 @@ RESEND_FROM = "Sentinel <updates@sentineldashboard.site>"
 # RESEND_API_KEY (secret)
 # ADMIN_TOKEN (secret: use a long random value)
 # Verify sentineldashboard.site in Resend before sending.
-routes = [{ pattern = "newsletter.sentineldashboard.site", custom_domain = true }]
