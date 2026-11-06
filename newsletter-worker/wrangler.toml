@@ -1,0 +1,18 @@
+name = "sentinel-newsletter"
+main = "index.js"
+compatibility_date = "2026-11-01"
+workers_dev = false
+keep_vars = true
+
+# Create a D1 database, then replace the placeholder with its database ID.
+[[d1_databases]]
+binding = "DB"
+database_name = "sentinel-newsletter"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+
+# Add these in Cloudflare Worker Settings → Variables and Secrets:
+# RESEND_API_KEY (secret)
+# ADMIN_TOKEN (secret: use a long random value)
+# RESEND_FROM (variable: Sentinel <updates@sentineldashboard.site>)
+# Verify sentineldashboard.site in Resend before sending.
+routes = [{ pattern = "newsletter.sentineldashboard.site", custom_domain = true }]
