@@ -25,7 +25,7 @@ Verify the sending domain `sentineldashboard.site` in Resend and publish the DNS
 In the Cloudflare Worker settings for `sentinel-newsletter`, add:
 - Secret `RESEND_API_KEY`: your Resend API key.
 - Secret `ADMIN_TOKEN`: a long, unique random password. Never put it in GitHub.
-- Variable `RESEND_FROM`: `Sentinel <updates@sentineldashboard.site>` (only after the domain is verified).
+- `RESEND_FROM` is already set in `wrangler.toml`; verify the sender domain before deploying.
 
 ## 3. Deploy the Worker
 
