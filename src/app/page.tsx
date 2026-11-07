@@ -1,4 +1,5 @@
-import { ArrowUpRight, Search, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowUpRight, ShieldCheck, Sparkles } from "lucide-react";
+import { SoftwareSearch } from "./components/software-search";
 
 const categories = [
   { name: "Development", count: "Code editors, APIs, databases" },
@@ -38,11 +39,7 @@ export default function Home() {
         <p className="mx-auto mt-7 max-w-xl text-base leading-7 text-neutral-400 sm:text-lg">
           A carefully curated directory of free and open-source software. Discover tools that respect your freedom and your budget.
         </p>
-        <div className="mx-auto mt-10 flex max-w-2xl items-center gap-3 rounded-2xl border border-neutral-700 bg-[#111] p-2 text-left shadow-2xl shadow-black/40">
-          <Search className="ml-3 size-5 shrink-0 text-neutral-500" />
-          <input aria-label="Search software" placeholder="What do you want to find?" className="min-w-0 flex-1 bg-transparent px-1 py-3 text-sm text-white outline-none placeholder:text-neutral-600" />
-          <button className="rounded-xl bg-[#d9ff66] px-5 py-3 text-sm font-semibold text-black transition hover:bg-[#e5ff9a]">Search</button>
-        </div>
+        <SoftwareSearch />
         <div className="mt-5 flex flex-wrap justify-center gap-2 text-xs text-neutral-500">
           <span>Popular:</span><span>Photoshop alternatives</span><span>·</span><span>Private browsers</span><span>·</span><span>Self-hosted tools</span>
         </div>
