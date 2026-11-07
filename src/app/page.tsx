@@ -19,16 +19,16 @@ export default function Home() {
       <header className="topbar wrap">
         <Link href="/" className="brand"><span className="brand-mark"><Activity size={17}/></span><span>SENTINEL<span className="brand-muted"> ANALYTICS</span></span></Link>
         <nav className="nav-links"><a href="#product">Product</a><a href="#features">Features</a><a href="#privacy">Privacy</a></nav>
-        <div className="nav-actions"><Link className="text-link" href="/privacy">Privacy</Link><Link className="button button-small" href="/dashboard">Explore preview <ArrowRight size={15}/></Link></div>
+        <div className="nav-actions"><Link className="text-link" href="/login">Sign in</Link><Link className="button button-small" href="/signup">Create account <ArrowRight size={15}/></Link></div>
       </header>
 
       <section className="hero wrap">
         <div className="hero-copy">
-          <div className="eyebrow"><span className="pulse-dot"/> WEBSITE ANALYTICS · PUBLIC PREVIEW</div>
+          <div className="eyebrow"><span className="pulse-dot"/> WEBSITE ANALYTICS · EARLY ACCESS</div>
           <h1>Know your traffic.<br/><span>Make better moves.</span></h1>
           <p className="hero-lede">The essential picture of your website, without the noise. Understand your audience, measure what matters and move with confidence.</p>
-          <div className="hero-actions"><Link className="button" href="/dashboard">Explore the preview <ArrowRight size={16}/></Link><a className="button button-quiet" href="#product">Explore the platform <ChevronRight size={16}/></a></div>
-          <div className="hero-note"><ShieldCheck size={15}/> Public preview · Accounts and live tracking are not open yet.</div>
+          <div className="hero-actions"><Link className="button" href="/signup">Create your account <ArrowRight size={16}/></Link><a className="button button-quiet" href="#product">Explore the platform <ChevronRight size={16}/></a></div>
+          <div className="hero-note"><ShieldCheck size={15}/> Accounts are open · Live website tracking is coming later.</div>
         </div>
         <div className="preview-shell" id="product">
           <div className="preview-window">
@@ -47,14 +47,14 @@ export default function Home() {
       <section className="trust-strip"><div className="wrap trust-inner"><span>BUILT FOR PEOPLE WHO BUILD THE WEB</span><div><span>PRODUCT TEAMS</span><span>INDEPENDENT BUILDERS</span><span>GROWING BUSINESSES</span></div></div></section>
 
       <section className="section wrap" id="features">
-        <div className="section-intro"><div className="eyebrow">PLANNED PRODUCT CAPABILITIES</div><h2>Everything you need.<br/><span>Nothing you don't.</span></h2><p>These capabilities describe the product direction. They are not active in the current preview; live tracking and account access are not available yet.</p></div>
+        <div className="section-intro"><div className="eyebrow">PLANNED PRODUCT CAPABILITIES</div><h2>Everything you need.<br/><span>Nothing you don't.</span></h2><p>These capabilities describe the product direction. The workspace and account system are available now. Live tracking, visitor reports and event collection are still in development.</p></div>
         <div className="feature-grid">{features.map(({icon:Icon,title,text},i)=><article className="feature-card" key={title}><div className="feature-icon"><Icon size={19}/></div><small>0{i+1}</small><h3>{title}</h3><p>{text}</p></article>)}</div>
       </section>
 
       <section className="privacy-band" id="privacy"><div className="wrap privacy-inner"><div><div className="eyebrow">YOUR DATA DESERVES RESPECT</div><h2>Useful insights.<br/>Thoughtful by default.</h2><p>Analytics should help you understand your audience, not collect everything about them. Sentinel is being built with clear controls, limited collection and privacy-conscious defaults.</p><Link className="text-link" href="/privacy">Our privacy principles <ArrowRight size={15}/></Link></div><div className="privacy-points"><div><ShieldCheck/><span><b>Privacy-first foundations</b><small>Designed for data minimisation and consent-aware measurement.</small></span><Check/></div><div><Globe2/><span><b>Built for the open web</b><small>One workspace for the websites you manage.</small></span><Check/></div><div><Activity/><span><b>Metrics you can act on</b><small>Understand performance without drowning in dashboards.</small></span><Check/></div></div></div></section>
 
-      <section className="closing wrap"><div><div className="eyebrow">A CLEARER VIEW STARTS HERE</div><h2>Your website has a story.<br/><span>Start reading it.</span></h2><p>Explore the current product preview while Sentinel Analytics is being built.</p><Link className="button" href="/dashboard">Explore the preview <ArrowRight size={16}/></Link></div></section>
-      <footer className="footer wrap"><Link href="/" className="brand"><span className="brand-mark"><Activity size={16}/></span><span>SENTINEL<span className="brand-muted"> ANALYTICS</span></span></Link><span>© 2026 Sentinel Analytics · Public preview</span><div><Link href="/mentions-legales">Mentions légales</Link><Link href="/privacy">Confidentialité</Link><Link href="/terms">Conditions</Link></div></footer>
+      <section className="closing wrap"><div><div className="eyebrow">A CLEARER VIEW STARTS HERE</div><h2>Your website has a story.<br/><span>Start reading it.</span></h2><p>Create your account and explore the workspace while live tracking is in development.</p><Link className="button" href="/dashboard">Explore the preview <ArrowRight size={16}/></Link></div></section>
+      <footer className="footer wrap"><Link href="/" className="brand"><span className="brand-mark"><Activity size={16}/></span><span>SENTINEL<span className="brand-muted"> ANALYTICS</span></span></Link><span>© 2026 Sentinel Analytics · Early access</span><div><Link href="/mentions-legales">Legal notice</Link><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link></div></footer>
     </main>
   );
 }
