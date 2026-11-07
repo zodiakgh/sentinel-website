@@ -1,16 +1,16 @@
-name = "sentinel-newsletter"
+name = "newsletter-worker"
 main = "index.js"
 compatibility_date = "2026-11-01"
-workers_dev = false
+workers_dev = true
 keep_vars = true
 
-# Create a D1 database, then replace the placeholder with its database ID.
+# Public custom domain for the newsletter API.
+routes = [{ pattern = "newsletter.sentineldashboard.site", custom_domain = true }]
+
 [[d1_databases]]
 binding = "DB"
 database_name = "sentinel-newsletter"
 database_id = "f8e098f9-247d-4848-ac2f-a0a34789d7a8"
-
-routes = [{ pattern = "newsletter.sentineldashboard.site", custom_domain = true }]
 
 [vars]
 RESEND_FROM = "Sentinel <updates@sentineldashboard.site>"
