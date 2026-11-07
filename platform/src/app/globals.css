@@ -146,3 +146,19 @@ button, a { -webkit-tap-highlight-color: transparent; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
+
+
+.auth-page { min-height: 100vh; width: min(100% - 40px, 520px); margin: auto; padding: 35px 0; display: flex; flex-direction: column; }
+.auth-back { display: inline-flex; align-items: center; gap: 8px; width: fit-content; color: #888; font-size: 11px; }
+.auth-back:hover { color: #eee; }
+.auth-card { width: 100%; margin: auto; padding: 34px; border: 1px solid #292929; border-radius: 12px; background: #101010; }
+.auth-brand { margin-bottom: 38px; }
+.auth-card h1 { margin: 13px 0 10px; font-size: 35px; letter-spacing: -.06em; }
+.auth-card > p { margin: 0 0 25px; color: #888; font-size: 12px; line-height: 1.8; }
+.auth-provider { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px; margin-top: 9px; border: 1px solid #2b2b2b; border-radius: 7px; color: #bdbdbd; font-size: 11px; }
+.auth-provider > span { display: inline-flex; align-items: center; gap: 9px; }
+.auth-provider small { color: #777; font-size: 9px; }
+.auth-note { margin-top: 18px; padding: 11px; border: 1px solid #3a3030; border-radius: 6px; background: #171313; color: #b5a6a6; font-size: 10px; line-height: 1.7; }
+.auth-switch { margin-top: 23px; color: #888; text-align: center; font-size: 10px; }
+.auth-switch a { color: #eee; text-decoration: underline; text-underline-offset: 3px; }
+@media (max-width: 500px) { .auth-card { padding: 25px 19px; } .auth-card h1 { font-size: 30px; } .auth-provider { align-items: flex-start; flex-direction: column; gap: 7px; } }
