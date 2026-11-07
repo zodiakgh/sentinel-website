@@ -8,6 +8,10 @@ const categories = [
   { name: "Privacy & Security", count: "Browsers, password managers and privacy" },
   { name: "Self-hosting", count: "Run your own services" },
   { name: "Education", count: "Learning and research tools" },
+  { name: "Utilities", count: "File, media and system tools" },
+  { name: "Communication", count: "Messaging and video meetings" },
+  { name: "Databases", count: "SQL, analytics and data stores" },
+  { name: "Gaming", count: "Engines and open games" },
 ];
 
 const picks = [
@@ -52,7 +56,7 @@ export default function Home() {
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {categories.map((category, index) => (
-            <a key={category.name} href="#" className="group rounded-2xl border border-neutral-800 bg-[#101010] p-6 transition hover:-translate-y-0.5 hover:border-neutral-600">
+            <a key={category.name} href="#search" className="group rounded-2xl border border-neutral-800 bg-[#101010] p-6 transition hover:-translate-y-0.5 hover:border-neutral-600">
               <div className="mb-8 flex items-center justify-between"><span className="text-xs text-neutral-600">0{index + 1}</span><ArrowUpRight className="size-4 text-neutral-600 transition group-hover:text-[#d9ff66]" /></div>
               <h3 className="text-lg font-medium">{category.name}</h3><p className="mt-2 text-sm text-neutral-500">{category.count}</p>
             </a>
