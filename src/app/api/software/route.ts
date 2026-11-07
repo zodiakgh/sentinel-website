@@ -14,6 +14,7 @@ type SoftwareRow = {
   repository_host: string | null;
   license_name: string;
   spdx_id: string;
+  license_url: string | null;
   pricing_status: "free" | "freemium" | "paid" | "unverified";
   categories: string | null;
 };
@@ -31,7 +32,7 @@ export async function GET(request: NextRequest) {
     let sql = `
       SELECT s.id, s.slug, s.name, s.summary, s.website_url, s.source_url,
              s.repository_host, s.pricing_status,
-             l.name AS license_name, l.spdx_id,
+             l.name AS license_name, l.spdx_id, l.official_url AS license_url,
              GROUP_CONCAT(DISTINCT c.name_en) AS categories
       FROM software s
       INNER JOIN licenses l ON l.id = s.license_id
@@ -46,7 +47,7 @@ export async function GET(request: NextRequest) {
 
     if (query) {
       sql += " AND (s.name LIKE ? OR s.summary LIKE ? OR s.description LIKE ?)";
-      const term = `%${query.replace(/[\\\\%_]/g, "\\\\$&")}%`;
+      const term = `%${query}%`;
       values.push(term, term, term);
     }
     if (category) {
