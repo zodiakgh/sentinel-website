@@ -1,9 +1,0 @@
-node_modules
-.next
-.open-next
-.wrangler
-.dev.vars
-.env*
-!.env.example
-*.log
-.DS_Store
