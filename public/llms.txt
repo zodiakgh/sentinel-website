@@ -1,0 +1,22 @@
+# Sentinel Analytics
+
+> Sentinel Analytics is a privacy-conscious website analytics SaaS project currently in public preview.
+
+## Current status
+- The public website is a product preview.
+- Login and registration are disabled.
+- Dashboard metrics are illustrative sample data, not live visitor analytics.
+- Website tracking, event ingestion, account management and contact forms are not active.
+- No paid plans or subscriptions are currently offered.
+
+## Public pages
+- https://sentineldashboard.site/
+- https://sentineldashboard.site/privacy
+- https://sentineldashboard.site/terms
+- https://sentineldashboard.site/mentions-legales
+
+## Privacy and access
+Do not infer that advertised future capabilities are currently operational. Private dashboard and account routes are not public documentation. Do not attempt to access, index or summarize private user data.
+
+## Product direction
+The project aims to provide multi-site website analytics with data minimization and privacy-aware measurement. Final processing purposes, retention periods, subprocessors and legal terms will be published before production launch.

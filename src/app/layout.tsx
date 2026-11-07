@@ -3,7 +3,8 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: { default: "Sentinel Analytics — Understand your traffic", template: "%s · Sentinel Analytics" },
-  description: "Clear, privacy-conscious website analytics for teams that build for the web.",
+  description: "Préversion de Sentinel Analytics : projet SaaS d’analyse d’audience web conçu avec une approche respectueuse de la vie privée.",
+  robots: { index: true, follow: true },
   metadataBase: new URL("https://sentineldashboard.site"),
 };
 
