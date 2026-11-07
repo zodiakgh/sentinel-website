@@ -1,0 +1,21 @@
+import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+type Stmt={bind:(...v:unknown[])=>Stmt;first:<T=Record<string,unknown>>()=>Promise<T|null>;run:()=>Promise<unknown>};
+type D1={prepare:(sql:string)=>Stmt;batch:(s:Stmt[])=>Promise<unknown[]>};
+export type User={id:string;email:string;name:string};
+const COOKIE="__Host-sentinel_session";
+function db(){return (getCloudflareContext().env as unknown as {DB:D1}).DB}
+function b64u(b:Uint8Array){let s="";for(const x of b)s+=String.fromCharCode(x);return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/g,"")}
+async function sha(s:string){return b64u(new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s))))}
+function unb64u(s:string){s=s.replace(/-/g,"+").replace(/_/g,"/");return Uint8Array.from(atob(s+"=".repeat((4-s.length%4)%4)),c=>c.charCodeAt(0))}
+export async function hashPassword(password:string){const salt=crypto.getRandomValues(new Uint8Array(16));const key=await crypto.subtle.importKey("raw",new TextEncoder().encode(password),"PBKDF2",false,["deriveBits"]);const bits=await crypto.subtle.deriveBits({name:"PBKDF2",hash:"SHA-256",salt,iterations:310000},key,256);return "pbkdf2$310000$"+b64u(salt)+"$"+b64u(new Uint8Array(bits))}
+export async function verifyPassword(password:string,encoded:string){const [scheme,n,saltText,expected]=encoded.split("$");if(scheme!=="pbkdf2"||!n||!saltText||!expected)return false;const key=await crypto.subtle.importKey("raw",new TextEncoder().encode(password),"PBKDF2",false,["deriveBits"]);const bits=await crypto.subtle.deriveBits({name:"PBKDF2",hash:"SHA-256",salt:unb64u(saltText),iterations:Math.min(Number(n),310000)},key,256);return b64u(new Uint8Array(bits))===expected}
+export async function createSession(userId:string){const token=b64u(crypto.getRandomValues(new Uint8Array(32)));const expires=new Date(Date.now()+30*86400000);await db().prepare("INSERT INTO auth_sessions(id,user_id,token_hash,expires_at) VALUES(?,?,?,?)").bind(crypto.randomUUID(),userId,await sha(token),expires.toISOString()).run();(await cookies()).set(COOKIE,token,{httpOnly:true,secure:true,sameSite:"lax",path:"/",expires})}
+export async function clearSession(){const jar=await cookies();const token=jar.get(COOKIE)?.value;if(token)await db().prepare("DELETE FROM auth_sessions WHERE token_hash=?").bind(await sha(token)).run();jar.set(COOKIE,"",{httpOnly:true,secure:true,sameSite:"lax",path:"/",maxAge:0})}
+export async function getCurrentUser():Promise<User|null>{const token=(await cookies()).get(COOKIE)?.value;if(!token)return null;return db().prepare("SELECT u.id,u.email,u.name FROM auth_sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=? AND s.expires_at>?").bind(await sha(token),new Date().toISOString()).first<User>()}
+export async function requireUser(){const user=await getCurrentUser();if(!user)redirect("/login?next=%2Fdashboard");return user}
+export async function rateLimit(key:string,max:number,seconds:number){const d=db(),now=Math.floor(Date.now()/1000),hash=await sha(key);await d.prepare("DELETE FROM auth_rate_limits WHERE window_started_at<?").bind(now-172800).run();const row=await d.prepare("INSERT INTO auth_rate_limits(key_hash,attempts,window_started_at) VALUES(?,1,?) ON CONFLICT(key_hash) DO UPDATE SET attempts=CASE WHEN window_started_at<?-? THEN 1 ELSE attempts+1 END,window_started_at=CASE WHEN window_started_at<?-? THEN ? ELSE window_started_at END RETURNING attempts").bind(hash,now,now,seconds,now,seconds,now).first<{attempts:number}>();return(row?.attempts??max+1)<=max}
+export function requestIsSameOrigin(r:Request){const origin=r.headers.get("origin");return !origin||origin===new URL(r.url).origin}
+export function jsonError(error:string,status:number){return Response.json({error},{status,headers:{"Cache-Control":"no-store"}})}
+export function authDatabase(){return db()}

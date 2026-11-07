@@ -1,17 +1,1 @@
-import type { Metadata } from "next";
-import "./globals.css";
-
-export const metadata: Metadata = {
-  title: { default: "Sentinel Analytics — Understand your traffic", template: "%s · Sentinel Analytics" },
-  description: "Préversion de Sentinel Analytics : projet SaaS d’analyse d’audience web conçu avec une approche respectueuse de la vie privée.",
-  robots: { index: true, follow: true },
-  metadataBase: new URL("https://sentineldashboard.site"),
-};
-
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return (
-    <html lang="en">
-      <body>{children}</body>
-    </html>
-  );
-}
+import type {Metadata}from"next";import"./globals.css";export const metadata:Metadata={title:{default:"Sentinel Analytics — Understand your traffic",template:"%s · Sentinel Analytics"},description:"A focused website analytics workspace, designed around clarity and privacy.",robots:{index:true,follow:true},metadataBase:new URL("https://sentineldashboard.site")};export default function RootLayout({children}:Readonly<{children:React.ReactNode}>){return <html lang="en"><body>{children}</body></html>}
