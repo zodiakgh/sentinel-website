@@ -8,11 +8,7 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
-  "observability": { "enabled": true },
-  "d1_databases": [{
-    "binding": "DB",
-    "database_name": "sentinel-open-catalog",
-    "database_id": "567ed0fa-4745-47b1-ad2e-4b722b2a69f4",
-    "migrations_dir": "migrations"
-  }]
+  "observability": {
+    "enabled": true
+  }
 }

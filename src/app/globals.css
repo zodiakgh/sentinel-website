@@ -1,25 +1,182 @@
 @import "tailwindcss";
 
-:root { color-scheme: light; background: #fff; color: #111; }
-* { box-sizing: border-box; }
-html, body { margin: 0; min-height: 100%; background: #fff; overflow-x: hidden; }
-body { font-family: Arial, Helvetica, sans-serif; }
-button { font: inherit; }
-.page { position: relative; min-height: 100vh; width: 100%; background: #fff; overflow: hidden; cursor: crosshair; }
-.chart { display: block; width: min(100%, 1100px); height: auto; margin: 0 auto; user-select: none; pointer-events: none; }
-.invisible-trigger { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; background: transparent; cursor: crosshair; }
-.chaos-label { position: fixed; left: 12px; bottom: 12px; z-index: 1000; background: #111; color: #fff; padding: 8px 11px; font-size: 10px; font-weight: 800; letter-spacing: .12em; }
-.player-stack { position: fixed; width: 1px; height: 1px; overflow: hidden; opacity: .01; pointer-events: none; }
-.player-stack iframe { width: 1px; height: 1px; border: 0; }
-.fake-window { position: fixed; min-width: 250px; max-width: calc(100vw - 16px); background: #f7f7f7; border: 1px solid #777; box-shadow: 5px 7px 0 rgba(0,0,0,.22); color: #111; font-family: Arial, sans-serif; animation: appear .16s ease-out both; }
-.window-bar { height: 27px; display: flex; align-items: center; justify-content: space-between; padding: 0 8px; color: white; background: #252525; font-size: 11px; font-weight: 700; }
-.window-controls { letter-spacing: 5px; }
-.window-body { min-height: 142px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 13px; text-align: center; }
-.window-body strong { font-size: 11px; }
-.window-body span { font-size: 10px; color: #666; }
-.rick-icon { font-size: 29px; color: #b51e37; }
-.window-body button { margin-top: 4px; border: 1px solid #888; background: #eee; padding: 5px 16px; font-size: 10px; cursor: pointer; }
-.stop-chaos { position: fixed; right: 12px; bottom: 12px; z-index: 1001; border: 1px solid #111; background: white; color: #111; padding: 9px 12px; font-size: 10px; font-weight: 800; letter-spacing: .08em; cursor: pointer; }
-@keyframes appear { from { opacity: 0; scale: .75; } to { opacity: 1; scale: 1; } }
-@media (max-width: 600px) { .chart { width: 100%; } .fake-window { min-width: 220px; } }
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; } }
+:root {
+  color-scheme: light;
+  background: #fff;
+  color: #111;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: #fff;
+  overflow-x: hidden;
+}
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.page {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  background: #fff;
+  overflow: hidden;
+  cursor: crosshair;
+}
+
+.chart {
+  display: block;
+  width: min(100%, 1100px);
+  height: auto;
+  margin: 0 auto;
+  user-select: none;
+  pointer-events: none;
+}
+
+.click-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  cursor: crosshair;
+}
+
+.chaos-label {
+  position: fixed;
+  left: 12px;
+  bottom: 12px;
+  z-index: 1000;
+  background: #111;
+  color: #fff;
+  padding: 8px 11px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  pointer-events: none;
+}
+
+.audio-players {
+  position: fixed;
+  width: 2px;
+  height: 2px;
+  left: -10px;
+  top: -10px;
+  overflow: hidden;
+  opacity: .01;
+  pointer-events: none;
+}
+
+.audio-players iframe {
+  display: block;
+  width: 2px;
+  height: 2px;
+  border: 0;
+}
+
+.fake-window {
+  position: fixed;
+  min-width: 230px;
+  max-width: calc(100vw - 16px);
+  background: #f7f7f7;
+  border: 1px solid #777;
+  box-shadow: 5px 7px 0 rgba(0, 0, 0, .22);
+  color: #111;
+  font-family: Arial, sans-serif;
+  animation: appear .16s ease-out both;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.window-bar {
+  height: 27px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px;
+  color: #fff;
+  background: #252525;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.window-controls {
+  letter-spacing: 5px;
+}
+
+.window-body {
+  min-height: 142px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px;
+  text-align: center;
+}
+
+.window-body strong {
+  font-size: 11px;
+}
+
+.window-body span {
+  font-size: 10px;
+  color: #666;
+}
+
+.window-body small {
+  font-size: 9px;
+  color: #777;
+}
+
+.rick-icon {
+  font-size: 29px;
+  color: #b51e37;
+}
+
+.fake-progress {
+  width: 85%;
+  height: 5px;
+  background: #ddd;
+  overflow: hidden;
+}
+
+.fake-progress span {
+  display: block;
+  height: 100%;
+  width: 72%;
+  background: #b51e37;
+  animation: progress 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes appear {
+  from {
+    opacity: 0;
+    scale: .75;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+@keyframes progress {
+  from { width: 12%; }
+  to { width: 92%; }
+}
+
+@media (max-width: 600px) {
+  .chart { width: 100%; }
+  .fake-window { min-width: 215px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+  }
+}

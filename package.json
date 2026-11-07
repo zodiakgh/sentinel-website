@@ -1,6 +1,6 @@
 {
-  "name": "sentinel-open-software",
-  "version": "0.1.0",
+  "name": "sentinel-one-page-prank",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -13,8 +13,7 @@
   "dependencies": {
     "next": "^16.1.0",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "lucide-react": "^0.468.0"
+    "react-dom": "^19.2.0"
   },
   "devDependencies": {
     "@opennextjs/cloudflare": "^1.0.0",
