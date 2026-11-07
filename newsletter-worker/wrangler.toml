@@ -8,7 +8,7 @@ keep_vars = true
 [[d1_databases]]
 binding = "DB"
 database_name = "sentinel-newsletter"
-database_id = "REPLACE_WITH_D1_DATABASE_ID"
+database_id = "f8e098f9-247d-4848-ac2f-a0a34789d7a8"
 
 routes = [{ pattern = "newsletter.sentineldashboard.site", custom_domain = true }]
 
