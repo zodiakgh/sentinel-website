@@ -1,7 +1,7 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-type Stmt={bind:(...v:unknown[])=>Stmt;first:<T=Record<string,unknown>>()=>Promise<T|null>;run:()=>Promise<unknown>};
+type Stmt={bind:(...v:unknown[])=>Stmt;first:<T=Record<string,unknown>>()=>Promise<T|null>;all:<T=Record<string,unknown>>()=>Promise<{results:T[]}>;run:()=>Promise<unknown>};
 type D1={prepare:(sql:string)=>Stmt;batch:(s:Stmt[])=>Promise<unknown[]>};
 export type User={id:string;email:string;name:string};
 const COOKIE="__Host-sentinel_session";
