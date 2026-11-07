@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, Construction } from "lucide-react";
+import { ArrowLeft, Wrench } from "lucide-react";
 import { notFound } from "next/navigation";
 
 const sections: Record<string, { title: string; description: string; phase: string }> = {
@@ -20,7 +20,7 @@ export default async function WorkspaceSectionPage({ params }: { params: Promise
     <div>
       <Link href="/app" className="inline-flex items-center gap-2 text-[11px] text-[#888] hover:text-white"><ArrowLeft size={13}/> Workspace overview</Link>
       <div className="mt-7 max-w-2xl rounded-xl border border-[#292929] bg-[#111] p-7 sm:p-9">
-        <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#303030] bg-[#181818] text-[#aaa]"><Construction size={19}/></div>
+        <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#303030] bg-[#181818] text-[#aaa]"><Wrench size={19}/></div>
         <div className="mt-7 text-[10px] uppercase tracking-[.16em] text-[#777]">{item.phase}</div>
         <h1 className="mt-2 text-2xl font-semibold tracking-[-.04em]">{item.title}</h1>
         <p className="mt-3 max-w-lg text-xs leading-6 text-[#888]">{item.description}</p>
