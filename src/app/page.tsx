@@ -37,7 +37,7 @@ export default function Home() {
           Find software.<br /><span className="text-neutral-500">Not subscriptions.</span>
         </h1>
         <p className="mx-auto mt-7 max-w-xl text-base leading-7 text-neutral-400 sm:text-lg">
-          A carefully curated directory of free and open-source software. Discover tools that respect your freedom and your budget.
+          A carefully curated directory of open-source software. Discover verified projects, compare licenses, and see exactly where each tool comes from.
         </p>
         <SoftwareSearch />
         <div className="mt-5 flex flex-wrap justify-center gap-2 text-xs text-neutral-500">
@@ -76,7 +76,7 @@ export default function Home() {
 
       <section id="about" className="mx-auto max-w-7xl px-6 py-20 lg:px-10">
         <div className="flex flex-col justify-between gap-8 rounded-3xl border border-neutral-800 bg-[#101010] p-8 sm:p-12 lg:flex-row lg:items-center">
-          <div className="max-w-2xl"><div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#d9ff66]"><ShieldCheck className="size-4" /> Our standard</div><h2 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">Free should mean free.<br />Open should mean open.</h2><p className="mt-4 max-w-xl leading-7 text-neutral-400">Every listing is expected to meet clear criteria. We distinguish genuinely free software from limited free tiers, and verify open-source licenses against recognized sources.</p></div>
+          <div className="max-w-2xl"><div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#d9ff66]"><ShieldCheck className="size-4" /> Our standard</div><h2 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">Open source should be verifiable.</h2><p className="mt-4 max-w-xl leading-7 text-neutral-400">Every listing links to its official website, source repository, and license reference. We keep license status separate from pricing, so an open-source project is not excluded just because its hosted or commercial offering costs money.</p></div>
           <div className="flex items-center gap-3 text-sm text-neutral-400"><Sparkles className="size-5 text-[#d9ff66]" /> Independent. Transparent. Curated.</div>
         </div>
       </section>
