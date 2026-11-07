@@ -27,7 +27,7 @@ export default function DashboardShell({ user, active, children }: Props) {
       <div className="sidebar-version"><span><span className="status-dot"/> SYSTEM OPERATIONAL</span><span>v0.1 preview</span></div>
     </aside>
     <section className="app-main">
-      <header className="app-topbar"><div className="topbar-breadcrumb"><span>Workspace</span><ChevronRight size={14}/><b>{items.find(x=>x.id===active)?.label??"Settings"}</b></div><div className="topbar-actions"><span className="topbar-live"><i/> REAL DATA ONLY</span><span className="topbar-divider"/><div className="topbar-user"><span className="user-avatar">{initial}</span><span>{user.name}</span></div></div></header>
+      <header className="app-topbar"><div className="topbar-breadcrumb"><span>Workspace</span><ChevronRight size={14}/><b>{items.find(x=>x.id===active)?.label??"Settings"}</b></div><div className="topbar-actions"><div className="topbar-user"><span className="user-avatar">{initial}</span><span>{user.name}</span></div></div></header>
       <div className="app-content">{children}<footer className="app-footer"><span>© 2026 Sentinel Pulse</span><span>Built for clarity <span className="footer-spark">✦</span></span></footer></div>
     </section>
   </main>;
