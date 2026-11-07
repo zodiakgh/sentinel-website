@@ -1,42 +1,42 @@
-# Phase 1 — Foundation
+# Phase 1 — Foundation and first catalog
 
 ## Product rules
 
-- A public catalogue entry must be both free to use and open source.
-- Free-to-use status and open-source license are verified independently.
-- Only approved entries may be exposed in public search.
-- A visible code repository does not automatically qualify as open source.
-- Paid tiers may exist only if the software also has a genuinely usable free version; such products are excluded from the strict catalogue unless the product owner later changes this policy.
+- A public listing must have a verifiable open-source license.
+- License and pricing are recorded separately.
+- The first seed focuses on projects that can be downloaded or self-hosted at no cost.
+- A paid hosted plan does not automatically make the underlying software proprietary.
+- A source-code link alone does not qualify a project: the actual license must be verified.
+- Only approved and verified listings appear in public search.
 
 ## Database
 
-Apply the initial schema with Wrangler after creating the D1 database:
+D1 database: `sentinel-open-catalog`
 
-```bash
-npx wrangler d1 create sentinel-open-catalog
-```
-
-Copy the returned database_id into `wrangler.jsonc`, then run:
+Apply the schema and seed migrations in order:
 
 ```bash
 npx wrangler d1 migrations apply sentinel-open-catalog --local
 npx wrangler d1 migrations apply sentinel-open-catalog --remote
 ```
 
-The migration is located in `migrations/0001_initial_schema.sql`.
+- `0001_initial_schema.sql` creates the application tables.
+- `0002_catalog_seed.sql` seeds 114 software projects, 10 categories, SPDX license references, platforms, and source links.
 
-## Phase 1 completion checklist
+## Phase 1 checklist
 
 - [x] Next.js + TypeScript foundation
 - [x] Tailwind CSS foundation
 - [x] OpenNext Cloudflare configuration
-- [x] Initial homepage visual direction
-- [x] Initial D1 schema
-- [ ] Install dependencies and run a local build
-- [ ] Create and bind the D1 database
-- [ ] Configure Cloudflare deployment secrets and production build
-- [ ] Add automated tests and CI
-- [ ] Implement authentication in Phase 2
+- [x] Initial D1 schema and binding
+- [x] 114 curated software listings inserted into D1
+- [x] Official website, source-code, and license references recorded for every listing
+- [x] Category filtering and expanded catalog search endpoint
+- [x] Reproducible catalog seed migration
+- [ ] Authentication and user accounts
+- [ ] Software detail pages
+- [ ] Automated source/license re-checks
+- [ ] Community submissions and moderation
 
 ## Security notes
 
