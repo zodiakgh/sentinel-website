@@ -1,4 +1,4 @@
-const ORIGIN = "https://www.sentineldashboard.site";
+const ORIGIN = "*";
 const API = "https://newsletter.sentineldashboard.site";
 const cors = { "Access-Control-Allow-Origin": ORIGIN, "Access-Control-Allow-Methods": "GET, POST, OPTIONS", "Access-Control-Allow-Headers": "Content-Type, Authorization", "Vary": "Origin" };
 const json = (data, status=200) => new Response(JSON.stringify(data), {status, headers:{...cors,"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}});
