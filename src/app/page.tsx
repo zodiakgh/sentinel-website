@@ -64,7 +64,7 @@ export default function Home() {
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {categories.map((category, index) => {
             const Icon = category.icon;
-            return <a key={category.slug} href={`#search`} className="group rounded-2xl border border-white/[0.08] bg-[#101010] p-5 transition duration-200 hover:-translate-y-1 hover:border-[#d9ff66]/35 hover:bg-[#131313]">
+            return <a key={category.slug} href={`/?category=${category.slug}#search`} aria-label={`Browse ${category.name} software`} className="group rounded-2xl border border-white/[0.08] bg-[#101010] p-5 transition duration-200 hover:-translate-y-1 hover:border-[#d9ff66]/35 hover:bg-[#131313]">
               <div className="flex items-center justify-between">
                 <span className="flex size-10 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.035] text-neutral-300 transition group-hover:border-[#d9ff66]/25 group-hover:text-[#d9ff66]"><Icon className="size-[18px]" /></span>
                 <span className="text-[10px] tabular-nums text-neutral-600">0{index + 1}</span>
@@ -81,14 +81,14 @@ export default function Home() {
         <div className="mx-auto max-w-7xl px-5 py-16 sm:py-20 lg:px-10">
           <div className="mb-8"><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#d9ff66]">Editor's starting point</p><h2 className="mt-3 text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">Worth discovering</h2></div>
           <div className="grid gap-3 lg:grid-cols-3">
-            {picks.map((item) => <article key={item.name} className="rounded-2xl border border-white/[0.08] bg-[#111] p-6 transition hover:border-white/20">
+            {picks.map((item) => <a key={item.name} href={item.website} target="_blank" rel="noreferrer" aria-label={`Visit ${item.name} official website`} className="group rounded-2xl border border-white/[0.08] bg-[#111] p-6 transition duration-300 hover:-translate-y-1 hover:border-[#d9ff66]/35 hover:bg-[#151515] focus-visible:outline-[#d9ff66]">
               <div className="flex items-center gap-4">
                 <SoftwareLogo name={item.name} website={item.website} />
                 <div><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-neutral-500">{item.type}</p><h3 className="mt-1 text-xl font-semibold tracking-tight">{item.name}</h3></div>
               </div>
               <p className="mt-5 min-h-12 text-sm leading-6 text-neutral-400">{item.description}</p>
-              <div className="mt-5 flex items-center justify-between border-t border-white/[0.08] pt-4 text-xs text-neutral-500"><span>{item.platforms}</span><a href="#search" className="text-[#d9ff66] hover:text-white">Find it <ArrowUpRight className="ml-1 inline size-3" /></a></div>
-            </article>)}
+              <div className="mt-5 flex items-center justify-between border-t border-white/[0.08] pt-4 text-xs text-neutral-500"><span>{item.platforms}</span><span className="text-[#d9ff66] transition group-hover:text-white">Visit website <ArrowUpRight className="ml-1 inline size-3" /></span></div>
+            </a>)}
           </div>
         </div>
       </section>
