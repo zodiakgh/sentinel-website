@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { ArrowRight, Plus, Activity, Globe, Siren, ChartNoAxesCombined } from "lucide-react";
+import { ArrowRight, Plus, Activity, Globe, AlertCircle } from "lucide-react";
 
 const cards = [
   { label: "MONITORS", value: "—", note: "No monitors configured", icon: Globe },
   { label: "UPTIME", value: "—", note: "Awaiting first checks", icon: Activity },
-  { label: "AVG. RESPONSE", value: "—", note: "No response data", icon: ChartNoAxesCombined },
-  { label: "OPEN INCIDENTS", value: "—", note: "No incident data", icon: Siren }
+  { label: "AVG. RESPONSE", value: "—", note: "No response data", icon: Activity },
+  { label: "OPEN INCIDENTS", value: "—", note: "No incident data", icon: AlertCircle }
 ];
 
 export default function DashboardPage() {
@@ -37,7 +37,7 @@ export default function DashboardPage() {
             <span className="text-[10px] text-[#666]">No data</span>
           </div>
           <div className="mt-6 flex h-44 items-center justify-center rounded-lg border border-dashed border-[#303030] bg-[#0d0d0d]">
-            <div className="text-center"><ChartNoAxesCombined className="mx-auto text-[#555]" size={22}/><p className="mt-3 text-xs text-[#888]">Your performance data will appear here</p><p className="mt-1 text-[10px] text-[#606060]">Add a monitor to begin collecting measurements.</p></div>
+            <div className="text-center"><Activity className="mx-auto text-[#555]" size={22}/><p className="mt-3 text-xs text-[#888]">Your performance data will appear here</p><p className="mt-1 text-[10px] text-[#606060]">Add a monitor to begin collecting measurements.</p></div>
           </div>
         </section>
         <section className="rounded-xl border border-[#292929] bg-[#111] p-5">
