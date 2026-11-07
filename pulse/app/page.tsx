@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { Activity, ArrowRight, BellRing, ChartNoAxesCombined, Check, Globe2, ShieldCheck, Zap } from "lucide-react";
+import { Activity, ArrowRight, Bell, Check, Globe, ShieldCheck } from "lucide-react";
 
 const capabilities = [
-  { icon: Globe2, title: "Uptime monitoring", text: "Know when a website or API becomes unavailable, with checks and a clear history." },
-  { icon: ChartNoAxesCombined, title: "Performance analytics", text: "Understand response times and reliability trends instead of guessing." },
-  { icon: BellRing, title: "Incident response", text: "Turn confirmed failures into incidents your team can investigate and resolve." },
+  { icon: Globe, title: "Uptime monitoring", text: "Know when a website or API becomes unavailable, with checks and a clear history." },
+  { icon: Activity, title: "Performance analytics", text: "Understand response times and reliability trends instead of guessing." },
+  { icon: Bell, title: "Incident response", text: "Turn confirmed failures into incidents your team can investigate and resolve." },
   { icon: ShieldCheck, title: "Public status pages", text: "Give customers a transparent view of service health and incident updates." }
 ];
 
