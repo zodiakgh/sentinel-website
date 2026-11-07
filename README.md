@@ -1,26 +1,42 @@
-# Sentinel website
+# Sentinel Pulse
 
-Static, bilingual (EN/FR) site for GitHub Pages, domain `sentineldashboard.site` (see `CNAME`, unchanged).
-Pages are served without `.html` (`/dashboard`, `/commands`, `/verify`…): GitHub Pages maps `/name` to `name.html`.
+Sentinel Pulse is a new, independent SaaS platform for website and API monitoring, performance analytics, incident management and public status pages.
 
-## Publish
+This repository is being rebuilt from the previous static Sentinel website. The previous application is intentionally not part of the new product architecture.
+
+## Stack
+
+- Next.js App Router + React + TypeScript
+- Tailwind CSS 4
+- Cloudflare Workers with OpenNext
+- Cloudflare D1, R2, Queues and Cron Triggers (introduced as features require them)
+
+## Local development
+
+```bash
+npm install
+npm run dev
 ```
-git add -A && git commit -m "Update website" && git push origin main
+
+Open http://localhost:3000.
+
+## Cloudflare
+
+```bash
+npm run cf-typegen
+npm run build
+npm run preview
 ```
-Pages settings stay as they are (deploy from branch, root). No build step.
 
-## Configuration
-Everything public lives in `assets/js/config.js`:
-- `supportUrl`: the support server **invitation link** (`https://discord.gg/...`). Every "Join the support server" button reads it. A server ID alone cannot be used to join, so `supportGuildId` is only stored for reference.
-- `inviteUrl` / `applicationId` / `invitePermissions`: the "Add to Discord" buttons.
-- `authApiUrl`: the Cloudflare Worker used by the Discord login and the verification page.
-- `statusApiUrl`: optional real monitoring (format documented in `assets/js/status.js`).
+Review the generated OpenNext output locally before deploying. Configure the Cloudflare Worker and custom domain in the Cloudflare dashboard; do not reuse the old website's Worker bindings or database.
 
-## Layout
-- `*.html` pages, `assets/css/main.css`, `assets/js/` (`app.js` language/nav/animations, `commands.js` explorer, `dashboard.js` login, `verify.js` verification page, `status.js`).
-- `assets/fonts/`: self-hosted fonts (SIL OFL licences in `LICENSES.txt`). No third-party font or tracking requests.
-- `assets/js/i18n-fr.js`: French strings (English lives in the HTML). `assets/js/commands-data.js`: generated from the bot source by static analysis; regenerate when commands change.
-- `terms.html` / `privacy.html`: full legal texts in English and French. Have them reviewed by a lawyer and update the date when you change them.
+## Environment
 
-## Discord login and server verification
-Both need the Cloudflare Worker in `auth-worker/` (see its README).
+Copy `.env.example` to `.env.local` for local-only configuration. Never commit secrets.
+
+## Product principles
+
+- Real monitoring data only; clearly label previews and sample data.
+- Strict workspace isolation and server-side authorization.
+- Validate and restrict monitored destinations to prevent SSRF.
+- Keep the public status page separate from private workspace data.
