@@ -13,7 +13,7 @@
     {
       "binding": "DB",
       "database_name": "sentinel-analytics",
-      "database_id": "REPLACE_WITH_CLOUDFLARE_D1_DATABASE_ID",
+      "database_id": "10f07804-4a1a-4178-a84e-6b97414fcf03",
       "migrations_dir": "migrations"
     }
   ]
