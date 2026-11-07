@@ -1,3 +1,34 @@
-import Link from"next/link";import{Activity,ChevronDown,ChevronRight,Globe2,LayoutDashboard,MousePointer2,Settings,Users}from"lucide-react";import type{ReactNode}from"react";import type{User}from"@/lib/auth";import LogoutButton from"@/components/logout-button";
-type Props={user:User;active:"overview"|"sites"|"audience"|"events"|"settings";children:ReactNode};const items=[{id:"overview",label:"Overview",href:"/dashboard",icon:LayoutDashboard},{id:"sites",label:"Websites",href:"/dashboard/sites",icon:Globe2},{id:"audience",label:"Audience",href:"/dashboard/audience",icon:Users},{id:"events",label:"Events",href:"/dashboard/events",icon:MousePointer2}]as const;
-export default function DashboardShell({user,active,children}:Props){const initial=user.name.trim().charAt(0).toUpperCase();return <main className="dash-layout dash-layout-new"><aside className="dash-sidebar"><Link href="/" className="brand"><span className="brand-mark"><Activity size={16}/></span><span>SENTINEL<span className="brand-muted"> ANALYTICS</span></span></Link><div className="workspace-switch"><span className="workspace-avatar">{initial}</span><span><b>{user.name}'s workspace</b><small>Personal workspace</small></span><ChevronDown size={14}/></div><div className="side-label">WORKSPACE</div><nav className="side-nav">{items.map(item=><Link key={item.id} className={active===item.id?"active":""} href={item.href}><item.icon/>{item.label}</Link>)}</nav><div className="side-label side-label-spaced">PREFERENCES</div><nav className="side-nav"><Link className={active==="settings"?"active":""} href="/dashboard/settings"><Settings/> Settings</Link></nav><div className="sidebar-bottom"><div className="plan-card"><span>ACCOUNT</span><b>Personal workspace</b><small>Your account is active. Website tracking is still in preview.</small></div><div className="profile-row"><span className="profile-avatar">{initial}</span><span><b>{user.name}</b><small>{user.email}</small></span></div></div></aside><section className="dash-main"><header className="dash-top"><div className="crumb"><span>Workspace</span><ChevronRight size={13}/><b>{items.find(x=>x.id===active)?.label??"Settings"}</b></div><div className="dash-top-right"><span className="preview-badge"><i/> PREVIEW DATA</span><span className="profile-avatar">{initial}</span><LogoutButton/></div></header><div className="dash-content dash-content-new">{children}<footer className="dash-footer"><span>Sentinel Analytics</span><span>Account active · Analytics preview</span></footer></div></section></main>}
+import Link from "next/link";
+import { Activity, BarChart3, ChevronRight, Command, Globe2, MousePointer2, Settings, Users, Sparkles } from "lucide-react";
+import type { ReactNode } from "react";
+import type { User } from "@/lib/auth";
+import LogoutButton from "@/components/logout-button";
+
+type Props = { user: User; active: "overview" | "sites" | "audience" | "events" | "settings"; children: ReactNode };
+const items = [
+  { id: "overview", label: "Overview", href: "/dashboard", icon: BarChart3, group: "Workspace" },
+  { id: "sites", label: "Websites", href: "/dashboard/sites", icon: Globe2, group: "Workspace" },
+  { id: "audience", label: "Audience", href: "/dashboard/audience", icon: Users, group: "Reports" },
+  { id: "events", label: "Events", href: "/dashboard/events", icon: MousePointer2, group: "Reports" },
+] as const;
+
+export default function DashboardShell({ user, active, children }: Props) {
+  const initial = user.name.trim().charAt(0).toUpperCase() || "S";
+  return <main className="app-shell">
+    <aside className="app-sidebar">
+      <Link href="/" className="brand brand-sidebar"><span className="brand-mark"><Activity size={17}/></span><span className="brand-word">SENTINEL<span> PULSE</span></span></Link>
+      <div className="workspace-card"><div className="workspace-avatar">{initial}</div><div className="workspace-copy"><b>{user.name}'s workspace</b><small>Personal workspace</small></div><span className="workspace-chevron">⌄</span></div>
+      <div className="sidebar-group"><span className="sidebar-label">WORKSPACE</span><nav className="sidebar-nav">{items.filter(x=>x.group==="Workspace").map(item=><Link key={item.id} href={item.href} className={active===item.id?"active":""}><item.icon size={17}/><span>{item.label}</span>{active===item.id&&<i/>}</Link>)}</nav></div>
+      <div className="sidebar-group"><span className="sidebar-label">ANALYTICS</span><nav className="sidebar-nav">{items.filter(x=>x.group==="Reports").map(item=><Link key={item.id} href={item.href} className={active===item.id?"active":""}><item.icon size={17}/><span>{item.label}</span>{active===item.id&&<i/>}</Link>)}</nav></div>
+      <div className="sidebar-spacer"/>
+      <div className="sidebar-assistant"><div className="assistant-glow"><Sparkles size={16}/></div><b>Setup made simpler</b><p>Connect a website with the guided AI setup assistant.</p><Link href="/dashboard/sites">Connect a site <ChevronRight size={13}/></Link></div>
+      <Link className={"sidebar-settings "+(active==="settings"?"active":"")} href="/dashboard/settings"><Settings size={16}/> Settings</Link>
+      <div className="sidebar-user"><div className="user-avatar">{initial}</div><div className="user-copy"><b>{user.name}</b><small>{user.email}</small></div><LogoutButton/></div>
+      <div className="sidebar-version"><span><span className="status-dot"/> SYSTEM OPERATIONAL</span><span>v0.1 preview</span></div>
+    </aside>
+    <section className="app-main">
+      <header className="app-topbar"><div className="topbar-breadcrumb"><span>Workspace</span><ChevronRight size={14}/><b>{items.find(x=>x.id===active)?.label??"Settings"}</b></div><div className="topbar-actions"><span className="topbar-live"><i/> REAL DATA ONLY</span><span className="topbar-divider"/><div className="topbar-user"><span className="user-avatar">{initial}</span><span>{user.name}</span></div></div></header>
+      <div className="app-content">{children}<footer className="app-footer"><span>© 2026 Sentinel Pulse</span><span>Built for clarity <span className="footer-spark">✦</span></span></footer></div>
+    </section>
+  </main>;
+}
