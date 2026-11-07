@@ -23,4 +23,4 @@ if(url.pathname==="/confirm"&&req.method==="GET"){const t=url.searchParams.get("
 if(url.pathname==="/unsubscribe"&&req.method==="GET"){const t=url.searchParams.get("token")||"";if(!t)return page("Invalid link","This unsubscribe link is incomplete.");const r=await env.DB.prepare("UPDATE subscribers SET status='unsubscribed',updated_at=datetime('now') WHERE unsubscribe_token=?").bind(t).run();return page("Unsubscribed","You will no longer receive Sentinel project emails.")}
 if(url.pathname==="/health")return json({ok:true,service:"sentinel-newsletter"});
 return json({error:"Not found."},404)
-}catch(e){return json({error:"The request could not be completed. "+(env.ENVIRONMENT==="development"?e.message:"")},500)}}};
+}catch(e){console.error("[newsletter-worker] request failed",{path:url.pathname,method:req.method,error:e?.message||String(e),stack:e?.stack||null});return json({error:"The request could not be completed. "+(env.ENVIRONMENT==="development"?(e?.message||"Unknown error"):"")},500)}}};
