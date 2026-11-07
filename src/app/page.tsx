@@ -39,12 +39,6 @@ export default function Home() {
   function unleash() {
     if (started) return;
     setStarted(true);
-    try {
-      const audio = new Audio("/chaos.mp3");
-      audio.loop = true;
-      audio.volume = 0.45;
-      void audio.play().catch(() => {});
-    } catch {}
   }
 
   return (
