@@ -23,7 +23,6 @@ export default function HomePage() {
           <a href="#reliability" className="hover:text-white">Reliability</a>
         </nav>
         <div className="flex items-center gap-3">
-          <Link href="/login" className="hidden text-xs text-[#b7b7b7] hover:text-white sm:block">Sign in</Link>
           <Link href="/app" className="button-primary">Open dashboard <ArrowRight size={14} /></Link>
         </div>
       </header>
