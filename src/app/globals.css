@@ -128,3 +128,5 @@ main{overflow:hidden}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}.preview-window{transform:none!important}}
 
 @media(max-width:700px){.preview-window{transform:none!important}.preview-shell:before{display:none}.float-tag{transform:none;animation:none}}
+
+.dash-top-right .logout-button{width:auto;border:1px solid #313a45;border-radius:5px;padding:8px 10px;font-size:10px;white-space:nowrap}.dash-top-right .logout-button:hover{background:#1b2128;border-color:#647080}
