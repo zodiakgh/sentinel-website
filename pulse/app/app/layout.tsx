@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { Activity, Bell, ChartNoAxesCombined, CircleHelp, Globe, LayoutDashboard, RadioTower, Settings2, ShieldCheck, Siren } from "lucide-react";
+import { Activity, AlertCircle, Bell, CircleHelp, Globe, LayoutDashboard, Radio, Settings2, ShieldCheck } from "lucide-react";
 
 const navigation = [
   { label: "Overview", href: "/app", icon: LayoutDashboard },
   { label: "Monitors", href: "/app/monitors", icon: Globe },
-  { label: "Analytics", href: "/app/analytics", icon: ChartNoAxesCombined },
-  { label: "Incidents", href: "/app/incidents", icon: Siren },
-  { label: "Status pages", href: "/app/status-pages", icon: RadioTower },
+  { label: "Analytics", href: "/app/analytics", icon: Activity },
+  { label: "Incidents", href: "/app/incidents", icon: AlertCircle },
+  { label: "Status pages", href: "/app/status-pages", icon: Radio },
   { label: "SSL & Domains", href: "/app/domains", icon: ShieldCheck }
 ];
 
