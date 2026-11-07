@@ -26,7 +26,6 @@ export default function Home() {
       <header className="sticky top-0 z-30 border-b border-white/[0.06] bg-[#090909]/85 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-10">
           <a href="/" className="flex items-center gap-3">
-            <span className="flex size-9 items-center justify-center rounded-xl border border-[#d9ff66]/30 bg-[#d9ff66]/10 text-sm font-black text-[#d9ff66]">S</span>
             <span className="text-lg font-black tracking-[-0.06em]">SENTINEL<span className="text-[#d9ff66]">.</span></span>
           </a>
           <nav className="hidden items-center gap-8 text-[13px] font-medium text-neutral-400 md:flex">
