@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUpRight, ExternalLink, Search, SlidersHorizontal, ShieldCheck } from "lucide-react";
+import { ArrowUpRight, ExternalLink, Search, SlidersHorizontal, ShieldCheck, X, LoaderCircle } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 
 type Software = {
@@ -50,28 +50,47 @@ export function SoftwareSearch() {
   const [category, setCategory] = useState("");
   const [items, setItems] = useState<Software[]>([]);
   const [loading, setLoading] = useState(false);
-  const [searched, setSearched] = useState(false);
+  const [searched, setSearched] = useState(false);\n  const [error, setError] = useState(false);
 
-  async function search(event?: FormEvent) {
-    event?.preventDefault();
+  async function runSearch(searchQuery = query, searchCategory = category) {
     setLoading(true);
     setSearched(true);
+    setError(false);
     try {
       const params = new URLSearchParams({ limit: "200" });
-      if (query.trim()) params.set("q", query.trim());
-      if (category) params.set("category", category);
+      if (searchQuery.trim()) params.set("q", searchQuery.trim());
+      if (searchCategory) params.set("category", searchCategory);
       const response = await fetch(`/api/software?${params.toString()}`);
       if (!response.ok) throw new Error("Catalog unavailable");
       const data = await response.json();
       setItems(data.items ?? []);
     } catch {
       setItems([]);
+      setError(true);
     } finally {
       setLoading(false);
     }
   }
 
-  useEffect(() => { void search(); }, []);
+  async function search(event?: FormEvent) {
+    event?.preventDefault();
+    await runSearch();
+  }
+
+  function clearFilters() {
+    setQuery("");
+    setCategory("");
+    void runSearch("", "");
+  }
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const requestedCategory = params.get("category") ?? "";
+    const validCategory = categoryOptions.some(([value]) => value === requestedCategory);
+    const initialCategory = validCategory ? requestedCategory : "";
+    setCategory(initialCategory);
+    void runSearch("", initialCategory);
+  }, []);
 
   return (
     <div id="search" className="mx-auto mt-10 max-w-5xl scroll-mt-8">
@@ -89,19 +108,19 @@ export function SoftwareSearch() {
                 {categoryOptions.map(([value, label]) => <option key={value} value={value} className="bg-[#151515]">{label}</option>)}
               </select>
             </label>
-            <button disabled={loading} className="rounded-xl bg-[#d9ff66] px-6 py-3.5 text-sm font-bold text-black transition hover:bg-[#e6ff9b] disabled:opacity-60">{loading ? "Searching…" : "Search index"}</button>
+            <button type="submit" disabled={loading} className="group flex items-center justify-center gap-2 rounded-xl bg-[#d9ff66] px-6 py-3.5 text-sm font-bold text-black shadow-[0_0_0_0_rgba(217,255,102,0)] transition duration-200 hover:-translate-y-0.5 hover:bg-[#e8ff9f] hover:shadow-[0_8px_28px_rgba(217,255,102,0.14)] active:translate-y-0 active:scale-[0.98] disabled:cursor-wait disabled:opacity-60">{loading ? <LoaderCircle className="size-4 animate-spin" /> : <Search className="size-4 transition group-hover:scale-110" />}{loading ? "Searching…" : "Search index"}</button>
           </div>
         </div>
       </form>
       <div className="mt-4 flex flex-wrap items-center justify-between gap-2 px-1 text-xs text-neutral-400">
         <span className="flex items-center gap-2"><ShieldCheck className="size-4 text-[#d9ff66]" /> Verified open-source licenses · pricing shown separately</span>
-        {searched && <span className="font-medium tabular-nums text-neutral-300">{items.length} {items.length === 1 ? "project" : "projects"} found</span>}
+        {searched && <div className="flex items-center gap-3"><span className="font-medium tabular-nums text-neutral-300">{items.length} {items.length === 1 ? "project" : "projects"} found</span>{(query || category) && <button type="button" onClick={clearFilters} className="inline-flex items-center gap-1 rounded-full border border-white/10 px-2.5 py-1.5 text-neutral-400 transition hover:border-[#d9ff66]/30 hover:text-[#d9ff66] active:scale-95"><X className="size-3" /> Clear</button>}</div>}
       </div>
 
       {searched && (
         <div className="mt-6 grid gap-3 text-left sm:grid-cols-2 lg:grid-cols-3">
           {items.map((item) => (
-            <article key={item.id} className="group flex min-h-[250px] flex-col rounded-2xl border border-white/[0.09] bg-[#101010] p-5 transition duration-200 hover:-translate-y-1 hover:border-[#d9ff66]/40 hover:bg-[#131313]">
+            <article key={item.id} className="group flex min-h-[250px] flex-col rounded-2xl border border-white/[0.09] bg-[#101010] p-5 transition duration-300 hover:-translate-y-1 hover:border-[#d9ff66]/40 hover:bg-[#131313] hover:shadow-[0_16px_44px_rgba(0,0,0,0.28)]">
               <div className="flex items-start gap-3">
                 <SoftwareLogo name={item.name} website={item.website_url} />
                 <div className="min-w-0 flex-1 pt-0.5">
@@ -122,7 +141,7 @@ export function SoftwareSearch() {
               </div>
             </article>
           ))}
-          {!loading && items.length === 0 && <p className="col-span-full rounded-2xl border border-white/10 bg-[#101010] p-8 text-center text-sm text-neutral-400">No matching projects. Try another name or category.</p>}
+          {!loading && items.length === 0 && <div className="col-span-full rounded-2xl border border-white/10 bg-[#101010] p-8 text-center"><p className="text-sm text-neutral-200">{error ? "The catalog could not be reached." : "No matching projects."}</p><p className="mt-2 text-xs text-neutral-500">{error ? "Check your connection and try again." : "Try another name or category."}</p><button type="button" onClick={() => void runSearch()} className="mt-5 rounded-xl border border-[#d9ff66]/30 px-4 py-2.5 text-xs font-semibold text-[#d9ff66] transition hover:bg-[#d9ff66] hover:text-black active:scale-95">Try again</button></div>}
         </div>
       )}
     </div>
