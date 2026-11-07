@@ -1,5 +1,0 @@
-User-agent: *
-Allow: /
-Disallow: /verify
-
-Sitemap: https://sentineldashboard.site/sitemap.xml
