@@ -120,7 +120,9 @@ export function SoftwareSearch() {
       {searched && (
         <div className="mt-6 grid gap-3 text-left sm:grid-cols-2 lg:grid-cols-3">
           {items.map((item) => (
-            <article key={item.id} className="group flex min-h-[250px] flex-col rounded-2xl border border-white/[0.09] bg-[#101010] p-5 transition duration-300 hover:-translate-y-1 hover:border-[#d9ff66]/40 hover:bg-[#131313] hover:shadow-[0_16px_44px_rgba(0,0,0,0.28)]">
+            <article key={item.id} className="group relative flex min-h-[250px] flex-col rounded-2xl border border-white/[0.09] bg-[#101010] p-5 transition duration-300 hover:-translate-y-1 hover:border-[#d9ff66]/40 hover:bg-[#131313] hover:shadow-[0_16px_44px_rgba(0,0,0,0.28)]">
+              <a href={item.website_url || item.source_url} target="_blank" rel="noreferrer" aria-label={`Open ${item.name} official platform`} className="absolute inset-0 z-0 rounded-2xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#d9ff66]"><span className="sr-only">Open {item.name} official platform</span></a>
+              <div className="pointer-events-none relative z-10 flex flex-1 flex-col">
               <div className="flex items-start gap-3">
                 <SoftwareLogo name={item.name} website={item.website_url} />
                 <div className="min-w-0 flex-1 pt-0.5">
@@ -135,9 +137,10 @@ export function SoftwareSearch() {
                 <span className="rounded-md border border-[#d9ff66]/20 bg-[#d9ff66]/[0.06] px-2 py-1 text-[10px] text-[#d9ff66]">{item.pricing_status === "free" ? "Free" : item.pricing_status}</span>
               </div>
               <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 border-t border-white/[0.08] pt-4 text-[11px] font-medium">
-                <a href={item.website_url} target="_blank" rel="noreferrer" className="text-[#d9ff66] hover:text-white">Website <ExternalLink className="ml-1 inline size-3" /></a>
-                <a href={item.source_url} target="_blank" rel="noreferrer" className="text-neutral-400 hover:text-white">Source code <ExternalLink className="ml-1 inline size-3" /></a>
-                {item.license_url && <a href={item.license_url} target="_blank" rel="noreferrer" className="text-neutral-400 hover:text-white">License <ExternalLink className="ml-1 inline size-3" /></a>}
+                <a href={item.website_url} target="_blank" rel="noreferrer" className="pointer-events-auto relative z-20 text-[#d9ff66] hover:text-white">Website <ExternalLink className="ml-1 inline size-3" /></a>
+                <a href={item.source_url} target="_blank" rel="noreferrer" className="pointer-events-auto relative z-20 text-neutral-400 hover:text-white">Source code <ExternalLink className="ml-1 inline size-3" /></a>
+                {item.license_url && <a href={item.license_url} target="_blank" rel="noreferrer" className="pointer-events-auto relative z-20 text-neutral-400 hover:text-white">License <ExternalLink className="ml-1 inline size-3" /></a>}
+              </div>
               </div>
             </article>
           ))}
