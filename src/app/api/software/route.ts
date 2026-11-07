@@ -14,13 +14,15 @@ type SoftwareRow = {
   repository_host: string | null;
   license_name: string;
   spdx_id: string;
+  pricing_status: "free" | "freemium" | "paid" | "unverified";
+  categories: string | null;
 };
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const query = (searchParams.get("q") ?? "").trim().slice(0, 100);
   const category = (searchParams.get("category") ?? "").trim().slice(0, 80);
-  const limit = Math.min(Math.max(Number(searchParams.get("limit") ?? 24), 1), 50);
+  const limit = Math.min(Math.max(Number(searchParams.get("limit") ?? 120), 1), 200);
 
   try {
     const { env } = await getCloudflareContext({ async: true });
@@ -28,9 +30,13 @@ export async function GET(request: NextRequest) {
 
     let sql = `
       SELECT s.id, s.slug, s.name, s.summary, s.website_url, s.source_url,
-             s.repository_host, l.name AS license_name, l.spdx_id
+             s.repository_host, s.pricing_status,
+             l.name AS license_name, l.spdx_id,
+             GROUP_CONCAT(DISTINCT c.name_en) AS categories
       FROM software s
       INNER JOIN licenses l ON l.id = s.license_id
+      LEFT JOIN software_categories sc ON sc.software_id = s.id
+      LEFT JOIN categories c ON c.id = sc.category_id
       WHERE s.verification_status = 'approved'
         AND s.free_to_use_verified = 1
         AND s.license_verified = 1
@@ -40,14 +46,14 @@ export async function GET(request: NextRequest) {
 
     if (query) {
       sql += " AND (s.name LIKE ? OR s.summary LIKE ? OR s.description LIKE ?)";
-      const term = `%${query.replace(/[\\%_]/g, "\\$&")}%`;
+      const term = `%${query.replace(/[\\\\%_]/g, "\\\\$&")}%`;
       values.push(term, term, term);
     }
     if (category) {
-      sql += " AND EXISTS (SELECT 1 FROM software_categories sc JOIN categories c ON c.id = sc.category_id WHERE sc.software_id = s.id AND c.slug = ?)";
+      sql += " AND EXISTS (SELECT 1 FROM software_categories sc2 JOIN categories c2 ON c2.id = sc2.category_id WHERE sc2.software_id = s.id AND c2.slug = ?)";
       values.push(category);
     }
-    sql += " ORDER BY s.name COLLATE NOCASE LIMIT ?";
+    sql += " GROUP BY s.id ORDER BY s.name COLLATE NOCASE LIMIT ?";
     const rows = await db.prepare(sql).bind(...values, limit).all<SoftwareRow>();
 
     return NextResponse.json({ items: rows.results ?? [], count: rows.results?.length ?? 0 });
