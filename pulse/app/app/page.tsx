@@ -13,7 +13,7 @@ export default function DashboardPage() {
     <div>
       <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
         <div>
-          <div className="text-[10px] uppercase tracking-[.16em] text-[#777]">Saturday, November 7, 2026</div>
+          <div className="text-[10px] uppercase tracking-[.16em] text-[#777]">WORKSPACE / OVERVIEW</div>
           <h1 className="mt-2 text-2xl font-semibold tracking-[-.04em]">Workspace overview</h1>
           <p className="mt-2 text-xs text-[#858585]">A central view of your monitored services and operational health.</p>
         </div>
