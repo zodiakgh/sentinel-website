@@ -13,6 +13,7 @@ type Software = {
   repository_host: string | null;
   license_name: string;
   spdx_id: string;
+  license_url: string | null;
   pricing_status: "free" | "freemium" | "paid" | "unverified";
   categories: string | null;
 };
@@ -81,11 +82,12 @@ export function SoftwareSearch() {
               <p className="mt-3 min-h-12 text-sm leading-6 text-neutral-400">{item.summary}</p>
               <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-neutral-500">
                 {(item.categories ?? "").split(",").filter(Boolean).map((category) => <span key={category} className="rounded-full border border-neutral-800 px-2 py-1">{category}</span>)}
-                <span className="rounded-full border border-neutral-800 px-2 py-1">{item.pricing_status === "free" ? "Free" : item.pricing_status}</span>
+                <span className="rounded-full border border-neutral-800 px-2 py-1">{item.pricing_status === "free" ? "Free download" : item.pricing_status}</span>
               </div>
               <div className="mt-5 flex gap-4 border-t border-neutral-800 pt-4 text-xs">
                 <a href={item.website_url} target="_blank" rel="noreferrer" className="text-[#d9ff66] hover:underline">Official website <ExternalLink className="ml-1 inline size-3" /></a>
                 <a href={item.source_url} target="_blank" rel="noreferrer" className="text-neutral-400 hover:text-white">Source code <ExternalLink className="ml-1 inline size-3" /></a>
+                {item.license_url && <a href={item.license_url} target="_blank" rel="noreferrer" className="text-neutral-400 hover:text-white">License <ExternalLink className="ml-1 inline size-3" /></a>}
               </div>
             </article>
           ))}
