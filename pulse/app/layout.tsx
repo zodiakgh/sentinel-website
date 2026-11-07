@@ -8,7 +8,6 @@ export const metadata: Metadata = {
   },
   description: "Monitor uptime, understand incidents and keep your web services reliable.",
   applicationName: "Sentinel Pulse",
-  metadataBase: new URL("https://pulse.example.com")
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
