@@ -1,7 +1,8 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { NextRequest, NextResponse } from "next/server";
 
-export const runtime = "edge";
+type D1Statement = { bind(...values: (string | number)[]): D1Statement; all<T>(): Promise<{ results?: T[] }> };
+type D1Database = { prepare(sql: string): D1Statement };
 
 type SoftwareRow = {
   id: string;
