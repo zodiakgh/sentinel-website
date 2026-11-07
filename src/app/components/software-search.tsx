@@ -46,7 +46,7 @@ export function SoftwareSearch() {
   useEffect(() => { void search(); }, []);
 
   return (
-    <div className="mx-auto mt-10 max-w-5xl">
+    <div id="search" className="mx-auto mt-10 max-w-5xl">
       <form onSubmit={search} className="flex flex-col gap-2 rounded-2xl border border-neutral-700 bg-[#111] p-2 text-left shadow-2xl shadow-black/40 sm:flex-row">
         <div className="flex min-w-0 flex-1 items-center gap-3">
         <Search className="ml-3 size-5 shrink-0 text-neutral-500" />
