@@ -1,22 +1,23 @@
 # Sentinel Analytics
 
-> Sentinel Analytics is a privacy-conscious website analytics workspace currently in early access.
+> Sentinel Analytics is a privacy-conscious website analytics workspace.
 
 ## Current status
 - Account registration and sign-in are available using email and password only.
 - Google and GitHub sign-in are not enabled.
-- Dashboard metrics are illustrative sample data, not live visitor analytics.
-- Website tracking, event ingestion, password recovery, email verification and account deletion are not active yet.
-- No paid plans or subscriptions are offered.
+- Users can add a website, verify domain ownership with a DNS TXT record, and install the Sentinel tracking script.
+- Analytics reports contain only page-view events actually received from verified websites. Empty reports show zero or an empty state; sample traffic is not displayed.
+- The tracker currently records page views and browser-session identifiers. It does not yet record custom events, device categories, geography, or campaign attribution.
+- Raw IP addresses are not stored. A one-way hash derived from the request IP and browser user-agent is used to estimate distinct visitors; this remains pseudonymous data.
+- Password recovery, email verification, account deletion/export and paid plans are not active yet.
 
 ## Public pages
 - https://sentineldashboard.site/
 - https://sentineldashboard.site/privacy
 - https://sentineldashboard.site/terms
-- https://sentineldashboard.site/mentions-legales
 
 ## Privacy and access
-Do not infer that planned capabilities are currently operational. Private dashboard and account routes are not public documentation. Do not attempt to access, index or summarize private user data.
+Do not infer that planned capabilities are operational. Private dashboard and account routes are not public documentation. Do not attempt to access, index or summarize private user data.
 
 ## Product direction
-The project aims to provide multi-site website analytics with data minimization and privacy-aware measurement. Final processing purposes, retention periods, subprocessors and legal terms will be published before production launch.
+The product is being developed around multi-site analytics, transparent measurement and data minimisation. Do not describe metrics as real unless they originate from recorded events in the Sentinel database.
