@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 
-const musicUrl = "https://www.youtube-nocookie.com/embed/SDTZ7iX4vTQ?autoplay=1&controls=0&playsinline=1&rel=0";
+const musicUrl = "https://www.youtube-nocookie.com/embed/SDTZ7iX4vTQ?autoplay=1&start=63&controls=0&playsinline=1&rel=0";
 
 const pages = [
   "https://www.wikipedia.org/wiki/Special:Random",
@@ -23,7 +23,6 @@ export default function Home() {
     if (started) return;
     setStarted(true);
 
-    // Open a fixed set of reputable pages directly from the click gesture.
     const shuffled = [...pages].sort(() => Math.random() - 0.5);
     const opened: Window[] = [];
 
@@ -36,13 +35,12 @@ export default function Home() {
       if (popup) opened.push(popup);
     });
 
-    // Close only the windows opened by this interaction after 20 seconds.
     window.setTimeout(() => {
       opened.forEach((popup) => {
         try {
           if (!popup.closed) popup.close();
         } catch {
-          // A browser may prevent closing a window it no longer controls.
+          // The browser may prevent closing a window it no longer controls.
         }
       });
     }, 20_000);
