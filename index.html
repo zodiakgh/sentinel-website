@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Modern Web App</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Screen Loader / Overlay Splash Screen -->
+  <div id="loader-wrapper">
+    <div class="loader-content">
+      <div class="logo-box">
+        <svg class="logo-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+          <polyline points="2 17 12 22 22 17"></polyline>
+          <polyline points="2 12 12 17 22 12"></polyline>
+        </svg>
+      </div>
+      <div class="spinner"></div>
+      <p class="loader-text">Chargement de l'application...</p>
+    </div>
+  </div>
+
+  <!-- Header & Navigation -->
+  <header class="navbar">
+    <div class="nav-container">
+      <div class="brand">
+        <svg class="brand-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+          <polyline points="2 17 12 22 22 17"></polyline>
+          <polyline points="2 12 12 17 22 12"></polyline>
+        </svg>
+        <span class="brand-name">NEXUS</span>
+      </div>
+      <nav class="nav-links">
+        <a href="#features">Fonctionnalités</a>
+        <a href="#demo">Démo</a>
+        <a href="#contact">Contact</a>
+      </nav>
+      <button class="btn btn-primary" onclick="alert('Bienvenue sur NEXUS !')">Commencer</button>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <main>
+    <section class="hero">
+      <div class="hero-badge">✨ Nouveau design 2.0</div>
+      <h1 class="hero-title">Une expérience fluide & instantanée</h1>
+      <p class="hero-subtitle">Le logo de chargement s'efface automatiquement avec une transition ultra-pro. Aucun élément ne vient bloquer votre écran.</p>
+      <div class="hero-actions">
+        <button class="btn btn-hero" onclick="triggerLoaderDemo()">Tester le Loader</button>
+        <a href="#features" class="btn btn-secondary">En savoir plus</a>
+      </div>
+    </section>
+
+    <!-- Grid Section -->
+    <section id="features" class="features-grid">
+      <div class="card">
+        <div class="card-icon">⚡</div>
+        <h3>Ultra Rapide</h3>
+        <p>Le splash screen utilise <code>pointer-events: none</code> et une transition CSS pour s'effacer en douceur sans bloquer la page.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🎨</div>
+        <h3>Design Dark Modern</h3>
+        <p>Une esthétique épurée avec gradients, flous d'arrière-plan (glassmorphism) et animations réactives.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">💻</div>
+        <h3>Responsive & Pro</h3>
+        <p>Parfaitement adapté pour mobile, tablette et écran desktop.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 NEXUS Studio. Tous droits réservés.</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
