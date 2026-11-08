@@ -1,26 +1,39 @@
-# SENTINEL — Controlled Chaos
+# Sentinel Discord Toolkit
 
-A monochrome, interactive browser experiment inspired by experimental corners of the internet.
+The public Discord lookup and developer tools at **sentineldashboard.site**.
 
-The experience is intentionally opt-in:
-- The visual sequence starts only when the visitor presses the button.
-- Signal distortion, gravity, and cursor echo are individually switchable.
-- Reset All Effects immediately returns the page to its default state.
-- All effects run locally in the current tab.
+## Included
 
-No forced popups, automatic downloads, permission prompts, third-party account actions, or navigation traps.
+- Discord user lookup by numeric ID
+- Server lookup by numeric ID
+- Invite metadata lookup
+- Snowflake decoder and timestamp builder
+- CDN URL builder
+- Permission bitfield inspector
+- JSON formatter
+- Consent-based voice session statistics API
 
-## Development
+## Run locally
 
-- Node.js 22+
+- Node.js 20+
 - `npm install`
 - `npm run dev`
 
-## Cloudflare
+## Deploy
 
-This project uses Next.js with OpenNext for Cloudflare Workers.
+`npm run deploy`
 
-- `npm run preview`
-- `npm run deploy`
+The Worker is named `sentinel-website`. Cloudflare resources are configured in `wrangler.jsonc`.
 
-The Worker name and compatibility settings are kept in `wrangler.jsonc`.
+## Required Worker secrets
+
+- `BOT_TOKEN`: Discord bot token used for API requests. The bot must have access to the server for server lookup.
+- `BOT_API_KEY`: existing Sentinel bot API key, used to authenticate voice event ingestion.
+
+Do not put secret values in this repository.
+
+## Voice event collection
+
+Voice statistics are not provided by Discord's public API. The Sentinel bot must send join/leave events to `POST /api/voice/events`. The server and user must both opt in before a session is stored or displayed. The endpoint does not accept audio or message contents.
+
+See the API reference on the site for the event payload.
