@@ -105,7 +105,8 @@ export default {
       const userId=body.userId,guildId=body.guildId;
       if(body.type==="optout"){
         await env.DB.prepare("UPDATE voice_public_consent SET enabled=0, updated_at=? WHERE user_id=? AND guild_id=?").bind(now,userId,guildId).run();
-        await env.DB.prepare("UPDATE voice_sessions SET ended_at=?, duration_seconds=MAX(0,?-started_at), public_opt_in=0 WHERE user_id=? AND guild_id=? AND ended_at IS NULL").bind(now,now,userId,guildId).run();\n        await env.DB.prepare("UPDATE voice_sessions SET public_opt_in=0 WHERE user_id=? AND guild_id=?").bind(userId,guildId).run();
+        await env.DB.prepare("UPDATE voice_sessions SET ended_at=?, duration_seconds=MAX(0,?-started_at), public_opt_in=0 WHERE user_id=? AND guild_id=? AND ended_at IS NULL").bind(now,now,userId,guildId).run();
+        await env.DB.prepare("UPDATE voice_sessions SET public_opt_in=0 WHERE user_id=? AND guild_id=?").bind(userId,guildId).run();
         return json({ok:true,optedOut:true});
       }
       if(body.type==="join"){
