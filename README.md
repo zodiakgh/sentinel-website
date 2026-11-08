@@ -1,8 +1,14 @@
-# SENTINEL
+# SENTINEL — Controlled Chaos
 
-A one-page internet prank.
+A monochrome, interactive browser experiment inspired by experimental corners of the internet.
 
-The page starts completely white and displays the Hypergamy graphic. The first click starts the music and an escalating stream of simulated Rickroll windows.
+The experience is intentionally opt-in:
+- The visual sequence starts only when the visitor presses the button.
+- Signal distortion, gravity, and cursor echo are individually switchable.
+- Reset All Effects immediately returns the page to its default state.
+- All effects run locally in the current tab.
+
+No forced popups, automatic downloads, permission prompts, third-party account actions, or navigation traps.
 
 ## Development
 
