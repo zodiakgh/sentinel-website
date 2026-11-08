@@ -18,7 +18,7 @@ export default function Home() {
   const [cursorEcho, setCursorEcho] = useState(false);
   const [pointer, setPointer] = useState<Point>({ x: -100, y: -100 });
   const [events, setEvents] = useState(initialEvents);
-  const sequenceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sequenceTimer = useRef<ReturnType<typeof window.setTimeout> | null>(null);
 
   const addEvent = (message: string) => {
     setEvents((current) => [message, ...current].slice(0, 5));
