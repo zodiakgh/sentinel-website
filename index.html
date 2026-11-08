@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Coffee Break Studio - Itch.io Games & Projects</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Screen Loader / Overlay Splash Screen -->
+  <div id="loader-wrapper">
+    <div class="loader-content">
+      <div class="logo-box">
+        <svg class="logo-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 8h1a4 4 0 1 1 0 8h-1"></path>
+          <path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V8z"></path>
+          <line x1="6" y1="2" x2="6" y2="4"></line>
+          <line x1="10" y1="2" x2="10" y2="4"></line>
+          <line x1="14" y1="2" x2="14" y2="4"></line>
+        </svg>
+      </div>
+      <div class="spinner"></div>
+      <p class="loader-text" id="loader-txt">Loading Coffee Break Studio...</p>
+    </div>
+  </div>
+
+  <!-- Header & Navigation -->
+  <header class="navbar">
+    <div class="nav-container">
+      <div class="brand">
+        <svg class="brand-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 8h1a4 4 0 1 1 0 8h-1"></path>
+          <path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V8z"></path>
+          <line x1="6" y1="2" x2="6" y2="4"></line>
+          <line x1="10" y1="2" x2="10" y2="4"></line>
+          <line x1="14" y1="2" x2="14" y2="4"></line>
+        </svg>
+        <span class="brand-name">Coffee Break Studio</span>
+      </div>
+      
+      <nav class="nav-links">
+        <a href="#games" data-en="My Games" data-fr="Mes Jeux">My Games</a>
+        <a href="#about" data-en="About" data-fr="À propos">About</a>
+        <a href="#itch" data-en="Itch.io" data-fr="Itch.io">Itch.io</a>
+      </nav>
+
+      <div class="nav-actions">
+        <!-- Language Switcher -->
+        <button class="lang-btn" id="lang-toggle" onclick="toggleLanguage()">🇫🇷 FR</button>
+        <a href="https://itch.io" target="_blank" class="btn btn-primary" data-en="Itch.io Profile" data-fr="Profil Itch.io">Itch.io Profile</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <main>
+    <section class="hero">
+      <div class="hero-badge" data-en="🎮 Indie Game Developer" data-fr="🎮 Développeur de Jeux Indie">🎮 Indie Game Developer</div>
+      <h1 class="hero-title" data-en="Coffee Break Studio Games" data-fr="Jeux Coffee Break Studio">Coffee Break Studio Games</h1>
+      <p class="hero-subtitle" data-en="Explore my indie game creations, game jam prototypes, and interactive experiences hosted on Itch.io." data-fr="Découvrez mes créations de jeux vidéo indés, mes prototypes de game jams et mes projets interactifs hébergés sur Itch.io.">Explore my indie game creations, game jam prototypes, and interactive experiences hosted on Itch.io.</p>
+    </section>
+
+    <!-- Itch.io Games Showcase Section -->
+    <section id="games" class="projects-section">
+      <h2 class="section-title" data-en="My Itch.io Games" data-fr="Mes Jeux Itch.io">My Itch.io Games</h2>
+      
+      <div class="projects-grid">
+
+        <!-- Game Card 1 -->
+        <div class="project-card">
+          <div class="card-tag">Indie Game / Playable</div>
+          <h3 data-en="My First Game Title" data-fr="Mon Premier Jeu">My First Game Title</h3>
+          <p data-en="A short action-adventure game crafted for a game jam. Navigate through levels, solve puzzles, and reach the high score!" data-fr="Un jeu d'action-aventure créé lors d'une game jam. Explorez les niveaux, résolvez des énigmes et battes le meilleur score !">A short action-adventure game crafted for a game jam. Navigate through levels, solve puzzles, and reach the high score!</p>
+          <div class="card-footer">
+            <span class="status-badge live" data-en="● Free Download" data-fr="● Téléchargement Gratuit">● Free Download</span>
+            <a href="https://itch.io" target="_blank" class="btn btn-sm" data-en="Play on Itch.io" data-fr="Jouer sur Itch.io">Play on Itch.io</a>
+          </div>
+        </div>
+
+        <!-- Game Card 2 -->
+        <div class="project-card">
+          <div class="card-tag">Prototype / WebGL</div>
+          <h3 data-en="Runner Prototype" data-fr="Prototype Runner">Runner Prototype</h3>
+          <p data-en="Fast-paced runner built directly for the browser. Play instant WebGL builds straight from your web browser without downloading." data-fr="Jeu de course rapide jouable directement dans le navigateur en WebGL sans aucun téléchargement.">Fast-paced runner built directly for the browser. Play instant WebGL builds straight from your web browser without downloading.</p>
+          <div class="card-footer">
+            <span class="status-badge release" data-en="WebGL Browser" data-fr="Navigateur WebGL">WebGL Browser</span>
+            <a href="https://itch.io" target="_blank" class="btn btn-sm" data-en="Play in Browser" data-fr="Jouer sur le Web">Play in Browser</a>
+          </div>
+        </div>
+
+        <!-- Game Card 3 -->
+        <div class="project-card">
+          <div class="card-tag">In Development</div>
+          <h3 data-en="Upcoming Project" data-fr="Prochain Projet">Upcoming Project</h3>
+          <p data-en="An ambitious new indie title currently in active development. Stay tuned on Itch.io for devlogs and early access builds!" data-fr="Un nouveau jeu indépendant ambitieux actuellement en développement. Suivez les devlogs et accès anticipés sur Itch.io !">An ambitious new indie title currently in active development. Stay tuned on Itch.io for devlogs and early access builds!</p>
+          <div class="card-footer">
+            <span class="status-badge dev" data-en="Coming Soon" data-fr="Bientôt Disponible">Coming Soon</span>
+            <a href="https://itch.io" target="_blank" class="btn btn-sm" data-en="Follow Devlog" data-fr="Suivre Devlog">Follow Devlog</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Coffee Break Studio. All rights reserved.</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
