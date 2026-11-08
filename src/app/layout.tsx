@@ -2,16 +2,16 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "SENTINEL",
-  description: "You should not have clicked.",
+  title: "SENTINEL — Controlled Chaos",
+  description: "An interactive browser experiment. A little controlled chaos, always in your control.",
   robots: {
-    index: false,
-    follow: false
-  }
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({
-  children
+  children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
