@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Coffee Break Studio</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Screen Loader / Overlay Splash Screen Coffee Break Studio -->
+  <div id="loader-wrapper">
+    <div class="loader-content">
+      <div class="logo-box">
+        <!-- SVG Tasse de Café / Coffee Break Studio Logo -->
+        <svg class="logo-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 8h1a4 4 0 1 1 0 8h-1"></path>
+          <path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V8z"></path>
+          <line x1="6" y1="2" x2="6" y2="4"></line>
+          <line x1="10" y1="2" x2="10" y2="4"></line>
+          <line x1="14" y1="2" x2="14" y2="4"></line>
+        </svg>
+      </div>
+      <div class="spinner"></div>
+      <p class="loader-text">Chargement de Coffee Break Studio...</p>
+    </div>
+  </div>
+
+  <!-- Header & Navigation -->
+  <header class="navbar">
+    <div class="nav-container">
+      <div class="brand">
+        <svg class="brand-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 8h1a4 4 0 1 1 0 8h-1"></path>
+          <path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V8z"></path>
+          <line x1="6" y1="2" x2="6" y2="4"></line>
+          <line x1="10" y1="2" x2="10" y2="4"></line>
+          <line x1="14" y1="2" x2="14" y2="4"></line>
+        </svg>
+        <span class="brand-name">Coffee Break Studio</span>
+      </div>
+      <nav class="nav-links">
+        <a href="#projets">Projets</a>
+        <a href="#services">Services</a>
+        <a href="#contact">Contact</a>
+      </nav>
+      <button class="btn btn-primary" onclick="alert('Bienvenue chez Coffee Break Studio !')">Découvrir</button>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <main>
+    <section class="hero">
+      <div class="hero-badge">☕ Coffee Break Studio v2.0</div>
+      <h1 class="hero-title">Des créations modernes & un chargement fluide</h1>
+      <p class="hero-subtitle">Le logo au centre s'efface automatiquement dès que la page est prête. Terminé le logo bloqué au milieu !</p>
+      <div class="hero-actions">
+        <button class="btn btn-hero" onclick="triggerLoaderDemo()">Re-tester le Loader</button>
+        <a href="#projets" class="btn btn-secondary">Voir les créations</a>
+      </div>
+    </section>
+
+    <!-- Grid Section -->
+    <section id="projets" class="features-grid">
+      <div class="card">
+        <div class="card-icon">☕</div>
+        <h3>Coffee Break Style</h3>
+        <p>Identité visuelle originale dédiée à Coffee Break Studio avec palette chaleureuse et animations modernes.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">⚡</div>
+        <h3>Loader Débloqué</h3>
+        <p>Le splash screen s'efface proprement via JS et <code>pointer-events: none</code> sans gêner les interactions.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🚀</div>
+        <h3>Optimisé & Clean</h3>
+        <p>Structure légère, ultra rapide à charger et 100% responsive sur mobile et PC.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Coffee Break Studio. Tous droits réservés.</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
