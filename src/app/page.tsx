@@ -4,6 +4,7 @@ import { useState } from "react";
 const musicUrl = "https://www.youtube-nocookie.com/embed/SDTZ7iX4vTQ?autoplay=1&start=63&controls=0&playsinline=1&rel=0";
 
 const pages = [
+  "https://www.fbi.gov/",
   "https://www.wikipedia.org/wiki/Special:Random",
   "https://www.nasa.gov/",
   "https://www.mozilla.org/",
@@ -12,7 +13,6 @@ const pages = [
   "https://www.metmuseum.org/",
   "https://www.loc.gov/",
   "https://www.nationalgeographic.com/",
-  "https://www.britannica.com/",
   "https://www.noaa.gov/"
 ];
 
@@ -35,12 +35,29 @@ export default function Home() {
       if (popup) opened.push(popup);
     });
 
+    // Gently move only the popups created by this click for 20 seconds.
+    const moveWindows = window.setInterval(() => {
+      opened.forEach((popup) => {
+        try {
+          if (popup.closed) return;
+          const maxX = Math.max(0, window.screen.availWidth - 900);
+          const maxY = Math.max(0, window.screen.availHeight - 650);
+          const x = Math.floor(Math.random() * (maxX + 1));
+          const y = Math.floor(Math.random() * (maxY + 1));
+          popup.moveTo(x, y);
+        } catch {
+          // Some browsers restrict moving popup windows.
+        }
+      });
+    }, 650);
+
     window.setTimeout(() => {
+      window.clearInterval(moveWindows);
       opened.forEach((popup) => {
         try {
           if (!popup.closed) popup.close();
         } catch {
-          // The browser may prevent closing a window it no longer controls.
+          // A browser may prevent closing a window it no longer controls.
         }
       });
     }, 20_000);
