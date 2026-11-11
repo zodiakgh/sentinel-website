@@ -224,6 +224,9 @@ const submitModal = async (event) => {
     } else if (modalKind === "incident") {
       await request("/api/incidents", { method: "POST", body: JSON.stringify(values) });
       toast("Incident created.");
+    } else if (modalKind === "incident-update") {
+      await request("/api/incidents/" + encodeURIComponent(currentIncidentId) + "/updates", { method: "POST", body: JSON.stringify(values) });
+      toast("Incident update published.");
     }
     closeModal();
     await loadDashboard();
