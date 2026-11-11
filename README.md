@@ -12,7 +12,7 @@ A free uptime monitoring and status-page service for developers and teams.
 
 ## Infrastructure
 
-- Frontend: GitHub Pages on `sentineldashboard.site`.
+- Frontend: Vercel project `sentinel` on `sentineldashboard.site` (production static deployment). The Git-linked Vercel project `sentinel-status` also tracks the repository for previews.
 - API: Cloudflare Worker on `api.sentineldashboard.site`.
 - Database: Cloudflare D1 database `sentinel-status` (EU jurisdiction).
 - Transactional email: Resend, sender `login@sentineldashboard.site`.
@@ -36,7 +36,7 @@ Optional Worker variable:
 3. From the repository root, deploy with: `wrangler deploy --config wrangler.toml`.
 4. Configure the custom domain `api.sentineldashboard.site` for the Worker.
 5. Add the two secrets using `wrangler secret put RESEND_API_KEY` and `wrangler secret put AUTH_PEPPER`.
-6. Publish the root files from the `sentinel-status` branch to GitHub Pages after review.
+6. For production frontend updates, deploy the latest static files from the repository root to the existing Vercel `sentinel` project. The separate `sentinel-status` Vercel project automatically tracks the GitHub `main` branch for preview deployments.
 
 ## Initial product limits
 
