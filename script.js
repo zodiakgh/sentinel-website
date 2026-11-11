@@ -5,6 +5,7 @@ let currentEmail = "";
 let currentSection = "overview";
 let dashboardData = { monitors: [], incidents: [], statusPages: [], analytics: {} };
 let modalKind = null;
+let currentIncidentId = null;
 let resendTimer = null;
 const request = async (path, options = {}) => {
   const response = await fetch(API + path, {
@@ -140,7 +141,7 @@ const renderMonitors = () => {
 const renderIncidents = () => {
   const incidents = dashboardData.incidents || [];
   $("#metric-incidents").textContent = incidents.filter((i) => i.status !== "resolved").length;
-  const html = incidents.length ? incidents.map((i) => `<article class="incident-card"><span class="incident-pill">${escapeHtml(i.status.toUpperCase())}</span><h3>${escapeHtml(i.title)}</h3><p>${escapeHtml(i.latest_message || "No public update yet.")}</p><div class="incident-meta">${fmtDate(i.created_at)} · ${escapeHtml(i.impact)} impact</div></article>`).join("") : '<div class="empty-state"><span class="empty-symbol">✓</span><b>No incidents recorded</b><p>When something goes wrong, you will see it here.</p></div>';
+  const html = incidents.length ? incidents.map((i) => `<article class="incident-card"><span class="incident-pill">${escapeHtml(i.status.toUpperCase())}</span><h3>${escapeHtml(i.title)}</h3><p>${escapeHtml(i.latest_message || "No public update yet.")}</p><div class="incident-meta">${fmtDate(i.created_at)} · ${escapeHtml(i.impact)} impact</div><button class="button button-quiet button-small" type="button" data-update-incident="${escapeHtml(i.id)}">Post update</button></article>`).join("") : '<div class="empty-state"><span class="empty-symbol">✓</span><b>No incidents recorded</b><p>When something goes wrong, you will see it here.</p></div>';
   $("#incident-list").innerHTML = html;
   $("#overview-incidents").innerHTML = incidents.length ? incidents.slice(0, 3).map((i) => `<div class="incident-card"><span class="incident-pill">${escapeHtml(i.status.toUpperCase())}</span><h3>${escapeHtml(i.title)}</h3><div class="incident-meta">${fmtDate(i.created_at)}</div></div>`).join("") : '<div class="empty-state compact"><span class="empty-symbol">✓</span><b>No incidents</b><p>You are all caught up.</p></div>';
 };
@@ -198,6 +199,12 @@ const openModal = (kind) => {
     $("#modal-description").textContent = "Create an incident and publish an initial update.";
     $("#modal-submit").textContent = "Create incident";
     fields.innerHTML = '<div class="modal-field"><label for="i-title">Incident title</label><input id="i-title" name="title" placeholder="Elevated API latency" maxlength="120" required></div><div class="modal-field"><label for="i-impact">Impact</label><select id="i-impact" name="impact"><option value="minor">Minor</option><option value="major">Major</option><option value="critical">Critical</option></select></div><div class="modal-field"><label for="i-message">Initial update</label><textarea id="i-message" name="message" rows="3" placeholder="We are investigating reports of an issue." required></textarea></div>';
+  } else if (kind === "incident-update") {
+    $("#modal-eyebrow").textContent = "INCIDENT MANAGEMENT";
+    $("#modal-title").textContent = "Post an update";
+    $("#modal-description").textContent = "Publish a new incident status and message.";
+    $("#modal-submit").textContent = "Publish update";
+    fields.innerHTML = '<div class="modal-field"><label for="iu-status">Incident status</label><select id="iu-status" name="status"><option value="investigating">Investigating</option><option value="identified">Identified</option><option value="monitoring">Monitoring</option><option value="resolved">Resolved</option></select></div><div class="modal-field"><label for="iu-message">Public update</label><textarea id="iu-message" name="message" rows="4" placeholder="Share what changed and what users should expect." maxlength="2000" required></textarea></div>';
   }
 };
 const closeModal = () => $("#modal-backdrop").classList.add("hidden");
@@ -224,7 +231,7 @@ const submitModal = async (event) => {
     $("#modal-error").textContent = error.message;
   } finally {
     button.disabled = false;
-    button.textContent = modalKind === "monitor" ? "Create monitor" : modalKind === "status-page" ? "Publish page" : "Create incident";
+    button.textContent = modalKind === "monitor" ? "Create monitor" : modalKind === "status-page" ? "Publish page" : modalKind === "incident-update" ? "Publish update" : "Create incident";
   }
 };
 const deleteMonitor = async (id) => {
@@ -263,7 +270,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("#add-status-page").addEventListener("click", () => openModal("status-page"));
   $("#empty-create-page")?.addEventListener("click", () => openModal("status-page"));
   $("#quick-create-page").addEventListener("click", () => openModal("status-page"));
-  $("#add-incident").addEventListener("click", () => openModal("incident"));
+  $("#add-incident").addEventListener("click", () => openModal("incident"));\n  $("#incident-list").addEventListener("click", (event) => { const button = event.target.closest("[data-update-incident]"); if (button) openModal("incident-update", button.dataset.updateIncident); });
   $("#modal-close").addEventListener("click", closeModal);
   $("#modal-cancel").addEventListener("click", closeModal);
   $("#modal-backdrop").addEventListener("click", (e) => { if (e.target.id === "modal-backdrop") closeModal(); });
