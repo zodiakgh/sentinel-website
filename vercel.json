@@ -1,0 +1,16 @@
+{
+  "rewrites": [
+    {
+      "source": "/status/:slug",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/dashboard",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/dashboard/:path*",
+      "destination": "/index.html"
+    }
+  ]
+}
