@@ -13,10 +13,10 @@ A free uptime monitoring and status-page service for developers and teams.
 ## Infrastructure
 
 - Frontend: Vercel project `sentinel` on `sentineldashboard.site` (production static deployment). The Git-linked Vercel project `sentinel-status` also tracks the repository for previews.
-- API: Cloudflare Worker on `api.sentineldashboard.site`.
+- API: Cloudflare Worker on `status-api.sentineldashboard.site`.
 - Database: Cloudflare D1 database `sentinel-status` (EU jurisdiction).
 - Transactional email: Resend, sender `login@sentineldashboard.site`.
-- Scheduled checks: Cloudflare Cron Trigger, once per minute; each monitor is scheduled at its own interval.
+- Scheduled checks: Cloudflare Cron Trigger, once per minute; each monitor is scheduled at its own interval.\n- Incident lifecycle: authenticated API and dashboard updates for investigating, identified, monitoring and resolved states.
 
 ## Worker secrets
 
