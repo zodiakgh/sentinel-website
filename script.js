@@ -270,8 +270,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("#modal-form").addEventListener("submit", submitModal);
   const path = window.location.pathname;
   if (path.startsWith("/status/")) { await loadPublicStatus(decodeURIComponent(path.slice(8).split("/")[0])); return; }
-  if (window.location.hash.startsWith("#dashboard")) {
-    try { await request("/auth/me"); await enterDashboard(); const section = window.location.hash.split("/")[1]; if (section) navigate(section); return; } catch (_) {}
+  if (path === "/dashboard" || path.startsWith("/dashboard/") || window.location.hash.startsWith("#dashboard")) {
+    try { await request("/auth/me"); await enterDashboard(); const section = path.startsWith("/dashboard/") ? path.split("/")[2] : window.location.hash.split("/")[1]; if (section) navigate(section); return; } catch (_) {}
   }
   try { await request("/auth/me"); await enterDashboard(); } catch (_) { showView("marketing"); }
 });
