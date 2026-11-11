@@ -102,20 +102,32 @@ async function userSession(request, env) {
   return { id: row.user_id, email: row.email, organization: membership };
 }
 function validateMonitorUrl(raw) {
+  if (typeof raw !== "string" || raw.length > 2048) throw new HttpError(400, "Enter a valid endpoint URL.");
   let url;
   try { url = new URL(raw); } catch { throw new HttpError(400, "Enter a valid endpoint URL."); }
   if (!["http:", "https:"].includes(url.protocol)) throw new HttpError(400, "Only HTTP and HTTPS endpoints are supported.");
   if (url.username || url.password) throw new HttpError(400, "URLs containing credentials are not allowed.");
   if (url.port && !["80", "443"].includes(url.port)) throw new HttpError(400, "Only standard HTTP and HTTPS ports are allowed.");
+
+  // URL normalizes alternate IPv4 spellings (integer, octal and hexadecimal)
+  // into dotted decimal before hostname validation.
   const host = url.hostname.toLowerCase().replace(/^\[|\]$/g, "");
-  if (!host || host === "localhost" || host.endsWith(".localhost") || host.endsWith(".local") || host.endsWith(".internal") || host.endsWith(".test")) {
+  const internalSuffixes = [".localhost", ".local", ".internal", ".test", ".home.arpa", ".lan", ".corp", ".intranet"];
+  if (!host || host.endsWith(".") || !host.includes(".") || host === "localhost" ||
+      internalSuffixes.some((suffix) => host.endsWith(suffix))) {
     throw new HttpError(400, "Local and internal hostnames cannot be monitored.");
   }
   if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) {
     const parts = host.split(".").map(Number);
     if (parts.some((n) => n > 255) || parts[0] === 10 || parts[0] === 127 || parts[0] === 0 || parts[0] >= 224 ||
       (parts[0] === 169 && parts[1] === 254) || (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) ||
-      (parts[0] === 192 && parts[1] === 168)) throw new HttpError(400, "Private or reserved IP addresses cannot be monitored.");
+      (parts[0] === 192 && parts[1] === 168) || (parts[0] === 100 && parts[1] >= 64 && parts[1] <= 127) ||
+      (parts[0] === 192 && parts[1] === 0) || (parts[0] === 198 && (parts[1] === 18 || parts[1] === 19)) ||
+      (parts[0] === 198 && parts[1] === 51 && parts[2] === 100) ||
+      (parts[0] === 203 && parts[1] === 0 && parts[2] === 113) ||
+      (parts[0] === 192 && parts[1] === 0 && parts[2] === 2)) {
+      throw new HttpError(400, "Private or reserved IP addresses cannot be monitored.");
+    }
     throw new HttpError(400, "Use a public hostname instead of an IP address.");
   }
   if (host.includes(":")) throw new HttpError(400, "IP address targets are not supported. Use a public hostname.");
@@ -380,4 +392,4 @@ export default {
   async scheduled(controller, env, ctx) {
     ctx.waitUntil(runScheduled(env));
   }
-};
+};\nexport { validateMonitorUrl };\n
