@@ -1,116 +1,89 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Coffee Break Studio - Itch.io Games & Projects</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#08090b">
+  <meta name="description" content="Free uptime monitoring, incident management and public status pages for developers and teams.">
+  <title>Sentinel Status — Know when things go wrong.</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+  <script defer src="/script.js"></script>
 </head>
 <body>
-
-  <!-- Screen Loader / Overlay Splash Screen -->
-  <div id="loader-wrapper">
-    <div class="loader-content">
-      <div class="logo-box">
-        <svg class="logo-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M17 8h1a4 4 0 1 1 0 8h-1"></path>
-          <path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V8z"></path>
-          <line x1="6" y1="2" x2="6" y2="4"></line>
-          <line x1="10" y1="2" x2="10" y2="4"></line>
-          <line x1="14" y1="2" x2="14" y2="4"></line>
-        </svg>
-      </div>
-      <div class="spinner"></div>
-      <p class="loader-text" id="loader-txt">Loading Coffee Break Studio...</p>
-    </div>
-  </div>
-
-  <!-- Header & Navigation -->
-  <header class="navbar">
-    <div class="nav-container">
-      <div class="brand">
-        <svg class="brand-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M17 8h1a4 4 0 1 1 0 8h-1"></path>
-          <path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V8z"></path>
-          <line x1="6" y1="2" x2="6" y2="4"></line>
-          <line x1="10" y1="2" x2="10" y2="4"></line>
-          <line x1="14" y1="2" x2="14" y2="4"></line>
-        </svg>
-        <span class="brand-name">Coffee Break Studio</span>
-      </div>
-      
-      <nav class="nav-links">
-        <a href="#games" data-en="My Games" data-fr="Mes Jeux">My Games</a>
-        <a href="#about" data-en="About" data-fr="À propos">About</a>
-        <a href="#itch" data-en="Itch.io" data-fr="Itch.io">Itch.io</a>
-      </nav>
-
-      <div class="nav-actions">
-        <!-- Language Switcher -->
-        <button class="lang-btn" id="lang-toggle" onclick="toggleLanguage()">🇫🇷 FR</button>
-        <a href="https://itch.io" target="_blank" class="btn btn-primary" data-en="Itch.io Profile" data-fr="Profil Itch.io">Itch.io Profile</a>
-      </div>
-    </div>
+  <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Sentinel Status home"><span class="brand-mark"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8 20 6v5.1c0 5-3.2 8.3-8 10.1-4.8-1.8-8-5.1-8-10.1V6l8-3.2Z"/><path d="m8.4 12.1 2.3 2.3 4.9-5"/></svg></span><span class="brand-word">SENTINEL<span>STATUS</span></span></a>
+    <nav class="header-nav"><a href="#features">Features</a><a href="#how">How it works</a><a href="#pricing">Pricing</a></nav>
+    <div class="header-actions"><button class="button button-quiet" id="login-open">Log in</button><button class="button button-primary" id="signup-open">Get started <span>↗</span></button></div>
+    <button class="mobile-menu" id="mobile-menu" aria-label="Open menu">☰</button>
   </header>
 
-  <!-- Hero Section -->
-  <main>
-    <section class="hero">
-      <div class="hero-badge" data-en="🎮 Indie Game Developer" data-fr="🎮 Développeur de Jeux Indie">🎮 Indie Game Developer</div>
-      <h1 class="hero-title" data-en="Coffee Break Studio Games" data-fr="Jeux Coffee Break Studio">Coffee Break Studio Games</h1>
-      <p class="hero-subtitle" data-en="Explore my indie game creations, game jam prototypes, and interactive experiences hosted on Itch.io." data-fr="Découvrez mes créations de jeux vidéo indés, mes prototypes de game jams et mes projets interactifs hébergés sur Itch.io.">Explore my indie game creations, game jam prototypes, and interactive experiences hosted on Itch.io.</p>
-    </section>
-
-    <!-- Itch.io Games Showcase Section -->
-    <section id="games" class="projects-section">
-      <h2 class="section-title" data-en="My Itch.io Games" data-fr="Mes Jeux Itch.io">My Itch.io Games</h2>
-      
-      <div class="projects-grid">
-
-        <!-- Game Card 1 -->
-        <div class="project-card">
-          <div class="card-tag">Indie Game / Playable</div>
-          <h3 data-en="My First Game Title" data-fr="Mon Premier Jeu">My First Game Title</h3>
-          <p data-en="A short action-adventure game crafted for a game jam. Navigate through levels, solve puzzles, and reach the high score!" data-fr="Un jeu d'action-aventure créé lors d'une game jam. Explorez les niveaux, résolvez des énigmes et battes le meilleur score !">A short action-adventure game crafted for a game jam. Navigate through levels, solve puzzles, and reach the high score!</p>
-          <div class="card-footer">
-            <span class="status-badge live" data-en="● Free Download" data-fr="● Téléchargement Gratuit">● Free Download</span>
-            <a href="https://itch.io" target="_blank" class="btn btn-sm" data-en="Play on Itch.io" data-fr="Jouer sur Itch.io">Play on Itch.io</a>
+  <main id="marketing-view">
+    <section class="hero shell">
+      <div class="hero-copy">
+        <div class="eyebrow"><span class="pulse-dot"></span> MONITORING FOR WHAT MATTERS</div>
+        <h1>Know when<br>things <span>go wrong.</span></h1>
+        <p class="hero-lede">Uptime monitoring, incident management and beautiful status pages. Everything your team needs to keep people informed — free.</p>
+        <div class="hero-actions"><button class="button button-primary button-large" id="hero-start">Start monitoring <span>↗</span></button><a class="text-link" href="#features">Explore the platform <span>↓</span></a></div>
+        <div class="hero-proof"><div class="avatar-stack"><i>S</i><i>D</i><i>+</i></div><span>Built for independent developers and teams.</span></div>
+      </div>
+      <div class="preview-wrap">
+        <div class="preview-window">
+          <div class="preview-top"><div class="window-dots"><i></i><i></i><i></i></div><span>status.acme.dev</span><span class="preview-live"><b></b> LIVE</span></div>
+          <div class="preview-body">
+            <div class="preview-brand"><span class="mini-mark">A</span><div><b>Acme Infrastructure</b><small>System status</small></div></div>
+            <div class="preview-banner"><span class="status-check">✓</span><div><b>All systems operational</b><small>All services are running normally.</small></div></div>
+            <div class="preview-section-title"><b>Service components</b><span>Last 90 days</span></div>
+            <div class="service-row"><span><i class="service-dot"></i> Website</span><div class="uptime-bars" data-bars="35"></div><b>99.99%</b></div>
+            <div class="service-row"><span><i class="service-dot"></i> API</span><div class="uptime-bars" data-bars="35"></div><b>99.98%</b></div>
+            <div class="service-row"><span><i class="service-dot"></i> Database</span><div class="uptime-bars" data-bars="35"></div><b>99.97%</b></div>
+            <div class="preview-footer"><span>Operational history</span><span>Powered by Sentinel Status</span></div>
           </div>
         </div>
-
-        <!-- Game Card 2 -->
-        <div class="project-card">
-          <div class="card-tag">Prototype / WebGL</div>
-          <h3 data-en="Runner Prototype" data-fr="Prototype Runner">Runner Prototype</h3>
-          <p data-en="Fast-paced runner built directly for the browser. Play instant WebGL builds straight from your web browser without downloading." data-fr="Jeu de course rapide jouable directement dans le navigateur en WebGL sans aucun téléchargement.">Fast-paced runner built directly for the browser. Play instant WebGL builds straight from your web browser without downloading.</p>
-          <div class="card-footer">
-            <span class="status-badge release" data-en="WebGL Browser" data-fr="Navigateur WebGL">WebGL Browser</span>
-            <a href="https://itch.io" target="_blank" class="btn btn-sm" data-en="Play in Browser" data-fr="Jouer sur le Web">Play in Browser</a>
-          </div>
-        </div>
-
-        <!-- Game Card 3 -->
-        <div class="project-card">
-          <div class="card-tag">In Development</div>
-          <h3 data-en="Upcoming Project" data-fr="Prochain Projet">Upcoming Project</h3>
-          <p data-en="An ambitious new indie title currently in active development. Stay tuned on Itch.io for devlogs and early access builds!" data-fr="Un nouveau jeu indépendant ambitieux actuellement en développement. Suivez les devlogs et accès anticipés sur Itch.io !">An ambitious new indie title currently in active development. Stay tuned on Itch.io for devlogs and early access builds!</p>
-          <div class="card-footer">
-            <span class="status-badge dev" data-en="Coming Soon" data-fr="Bientôt Disponible">Coming Soon</span>
-            <a href="https://itch.io" target="_blank" class="btn btn-sm" data-en="Follow Devlog" data-fr="Suivre Devlog">Follow Devlog</a>
-          </div>
-        </div>
-
+        <div class="floating-note"><span class="note-icon">↗</span><div><b>Incident detected</b><small>API response time is elevated</small></div><span class="note-time">now</span></div>
+        <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
       </div>
     </section>
+
+    <section class="trust-strip shell"><span>ONE PLACE TO KEEP YOUR USERS INFORMED</span><div><i>◎</i> Uptime monitoring</div><div><i>◫</i> Incident updates</div><div><i>↗</i> Public status pages</div><div><i>⌁</i> Developer API</div></section>
+
+    <section class="section shell" id="features">
+      <div class="section-heading"><div class="eyebrow">THE ESSENTIALS, CONNECTED</div><h2>From first check<br>to public update.</h2><p>One workflow for detecting issues, understanding impact and communicating clearly.</p></div>
+      <div class="feature-grid">
+        <article class="feature-card feature-wide"><div class="feature-icon">⌁</div><div class="feature-tag">01 / MONITORING</div><h3>Catch issues early.</h3><p>Monitor HTTP and HTTPS endpoints, track response times and detect downtime before your users report it.</p><div class="mini-chart"><div class="chart-labels"><span>RESPONSE TIME</span><b>128 ms <em>−12%</em></b></div><svg viewBox="0 0 520 110" preserveAspectRatio="none"><path class="chart-fill" d="M0 80 C35 70 45 82 78 63 S126 76 157 49 S206 64 235 43 S278 52 308 34 S352 53 386 27 S436 40 470 18 S500 30 520 12 V110 H0Z"/><path class="chart-line" d="M0 80 C35 70 45 82 78 63 S126 76 157 49 S206 64 235 43 S278 52 308 34 S352 53 386 27 S436 40 470 18 S500 30 520 12"/></svg></div></article>
+        <article class="feature-card"><div class="feature-icon">▤</div><div class="feature-tag">02 / STATUS PAGES</div><h3>Keep everyone in the loop.</h3><p>Publish a clear, branded view of your service health and incident history.</p><div class="feature-visual status-visual"><span class="tiny-check">✓</span><b>All systems operational</b><small>Updated just now</small></div></article>
+        <article class="feature-card"><div class="feature-icon">△</div><div class="feature-tag">03 / INCIDENTS</div><h3>Make response visible.</h3><p>Track investigations, share progress updates and close the loop when service is restored.</p><div class="incident-visual"><span class="incident-pill">INVESTIGATING</span><b>Elevated API latency</b><small>We are investigating reports of slower responses.</small></div></article>
+        <article class="feature-card"><div class="feature-icon">⌘</div><div class="feature-tag">04 / INTEGRATIONS</div><h3>Fit your workflow.</h3><p>Connect webhooks, Discord notifications and the Sentinel API as your setup grows.</p><div class="integration-visual"><span>WEBHOOK</span><i>→</i><span>DISCORD</span><i>→</i><span>API</span></div></article>
+      </div>
+    </section>
+
+    <section class="section section-process" id="how"><div class="shell process-inner"><div class="section-heading"><div class="eyebrow">UP AND RUNNING IN MINUTES</div><h2>Simple by design.</h2><p>No complicated setup. Start with a URL and build from there.</p></div><div class="steps"><article><span>01</span><div class="step-line"></div><h3>Add a monitor</h3><p>Enter the endpoint you want Sentinel to check.</p></article><article><span>02</span><div class="step-line"></div><h3>Watch your services</h3><p>See checks, response times and incidents in one dashboard.</p></article><article><span>03</span><div class="step-line"></div><h3>Share your status</h3><p>Publish a status page and keep subscribers informed.</p></article></div></div></section>
+
+    <section class="section shell pricing-section" id="pricing"><div class="pricing-card"><div><div class="eyebrow">NO PAYWALLS. NO SURPRISES.</div><h2>Monitoring should<br>be accessible.</h2><p>Sentinel Status is free to use. Start with the essentials and help us build a reliable platform for everyone.</p></div><div class="price-side"><div class="price">€0<span>/ forever</span></div><ul><li>5 monitors per organization</li><li>2 public status pages</li><li>5-minute check intervals</li><li>30-day detailed check history</li><li>Incident management and email alerts</li></ul><button class="button button-primary button-large" id="pricing-start">Create your workspace <span>↗</span></button></div></div></section>
   </main>
 
-  <footer>
-    <p>&copy; 2026 Coffee Break Studio. All rights reserved.</p>
-  </footer>
+  <main id="auth-view" class="auth-view hidden"><section class="auth-card"><a class="brand auth-brand" href="/"><span class="brand-mark"><svg viewBox="0 0 24 24"><path d="M12 2.8 20 6v5.1c0 5-3.2 8.3-8 10.1-4.8-1.8-8-5.1-8-10.1V6l8-3.2Z"/><path d="m8.4 12.1 2.3 2.3 4.9-5"/></svg></span><span class="brand-word">SENTINEL<span>STATUS</span></span></a><div class="auth-step" id="email-step"><div class="eyebrow">SECURE SIGN IN</div><h1>Your workspace<br>starts here.</h1><p>Enter your email. We'll send you a one-time code — no password required.</p><form id="email-form"><label for="email">Email address</label><input id="email" name="email" type="email" autocomplete="email" placeholder="you@company.com" required><button class="button button-primary button-large full" type="submit">Send login code <span>↗</span></button></form><div class="auth-note">By continuing, you agree to our <a href="/terms.html">Terms</a> and <a href="/privacy.html">Privacy Policy</a>.</div></div><div class="auth-step hidden" id="code-step"><div class="back-link" id="back-email">← Change email</div><div class="eyebrow">CHECK YOUR INBOX</div><h1>Enter your<br>one-time code.</h1><p>We sent a 6-digit code to <b id="email-destination"></b>. It expires in 5 minutes.</p><form id="code-form"><label for="otp">Verification code</label><input id="otp" name="otp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" placeholder="000000" required><button class="button button-primary button-large full" type="submit">Verify and continue <span>↗</span></button></form><button class="resend-button" id="resend-code" disabled>Resend code <span id="resend-countdown">in 60s</span></button></div><div class="auth-message" id="auth-message" role="status"></div><a class="auth-back" href="/">← Back to Sentinel Status</a></section></main>
 
-  <script src="script.js"></script>
+  <main id="dashboard-view" class="dashboard-view hidden">
+    <aside class="app-sidebar"><a class="brand" href="/dashboard"><span class="brand-mark"><svg viewBox="0 0 24 24"><path d="M12 2.8 20 6v5.1c0 5-3.2 8.3-8 10.1-4.8-1.8-8-5.1-8-10.1V6l8-3.2Z"/><path d="m8.4 12.1 2.3 2.3 4.9-5"/></svg></span><span class="brand-word">SENTINEL<span>STATUS</span></span></a><div class="workspace-switch"><span class="workspace-avatar">S</span><span><b id="workspace-name">My workspace</b><small>Free workspace</small></span><span class="switch-chevron">⌄</span></div><div class="side-label">WORKSPACE</div><nav class="app-nav"><button class="active" data-section="overview"><i>⌂</i> Overview</button><button data-section="monitors"><i>⌁</i> Monitors <span id="monitor-count" class="nav-count">0</span></button><button data-section="status-pages"><i>▤</i> Status pages</button><button data-section="incidents"><i>△</i> Incidents</button><button data-section="analytics"><i>▥</i> Analytics</button></nav><div class="side-label">CONFIGURATION</div><nav class="app-nav"><button data-section="integrations"><i>⌘</i> Integrations</button><button data-section="settings"><i>⚙</i> Settings</button></nav><div class="sidebar-bottom"><div class="user-chip"><span class="user-avatar" id="user-avatar">U</span><span><b id="user-email">user@example.com</b><small>Owner</small></span><button id="logout-button" title="Log out">↗</button></div><div class="sidebar-version">SENTINEL STATUS <span>v0.1.0</span></div></div></aside>
+    <div class="app-main"><header class="app-topbar"><div class="mobile-brand"><span class="brand-mark">S</span><b>SENTINEL STATUS</b></div><div class="breadcrumbs">Workspace <span>/</span> <b id="page-title">Overview</b></div><div class="topbar-right"><span class="system-indicator"><i></i> All systems operational</span><button class="button button-primary button-small" id="top-add-monitor">+ Add monitor</button></div></header>
+      <div class="app-content">
+        <section class="app-section active" id="section-overview"><div class="page-intro"><div><div class="eyebrow">WORKSPACE OVERVIEW</div><h1>Good to see you.</h1><p>Here's what's happening across your services.</p></div><span class="date-label" id="today-label"></span></div><div class="metric-grid"><article class="metric-card"><span>ACTIVE MONITORS</span><b id="metric-monitors">0 <small>/ 5</small></b><small class="metric-foot">Endpoints being checked</small></article><article class="metric-card"><span>OPERATIONAL</span><b id="metric-up">—</b><small class="metric-foot">Currently responding</small></article><article class="metric-card"><span>OPEN INCIDENTS</span><b id="metric-incidents">0</b><small class="metric-foot">Require attention</small></article><article class="metric-card"><span>STATUS PAGES</span><b id="metric-pages">0 <small>/ 2</small></b><small class="metric-foot">Public pages published</small></article></div><div class="overview-grid"><article class="surface-card"><div class="card-heading"><div><h2>Monitors</h2><p>Latest endpoint checks</p></div><button class="inline-link" data-go="monitors">View all ↗</button></div><div id="overview-monitors" class="empty-state"><span class="empty-symbol">⌁</span><b>No monitors yet</b><p>Add your first endpoint to start tracking uptime.</p><button class="button button-primary button-small" id="empty-add-monitor">Add your first monitor</button></div></article><article class="surface-card"><div class="card-heading"><div><h2>Recent incidents</h2><p>Updates from your services</p></div><button class="inline-link" data-go="incidents">View all ↗</button></div><div id="overview-incidents" class="empty-state compact"><span class="empty-symbol">✓</span><b>No incidents</b><p>You're all caught up.</p></div></article></div><article class="surface-card quick-start"><div><div class="eyebrow">NEXT STEP</div><h2>Give your services a voice.</h2><p>Create a public status page to share uptime and incident updates with your users.</p></div><button class="button button-secondary" id="quick-create-page">Create status page ↗</button></article></section>
+        <section class="app-section" id="section-monitors"><div class="page-intro"><div><div class="eyebrow">ENDPOINT MONITORING</div><h1>Monitors</h1><p>Track availability and response times for your services.</p></div><button class="button button-primary" id="add-monitor">+ Add monitor</button></div><article class="surface-card"><div class="table-wrap"><table><thead><tr><th>MONITOR</th><th>STATUS</th><th>RESPONSE TIME</th><th>INTERVAL</th><th>LAST CHECK</th><th></th></tr></thead><tbody id="monitor-table"><tr><td colspan="6" class="table-empty">No monitors created yet.</td></tr></tbody></table></div></article></section>
+        <section class="app-section" id="section-status-pages"><div class="page-intro"><div><div class="eyebrow">PUBLIC COMMUNICATION</div><h1>Status pages</h1><p>Give customers a clear view of your service health.</p></div><button class="button button-primary" id="add-status-page">+ Create page</button></div><div id="status-page-grid" class="resource-grid"><div class="empty-state"><span class="empty-symbol">▤</span><b>No status pages yet</b><p>Publish your first public status page.</p><button class="button button-primary button-small" id="empty-create-page">Create status page</button></div></div></section>
+        <section class="app-section" id="section-incidents"><div class="page-intro"><div><div class="eyebrow">SERVICE DISRUPTIONS</div><h1>Incidents</h1><p>Investigate issues and keep your status pages updated.</p></div><button class="button button-primary" id="add-incident">+ Report incident</button></div><div id="incident-list" class="incident-list"><div class="empty-state"><span class="empty-symbol">✓</span><b>No incidents recorded</b><p>When something goes wrong, you'll see it here.</p></div></div></section>
+        <section class="app-section" id="section-analytics"><div class="page-intro"><div><div class="eyebrow">PERFORMANCE INSIGHTS</div><h1>Analytics</h1><p>Understand availability and response time over time.</p></div></div><div class="metric-grid"><article class="metric-card"><span>CHECKS (30 DAYS)</span><b id="analytics-checks">0</b></article><article class="metric-card"><span>SUCCESS RATE</span><b id="analytics-success">—</b></article><article class="metric-card"><span>AVG. RESPONSE</span><b id="analytics-latency">—</b></article><article class="metric-card"><span>FAILED CHECKS</span><b id="analytics-failed">0</b></article></div><article class="surface-card"><div class="card-heading"><div><h2>Availability history</h2><p>Last 30 days across your monitors</p></div></div><div id="analytics-chart" class="analytics-chart"><div class="empty-state compact"><b>Not enough data yet</b><p>Add monitors and let Sentinel collect checks.</p></div></div></article></section>
+        <section class="app-section" id="section-integrations"><div class="page-intro"><div><div class="eyebrow">CONNECT YOUR TOOLCHAIN</div><h1>Integrations</h1><p>Send service events to the tools your team already uses.</p></div></div><div class="resource-grid"><article class="resource-card"><span class="integration-icon">◈</span><h3>Discord webhooks</h3><p>Send incident and recovery notifications to a Discord channel.</p><span class="coming-soon">COMING SOON</span></article><article class="resource-card"><span class="integration-icon">⌘</span><h3>Generic webhooks</h3><p>Deliver signed event payloads to your own endpoint.</p><span class="coming-soon">COMING SOON</span></article><article class="resource-card"><span class="integration-icon">{ }</span><h3>Developer API</h3><p>Read monitor and status page data programmatically.</p><span class="coming-soon">COMING SOON</span></article></div></section>
+        <section class="app-section" id="section-settings"><div class="page-intro"><div><div class="eyebrow">WORKSPACE CONFIGURATION</div><h1>Settings</h1><p>Manage your workspace and account.</p></div></div><article class="surface-card settings-card"><div><h2>Workspace</h2><p id="settings-workspace">My workspace</p></div><div><h2>Account email</h2><p id="settings-email">—</p></div><div><h2>Plan</h2><p>Free · No payment details required</p></div><div><h2>Authentication</h2><p>Passwordless email verification · One-time codes</p></div><div><h2>Data region</h2><p>European Union</p></div></article></section>
+      </div>
+    </div>
+  </main>
+
+  <div class="modal-backdrop hidden" id="modal-backdrop"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><button class="modal-close" id="modal-close" aria-label="Close">×</button><div class="eyebrow" id="modal-eyebrow">WORKSPACE</div><h2 id="modal-title">Add monitor</h2><p id="modal-description">Choose an endpoint to monitor.</p><form id="modal-form"><div id="modal-fields"></div><div class="modal-error" id="modal-error"></div><div class="modal-actions"><button type="button" class="button button-quiet" id="modal-cancel">Cancel</button><button type="submit" class="button button-primary" id="modal-submit">Create</button></div></form></section></div>
+  <div class="toast" id="toast" role="status"></div>
+  <footer class="site-footer"><div class="shell footer-inner"><a class="brand" href="/"><span class="brand-mark"><svg viewBox="0 0 24 24"><path d="M12 2.8 20 6v5.1c0 5-3.2 8.3-8 10.1-4.8-1.8-8-5.1-8-10.1V6l8-3.2Z"/><path d="m8.4 12.1 2.3 2.3 4.9-5"/></svg></span><span class="brand-word">SENTINEL<span>STATUS</span></span></a><span>Free uptime monitoring for everyone.</span><span>© 2026 Sentinel Status</span></div></footer>
 </body>
 </html>
