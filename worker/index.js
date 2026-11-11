@@ -145,12 +145,13 @@ async function requestOtp(request, env) {
   const body = await readJson(request);
   const email = String(body.email || "").trim().toLowerCase();
   if (!emailValid(email)) throw new HttpError(400, "Enter a valid email address.");
+  if (!env.AUTH_PEPPER) throw new HttpError(503, "Authentication security is not configured yet.");
   const ip = request.headers.get("CF-Connecting-IP") || "unknown";
   await rateLimit(env, await digest("email:" + email), 3, 3600);
   await rateLimit(env, await digest("ip:" + ip), 10, 3600);
   const digits = new Uint32Array(1); crypto.getRandomValues(digits);
   const code = String(digits[0] % 1000000).padStart(6, "0");
-  const codeHash = await digest((env.AUTH_PEPPER || "missing-pepper") + ":" + email + ":" + code);
+  const codeHash = await digest(env.AUTH_PEPPER + ":" + email + ":" + code);
   const challengeId = id();
   const time = now();
   await env.DB.prepare("DELETE FROM auth_codes WHERE email=?").bind(email).run();
@@ -315,7 +316,7 @@ async function checkMonitor(env, monitor) {
     const time = now();
     await env.DB.batch([
       env.DB.prepare("INSERT INTO incidents (id,organization_id,monitor_id,title,impact,status,created_at,updated_at) VALUES (?,?,?,?,'major','investigating',?,?)").bind(incidentId, monitor.organization_id, monitor.id, "Monitor unavailable: " + monitor.name, time, time),
-      env.DB.prepare("INSERT INTO incident_updates (id,incident_id,status,message,created_at) VALUES (?,?,'investigating',?,?,?)".replace("?,?,?,?)","?,?,?,?)")).bind(id(), incidentId, "Automated monitoring detected two consecutive failed checks.", time)
+      env.DB.prepare("INSERT INTO incident_updates (id,incident_id,status,message,created_at) VALUES (?,?,'investigating',?,?)").bind(id(), incidentId, "Automated monitoring detected two consecutive failed checks.", time)
     ]);
   } else if (status === "up" && open) {
     const time = now();
