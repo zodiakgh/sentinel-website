@@ -165,14 +165,20 @@ async function verifyOtp(request, env) {
   const email = String(body.email || "").trim().toLowerCase();
   const code = String(body.code || "").replace(/\D/g, "");
   if (!emailValid(email) || !/^\d{6}$/.test(code)) throw new HttpError(400, "Enter the email address and 6-digit code.");
+  if (!env.AUTH_PEPPER) throw new HttpError(503, "Authentication security is not configured yet.");
+  const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+  await rateLimit(env, await digest("verify-email:" + email), 8, 900);
+  await rateLimit(env, await digest("verify-ip:" + ip), 20, 900);
   const challenge = await env.DB.prepare("SELECT id,code_hash,expires_at,attempts FROM auth_codes WHERE email=? ORDER BY created_at DESC LIMIT 1").bind(email).first();
-  if (!challenge || challenge.expires_at < now()) throw new HttpError(400, "That code has expired. Request a new one.");
+  if (!challenge || challenge.expires_at <= now()) throw new HttpError(400, "That code has expired. Request a new one.");
   if (challenge.attempts >= 5) throw new HttpError(429, "Too many incorrect attempts. Request a new code.");
   const candidate = await digest(env.AUTH_PEPPER + ":" + email + ":" + code);
   if (!safeEqual(candidate, challenge.code_hash)) {
-    await env.DB.prepare("UPDATE auth_codes SET attempts=attempts+1 WHERE id=?").bind(challenge.id).run();
+    await env.DB.prepare("UPDATE auth_codes SET attempts=attempts+1 WHERE id=? AND attempts<5").bind(challenge.id).run();
     throw new HttpError(400, "That code is incorrect. Check your email and try again.");
   }
+  const consumed = await env.DB.prepare("DELETE FROM auth_codes WHERE id=? AND expires_at>? AND attempts<5 AND code_hash=?").bind(challenge.id, now(), candidate).run();
+  if (!consumed.meta?.changes) throw new HttpError(400, "That code has already been used or expired. Request a new one.");
   const time = now();
   let user = await env.DB.prepare("SELECT id,email FROM users WHERE email=?").bind(email).first();
   if (!user) {
