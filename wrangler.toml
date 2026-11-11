@@ -1,0 +1,16 @@
+name = "sentinel-status-api"
+main = "worker/index.js"
+compatibility_date = "2026-11-11"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "sentinel-status"
+database_id = "11393666-7c3f-41cc-bc07-06682cc3f000"
+
+[triggers]
+crons = ["* * * * *"]
+
+[observability]
+enabled = true
