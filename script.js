@@ -1,4 +1,4 @@
-const API = "https://api.sentineldashboard.site";
+const API = "https://status-api.sentineldashboard.site";
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 let currentEmail = "";
