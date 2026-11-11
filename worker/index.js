@@ -168,7 +168,7 @@ async function verifyOtp(request, env) {
   const challenge = await env.DB.prepare("SELECT id,code_hash,expires_at,attempts FROM auth_codes WHERE email=? ORDER BY created_at DESC LIMIT 1").bind(email).first();
   if (!challenge || challenge.expires_at < now()) throw new HttpError(400, "That code has expired. Request a new one.");
   if (challenge.attempts >= 5) throw new HttpError(429, "Too many incorrect attempts. Request a new code.");
-  const candidate = await digest((env.AUTH_PEPPER || "missing-pepper") + ":" + email + ":" + code);
+  const candidate = await digest(env.AUTH_PEPPER + ":" + email + ":" + code);
   if (!safeEqual(candidate, challenge.code_hash)) {
     await env.DB.prepare("UPDATE auth_codes SET attempts=attempts+1 WHERE id=?").bind(challenge.id).run();
     throw new HttpError(400, "That code is incorrect. Check your email and try again.");
