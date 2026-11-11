@@ -392,4 +392,6 @@ export default {
   async scheduled(controller, env, ctx) {
     ctx.waitUntil(runScheduled(env));
   }
-};\nexport { validateMonitorUrl };\n
+};
+
+export { validateMonitorUrl };
