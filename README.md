@@ -34,7 +34,7 @@ Optional Worker variable:
 1. Install Wrangler: `npm install -g wrangler`.
 2. Authenticate: `wrangler login`.
 3. From the repository root, deploy with: `wrangler deploy --config wrangler.toml`.
-4. Configure the custom domain `api.sentineldashboard.site` for the Worker.
+4. Configure the custom domain `status-api.sentineldashboard.site` for the Worker.
 5. Add the two secrets using `wrangler secret put RESEND_API_KEY` and `wrangler secret put AUTH_PEPPER`.
 6. For production frontend updates, deploy the latest static files from the repository root to the existing Vercel `sentinel` project. The separate `sentinel-status` Vercel project automatically tracks the GitHub `main` branch for preview deployments.
 
@@ -48,4 +48,4 @@ Optional Worker variable:
 
 ## Important production hardening
 
-Before opening public signups broadly, add DNS-level egress protection for monitor targets (including protection against DNS rebinding), delivery retries and webhook notifications, subscription confirmation, audit logs, abuse monitoring, and automated tests. The current monitor URL validator rejects IP literals, local hostnames and non-standard ports and does not follow redirects; it is a first layer, not a substitute for an isolated egress service.
+Before opening public signups broadly, add DNS-level egress protection for monitor targets (including protection against DNS rebinding), delivery retries and webhook notifications, subscription confirmation, audit logs, abuse monitoring, and automated tests. The monitor URL validator rejects IP literals (including normalized integer, octal and hexadecimal IPv4 forms), local and single-label hostnames, common private-network suffixes, credentials, and non-standard ports. Redirects are not followed. These checks do not prevent DNS rebinding or a public hostname resolving to a private address at connection time; production launch still requires DNS-aware egress filtering or an isolated outbound monitoring service.
