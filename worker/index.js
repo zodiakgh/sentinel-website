@@ -248,6 +248,25 @@ async function createIncident(user, env, request) {
   ]);
   return json({ ok: true, id: incidentId }, 201);
 }
+async function updateIncident(user, env, request, incidentId) {
+  const body = await readJson(request);
+  const status = String(body.status || "").trim();
+  const message = String(body.message || "").trim().slice(0, 2000);
+  if (!["investigating", "identified", "monitoring", "resolved"].includes(status)) {
+    throw new HttpError(400, "Choose a valid incident status.");
+  }
+  if (!message) throw new HttpError(400, "An update message is required.");
+  const orgId = user.organization.organization_id;
+  const incident = await env.DB.prepare("SELECT id FROM incidents WHERE id=? AND organization_id=?").bind(incidentId, orgId).first();
+  if (!incident) throw new HttpError(404, "Incident not found.");
+  const time = now();
+  const resolvedAt = status === "resolved" ? time : null;
+  await env.DB.batch([
+    env.DB.prepare("UPDATE incidents SET status=?,updated_at=?,resolved_at=? WHERE id=? AND organization_id=?").bind(status, time, resolvedAt, incidentId, orgId),
+    env.DB.prepare("INSERT INTO incident_updates (id,incident_id,status,message,created_at) VALUES (?,?,?,?,?)").bind(id(), incidentId, status, message, time)
+  ]);
+  return json({ ok: true, status, updated_at: time });
+}
 async function publicStatus(env, slug) {
   const page = await env.DB.prepare("SELECT id,name,slug,description,created_at FROM status_pages WHERE slug=? AND is_public=1").bind(slug).first();
   if (!page) throw new HttpError(404, "Status page not found.");
@@ -289,6 +308,8 @@ async function handleApi(request, env) {
   }
   if (path === "/api/status-pages" && request.method === "POST") return await createStatusPage(user, env, request);
   if (path === "/api/incidents" && request.method === "POST") return await createIncident(user, env, request);
+  const incidentUpdateMatch = path.match(/^\/api\/incidents\/([0-9a-f-]+)\/updates$/i);
+  if (incidentUpdateMatch && request.method === "POST") return await updateIncident(user, env, request, incidentUpdateMatch[1]);
   return json({ error: "Not found." }, 404);
 }
 async function checkMonitor(env, monitor) {
