@@ -33,7 +33,7 @@ Optional Worker variable:
 
 1. Install Wrangler: `npm install -g wrangler`.
 2. Authenticate: `wrangler login`.
-3. Deploy from the `worker` directory with the root config: `wrangler deploy --config wrangler.toml`.
+3. From the repository root, deploy with: `wrangler deploy --config wrangler.toml`.
 4. Configure the custom domain `api.sentineldashboard.site` for the Worker.
 5. Add the two secrets using `wrangler secret put RESEND_API_KEY` and `wrangler secret put AUTH_PEPPER`.
 6. Publish the root files from the `sentinel-status` branch to GitHub Pages after review.
